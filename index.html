@@ -87,6 +87,8 @@ button.go {
   background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; padding: 11px 14px; cursor: pointer;
 }
 button.go:disabled { opacity: .5; cursor: progress; }
+.usage { margin: 0; font-family: var(--mono); font-size: .8rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+.usage.low { color: var(--warn); }
 .status { font-size: .85rem; min-height: 1.3em; margin: 0; }
 .status.err { color: var(--warn); }
 .status.ok { color: var(--ok); }
@@ -129,6 +131,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
           <option value="local" data-i18n="eLocal"></option>
         </select>
         <p class="hint" id="engine-hint" data-i18n="cloudNote"></p>
+        <p class="usage" id="usage" hidden></p>
       </div>
 
       <div class="field">
@@ -217,7 +220,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       darken: "浅色线加深（黄、青等在白纸上更清楚）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
       lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
       mode: "输出方式", mAuto: "自动（有中文就用高清图像）", mVec: "矢量（线条最清晰，中文会乱码）", mRas: "高清图像（中文正常）",
-      go: "生成 PDF", engine: "转换引擎", eCloud: "云端高保真（ConvertAPI，效果同 AutoCAD）", eLocal: "本机浏览器（不上传，简化效果）", cloudNote: "云端引擎会把图纸上传到 ConvertAPI 转换；上面的预览是简化效果，PDF 以云端结果为准。", uploading: "正在上传到云端转换…（大图要几十秒）", noToken: "网站还没配置 ConvertAPI 密钥，请先在 Vercel 里添加 CONVERTAPI_TOKEN。现在可以改用「本机浏览器」引擎。", upTooBig: "文件超过 4.4 MB，云端转换暂时不支持，请改用「本机浏览器」引擎。", cloudFail: "云端转换失败：{m}", cloudOpen: "PDF 已在新标签页打开，请在那里保存。", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
+      go: "生成 PDF", engine: "转换引擎", eCloud: "云端高保真（ConvertAPI，效果同 AutoCAD）", eLocal: "本机浏览器（不上传，简化效果）", cloudNote: "云端引擎会把图纸上传到 ConvertAPI 转换；上面的预览是简化效果，PDF 以云端结果为准。", uploading: "正在上传到云端转换…（大图要几十秒）", noToken: "网站还没配置 ConvertAPI 密钥，请先在 Vercel 里添加 CONVERTAPI_TOKEN。现在可以改用「本机浏览器」引擎。", upTooBig: "文件超过 4.4 MB，云端转换暂时不支持，请改用「本机浏览器」引擎。", cloudFail: "云端转换失败：{m}", cloudOpen: "PDF 已在新标签页打开，请在那里保存。", usage: "ConvertAPI 额度：已用 {u} 次，剩余 {r} 次（共 {t} 次）", usageNA: "要显示用量，请在 Vercel 里添加 CONVERTAPI_SECRET。", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
       sample: "示例图纸", sampleName: "示例平面图.dxf",
       mFile: "文件", mCount: "图形", mPaper: "纸张", mText: "文字", tCJK: "含中文", tLatin: "英文/数字",
       onlyExt: "只支持 .dwg 和 .dxf 文件。", readingDwg: "正在读取 DWG…", readingDxf: "正在读取 DXF…",
@@ -242,7 +245,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       darken: "Darken light colors (yellow and cyan read better on white paper)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
       lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
       mode: "Output", mAuto: "Auto (high-res image if the drawing has Chinese text)", mVec: "Vector (sharpest lines, Chinese text breaks)", mRas: "High-res image (Chinese text OK)",
-      go: "Create PDF", engine: "Engine", eCloud: "Cloud, high fidelity (ConvertAPI, matches AutoCAD)", eLocal: "In this browser (no upload, simplified)", cloudNote: "The cloud engine uploads the drawing to ConvertAPI. The preview above is simplified; the PDF comes from the cloud result.", uploading: "Uploading for cloud conversion… (large drawings take a while)", noToken: "The site has no ConvertAPI key yet. Add CONVERTAPI_TOKEN in Vercel, or switch Engine to In this browser.", upTooBig: "Files over 4.4 MB can't use the cloud engine yet. Switch Engine to In this browser.", cloudFail: "Cloud conversion failed: {m}", cloudOpen: "The PDF opened in a new tab. Save it from there.", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
+      go: "Create PDF", engine: "Engine", eCloud: "Cloud, high fidelity (ConvertAPI, matches AutoCAD)", eLocal: "In this browser (no upload, simplified)", cloudNote: "The cloud engine uploads the drawing to ConvertAPI. The preview above is simplified; the PDF comes from the cloud result.", uploading: "Uploading for cloud conversion… (large drawings take a while)", noToken: "The site has no ConvertAPI key yet. Add CONVERTAPI_TOKEN in Vercel, or switch Engine to In this browser.", upTooBig: "Files over 4.4 MB can't use the cloud engine yet. Switch Engine to In this browser.", cloudFail: "Cloud conversion failed: {m}", cloudOpen: "The PDF opened in a new tab. Save it from there.", usage: "ConvertAPI quota: {u} used, {r} left of {t}", usageNA: "To show usage, add CONVERTAPI_SECRET in Vercel.", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
       sample: "Sample drawing", sampleName: "sample-plan.dxf",
       mFile: "File", mCount: "Objects", mPaper: "Sheet", mText: "Text", tCJK: "Has Chinese", tLatin: "Latin only",
       onlyExt: "Only .dwg and .dxf files are supported.", readingDwg: "Reading DWG…", readingDxf: "Reading DXF…",
@@ -274,6 +277,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
     if (state.isSample) state.name = t("sampleName");
     if (lastStatus) setStatus(lastStatus.k, lastStatus.kind, lastStatus.v);
+    if (typeof showUsage === "function") showUsage();
     render();
   }
   const state = { name: "示例平面图.dxf", isSample: true, content: null, vb: null, layers: [], hasCJK: false, count: 0 };
@@ -908,6 +912,25 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
   const hasCloud = !!window.CAD2PDF_API;
   if (hasCloud) $("engine-field").hidden = false;
+  let usageInfo = null;
+  function showUsage() {
+    const el = $("usage");
+    if (!usageInfo) { el.hidden = true; return; }
+    el.hidden = false;
+    if (usageInfo.error === "NO_SECRET") { el.textContent = t("usageNA"); el.className = "usage"; return; }
+    el.textContent = t("usage", { u: usageInfo.used, r: usageInfo.remaining, t: usageInfo.total });
+    el.className = "usage" + (usageInfo.remaining <= 20 ? " low" : "");
+  }
+  async function refreshUsage() {
+    if (!hasCloud) return;
+    try {
+      const res = await fetch(window.CAD2PDF_API.replace(/convert$/, "usage"), { cache: "no-store" });
+      const d = await res.json();
+      usageInfo = d && (d.error === "NO_SECRET" || isFinite(d.total)) ? d : null;
+    } catch (e) { usageInfo = null; }
+    showUsage();
+  }
+  refreshUsage();
   async function cloudConvert() {
     if (!state.file) fail("noPdfLib");
     if (state.file.size > 4.4 * 1024 * 1024) fail("upTooBig");
@@ -965,6 +988,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
         setStatus("uploading");
         const f = await cloudConvert();
         const saved = await saveCloudFile(f, fname);
+        refreshUsage();
         if (saved.opened) setStatus("cloudOpen", "ok");
         else setStatus("downloaded", "ok", { n: fname, s: (saved.size / 1048576).toFixed(1), m: "ConvertAPI" });
         return;
