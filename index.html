@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Convert DWG and DXF drawings to PDF in your browser. Files are never uploaded.">
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>window.CAD2PDF_DWG_BASE = "https://cdn.jsdelivr.net/npm/@mlightcad/libredwg-web@0.8.1/";</script>
+<title>cad2pdf</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: drafting-table split — controls rail on the left, the sheet itself on the right; stacks on phones. */
+:root {
+  --bg: #eef1f4;          /* drafting film */
+  --panel: #f8fafb;
+  --ink: #18202b;
+  --muted: #5b6776;
+  --rule: #cdd5de;
+  --accent: #1d5bb8;      /* plan blue */
+  --accent-ink: #ffffff;
+  --sheet: #ffffff;
+  --warn: #9a5a00;
+  --ok: #1f7a4a;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --body: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12171e; --panel: #1a212b; --ink: #e4e9ef; --muted: #98a4b3; --rule: #2d3743;
+    --accent: #6b9ff0; --accent-ink: #0d1520; --sheet: #ffffff; --warn: #e0a54a; --ok: #5fc48e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12171e; --panel: #1a212b; --ink: #e4e9ef; --muted: #98a4b3; --rule: #2d3743;
+  --accent: #6b9ff0; --accent-ink: #0d1520; --sheet: #ffffff; --warn: #e0a54a; --ok: #5fc48e;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 32px;
+}
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 20px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
+h1 { font-family: var(--display); font-weight: 600; font-size: 1.7rem; letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.tag { font-family: var(--mono); font-size: .78rem; color: var(--muted); letter-spacing: .04em; }
+.hd-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.lang { display: flex; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.lang button { font: inherit; font-size: .82rem; background: transparent; color: var(--ink); border: 0; padding: 4px 10px; cursor: pointer; }
+.lang button + button { border-left: 1px solid var(--rule); }
+.lang button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.lang button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.main { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.rail { display: grid; gap: 16px; background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; }
+.drop {
+  display: grid; gap: 4px; place-items: center; text-align: center; padding: 20px 12px;
+  border: 1.5px dashed var(--rule); border-radius: 6px; cursor: pointer; transition: border-color .15s, background .15s;
+}
+.drop:hover, .drop.over, .drop:focus-within { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.drop strong { font-family: var(--display); font-size: 1.05rem; font-weight: 600; }
+.drop span { color: var(--muted); font-size: .85rem; }
+.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.field { display: grid; gap: 6px; }
+.label { font-family: var(--display); font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--rule); border-radius: 4px; padding: 7px 8px; width: 100%; }
+select:focus-visible, button:focus-visible, .seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.seg { display: flex; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.seg label { flex: 1; }
+.seg input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.seg span { display: block; text-align: center; padding: 6px 4px; cursor: pointer; font-size: .9rem; border-left: 1px solid var(--rule); }
+.seg label:first-child span { border-left: 0; }
+.seg input:checked + span { background: var(--accent); color: var(--accent-ink); }
+.check { display: flex; gap: 8px; align-items: center; font-size: .9rem; }
+.check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.hint { font-size: .8rem; color: var(--muted); margin: 0; }
+button.go {
+  font: inherit; font-family: var(--display); font-weight: 600; font-size: 1.05rem; letter-spacing: .02em;
+  background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; padding: 11px 14px; cursor: pointer;
+}
+button.go:disabled { opacity: .5; cursor: progress; }
+.status { font-size: .85rem; min-height: 1.3em; margin: 0; }
+.status.err { color: var(--warn); }
+.status.ok { color: var(--ok); }
+.stage { display: grid; gap: 10px; min-width: 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--mono); font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.meta b { color: var(--ink); font-weight: 500; }
+.sheetbox { background: color-mix(in srgb, var(--ink) 6%, var(--bg)); border-radius: 6px; padding: 18px; display: grid; place-items: center; min-height: 260px; }
+.sheet { width: 100%; max-width: 100%; background: var(--sheet); box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.10); position: relative; }
+.sheet svg { display: block; width: 100%; height: auto; }
+.badge { position: absolute; top: 8px; left: 8px; font-family: var(--mono); font-size: .72rem; background: #18202b; color: #fff; padding: 2px 7px; border-radius: 3px; letter-spacing: .04em; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .8rem; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--rule); }
+.busy { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(255,255,255,.75); font-family: var(--display); color: #18202b; font-size: 1rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 data-i18n="h1"></h1>
+    <div class="hd-right"><span class="tag" data-i18n="tag"></span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
+  </header>
+
+  <div class="main">
+    <aside class="rail">
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept=".dwg,.dxf">
+        <strong data-i18n="pick"></strong>
+        <span data-i18n="support"></span>
+      </label>
+
+      <div class="field">
+        <span class="label" id="lbl-size" data-i18n="paper"></span>
+        <select id="size" aria-labelledby="lbl-size">
+          <option value="24x36" selected>24 × 36 in (ARCH D)</option>
+          <option value="36x48">36 × 48 in (ARCH E)</option>
+          <option value="18x24">18 × 24 in (ARCH C)</option>
+          <option value="11x17">11 × 17 in (Tabloid)</option>
+          <option value="8.5x11">8.5 × 11 in (Letter)</option>
+          <option value="594x841mm">A1  594 × 841 mm</option>
+          <option value="297x420mm">A3  297 × 420 mm</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <span class="label" data-i18n="orient"></span>
+        <div class="seg" role="radiogroup" data-i18n-aria="orient">
+          <label><input type="radio" name="orient" id="o-auto" value="auto" checked><span data-i18n="auto"></span></label>
+          <label><input type="radio" name="orient" id="o-land" value="land"><span data-i18n="land"></span></label>
+          <label><input type="radio" name="orient" id="o-port" value="port"><span data-i18n="port"></span></label>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="label" data-i18n="color"></span>
+        <div class="seg" role="radiogroup" data-i18n-aria="color">
+          <label><input type="radio" name="color" id="c-color" value="color" checked><span data-i18n="cColor"></span></label>
+          <label><input type="radio" name="color" id="c-mono" value="mono"><span data-i18n="cMono"></span></label>
+        </div>
+        <label class="check"><input type="checkbox" id="darken" checked> <span data-i18n="darken"></span></label>
+      </div>
+
+      <div class="field">
+        <span class="label" id="lbl-lw" data-i18n="lw"></span>
+        <select id="lw" aria-labelledby="lbl-lw">
+          <option value="0.13" data-i18n="lw13"></option>
+          <option value="0.25" selected data-i18n="lw25"></option>
+          <option value="0.35" data-i18n="lw35"></option>
+          <option value="0.5" data-i18n="lw50"></option>
+        </select>
+      </div>
+
+      <div class="field">
+        <span class="label" id="lbl-mode" data-i18n="mode"></span>
+        <select id="mode" aria-labelledby="lbl-mode">
+          <option value="auto" selected data-i18n="mAuto"></option>
+          <option value="vector" data-i18n="mVec"></option>
+          <option value="raster" data-i18n="mRas"></option>
+        </select>
+      </div>
+
+      <button class="go" id="go" type="button" data-i18n="go"></button>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+      <p class="hint" data-i18n="hint"></p>
+    </aside>
+
+    <section class="stage">
+      <div class="meta" id="meta"></div>
+      <div class="sheetbox">
+        <div class="sheet" id="sheet"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.3/dist/svg2pdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dxf-parser@1.1.2/dist/dxf-parser.js"></script>
+<script>
+window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\n$ACADMAINTVER\n 70\n6\n  9\n$DWGCODEPAGE\n  3\nANSI_1252\n  9\n$INSBASE\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$EXTMIN\n 10\n1e+20\n 20\n1e+20\n 30\n1e+20\n  9\n$EXTMAX\n 10\n-1e+20\n 20\n-1e+20\n 30\n-1e+20\n  9\n$LIMMIN\n 10\n0.0\n 20\n0.0\n  9\n$LIMMAX\n 10\n420.0\n 20\n297.0\n  9\n$ORTHOMODE\n 70\n0\n  9\n$REGENMODE\n 70\n1\n  9\n$FILLMODE\n 70\n1\n  9\n$QTEXTMODE\n 70\n0\n  9\n$MIRRTEXT\n 70\n1\n  9\n$LTSCALE\n 40\n1.0\n  9\n$ATTMODE\n 70\n1\n  9\n$TEXTSIZE\n 40\n2.5\n  9\n$TRACEWID\n 40\n1.0\n  9\n$TEXTSTYLE\n  7\nStandard\n  9\n$CLAYER\n  8\n0\n  9\n$CELTYPE\n  6\nByLayer\n  9\n$CECOLOR\n 62\n256\n  9\n$CELTSCALE\n 40\n1.0\n  9\n$DISPSILH\n 70\n0\n  9\n$DIMSCALE\n 40\n1.0\n  9\n$DIMASZ\n 40\n2.5\n  9\n$DIMEXO\n 40\n0.625\n  9\n$DIMDLI\n 40\n3.75\n  9\n$DIMRND\n 40\n0.0\n  9\n$DIMDLE\n 40\n0.0\n  9\n$DIMEXE\n 40\n1.25\n  9\n$DIMTP\n 40\n0.0\n  9\n$DIMTM\n 40\n0.0\n  9\n$DIMTXT\n 40\n2.5\n  9\n$DIMCEN\n 40\n2.5\n  9\n$DIMTSZ\n 40\n0.0\n  9\n$DIMTOL\n 70\n0\n  9\n$DIMLIM\n 70\n0\n  9\n$DIMTIH\n 70\n0\n  9\n$DIMTOH\n 70\n0\n  9\n$DIMSE1\n 70\n0\n  9\n$DIMSE2\n 70\n0\n  9\n$DIMTAD\n 70\n1\n  9\n$DIMZIN\n 70\n8\n  9\n$DIMBLK\n  1\n\n  9\n$DIMASO\n 70\n1\n  9\n$DIMSHO\n 70\n1\n  9\n$DIMPOST\n  1\n\n  9\n$DIMAPOST\n  1\n\n  9\n$DIMALT\n 70\n0\n  9\n$DIMALTD\n 70\n3\n  9\n$DIMALTF\n 40\n0.03937007874\n  9\n$DIMLFAC\n 40\n1.0\n  9\n$DIMTOFL\n 70\n1\n  9\n$DIMTVP\n 40\n0.0\n  9\n$DIMTIX\n 70\n0\n  9\n$DIMSOXD\n 70\n0\n  9\n$DIMSAH\n 70\n0\n  9\n$DIMBLK1\n  1\n\n  9\n$DIMBLK2\n  1\n\n  9\n$DIMSTYLE\n  2\nISO-25\n  9\n$DIMCLRD\n 70\n0\n  9\n$DIMCLRE\n 70\n0\n  9\n$DIMCLRT\n 70\n0\n  9\n$DIMTFAC\n 40\n1.0\n  9\n$DIMGAP\n 40\n0.625\n  9\n$DIMJUST\n 70\n0\n  9\n$DIMSD1\n 70\n0\n  9\n$DIMSD2\n 70\n0\n  9\n$DIMTOLJ\n 70\n0\n  9\n$DIMTZIN\n 70\n8\n  9\n$DIMALTZ\n 70\n0\n  9\n$DIMALTTZ\n 70\n0\n  9\n$DIMUPT\n 70\n0\n  9\n$DIMDEC\n 70\n2\n  9\n$DIMTDEC\n 70\n2\n  9\n$DIMALTU\n 70\n2\n  9\n$DIMALTTD\n 70\n3\n  9\n$DIMTXSTY\n  7\nStandard\n  9\n$DIMAUNIT\n 70\n0\n  9\n$DIMADEC\n 70\n0\n  9\n$DIMALTRND\n 40\n0.0\n  9\n$DIMAZIN\n 70\n0\n  9\n$DIMDSEP\n 70\n44\n  9\n$DIMATFIT\n 70\n3\n  9\n$DIMFRAC\n 70\n0\n  9\n$DIMLDRBLK\n  1\n\n  9\n$DIMLUNIT\n 70\n2\n  9\n$DIMLWD\n 70\n-2\n  9\n$DIMLWE\n 70\n-2\n  9\n$DIMTMOVE\n 70\n0\n  9\n$LUNITS\n 70\n2\n  9\n$LUPREC\n 70\n4\n  9\n$SKETCHINC\n 40\n1.0\n  9\n$FILLETRAD\n 40\n10.0\n  9\n$AUNITS\n 70\n0\n  9\n$AUPREC\n 70\n2\n  9\n$MENU\n  1\n.\n  9\n$ELEVATION\n 40\n0.0\n  9\n$PELEVATION\n 40\n0.0\n  9\n$THICKNESS\n 40\n0.0\n  9\n$LIMCHECK\n 70\n0\n  9\n$CHAMFERA\n 40\n0.0\n  9\n$CHAMFERB\n 40\n0.0\n  9\n$CHAMFERC\n 40\n0.0\n  9\n$CHAMFERD\n 40\n0.0\n  9\n$SKPOLY\n 70\n0\n  9\n$TDCREATE\n 40\n2461334.9711921294\n  9\n$TDUCREATE\n 40\n2458532.153996898\n  9\n$TDUPDATE\n 40\n2461334.9711921294\n  9\n$TDUUPDATE\n 40\n2458532.1544311\n  9\n$TDINDWG\n 40\n0.0\n  9\n$TDUSRTIMER\n 40\n0.0\n  9\n$USRTIMER\n 70\n1\n  9\n$ANGBASE\n 50\n0.0\n  9\n$ANGDIR\n 70\n0\n  9\n$PDMODE\n 70\n0\n  9\n$PDSIZE\n 40\n0.0\n  9\n$PLINEWID\n 40\n0.0\n  9\n$SPLFRAME\n 70\n0\n  9\n$SPLINETYPE\n 70\n6\n  9\n$SPLINESEGS\n 70\n8\n  9\n$HANDSEED\n  5\n63\n  9\n$SURFTAB1\n 70\n6\n  9\n$SURFTAB2\n 70\n6\n  9\n$SURFTYPE\n 70\n6\n  9\n$SURFU\n 70\n6\n  9\n$SURFV\n 70\n6\n  9\n$UCSBASE\n  2\n\n  9\n$UCSNAME\n  2\n\n  9\n$UCSORG\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$UCSXDIR\n 10\n1.0\n 20\n0.0\n 30\n0.0\n  9\n$UCSYDIR\n 10\n0.0\n 20\n1.0\n 30\n0.0\n  9\n$UCSORTHOREF\n  2\n\n  9\n$UCSORTHOVIEW\n 70\n0\n  9\n$UCSORGTOP\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$UCSORGBOTTOM\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$UCSORGLEFT\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$UCSORGRIGHT\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$UCSORGFRONT\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$UCSORGBACK\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$PUCSBASE\n  2\n\n  9\n$PUCSNAME\n  2\n\n  9\n$PUCSORG\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$PUCSXDIR\n 10\n1.0\n 20\n0.0\n 30\n0.0\n  9\n$PUCSYDIR\n 10\n0.0\n 20\n1.0\n 30\n0.0\n  9\n$PUCSORTHOREF\n  2\n\n  9\n$PUCSORTHOVIEW\n 70\n0\n  9\n$PUCSORGTOP\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$PUCSORGBOTTOM\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$PUCSORGLEFT\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$PUCSORGRIGHT\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$PUCSORGFRONT\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$PUCSORGBACK\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$USERI1\n 70\n0\n  9\n$USERI2\n 70\n0\n  9\n$USERI3\n 70\n0\n  9\n$USERI4\n 70\n0\n  9\n$USERI5\n 70\n0\n  9\n$USERR1\n 40\n0.0\n  9\n$USERR2\n 40\n0.0\n  9\n$USERR3\n 40\n0.0\n  9\n$USERR4\n 40\n0.0\n  9\n$USERR5\n 40\n0.0\n  9\n$WORLDVIEW\n 70\n1\n  9\n$SHADEDGE\n 70\n3\n  9\n$SHADEDIF\n 70\n70\n  9\n$TILEMODE\n 70\n1\n  9\n$MAXACTVP\n 70\n64\n  9\n$PINSBASE\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  9\n$PLIMCHECK\n 70\n0\n  9\n$PEXTMIN\n 10\n1e+20\n 20\n1e+20\n 30\n1e+20\n  9\n$PEXTMAX\n 10\n-1e+20\n 20\n-1e+20\n 30\n-1e+20\n  9\n$PLIMMIN\n 10\n0.0\n 20\n0.0\n  9\n$PLIMMAX\n 10\n420.0\n 20\n297.0\n  9\n$UNITMODE\n 70\n0\n  9\n$VISRETAIN\n 70\n1\n  9\n$PLINEGEN\n 70\n0\n  9\n$PSLTSCALE\n 70\n1\n  9\n$TREEDEPTH\n 70\n3020\n  9\n$CMLSTYLE\n  2\nStandard\n  9\n$CMLJUST\n 70\n0\n  9\n$CMLSCALE\n 40\n20.0\n  9\n$PROXYGRAPHICS\n 70\n1\n  9\n$MEASUREMENT\n 70\n1\n  9\n$CELWEIGHT\n370\n-1\n  9\n$ENDCAPS\n280\n0\n  9\n$JOINSTYLE\n280\n0\n  9\n$LWDISPLAY\n290\n0\n  9\n$INSUNITS\n 70\n6\n  9\n$HYPERLINKBASE\n  1\n\n  9\n$STYLESHEET\n  1\n\n  9\n$XEDIT\n290\n1\n  9\n$CEPSNTYPE\n380\n0\n  9\n$PSTYLEMODE\n290\n1\n  9\n$FINGERPRINTGUID\n  2\n{FFF57B11-55E7-4D4B-A84E-846E09011D97}\n  9\n$VERSIONGUID\n  2\n{AF1E6B4E-7FE3-4467-AAC4-179CE4193CE0}\n  9\n$EXTNAMES\n290\n1\n  9\n$PSVPSCALE\n 40\n0.0\n  9\n$OLESTARTUP\n290\n0\n  0\nENDSEC\n  0\nSECTION\n  2\nCLASSES\n  0\nCLASS\n  1\nACDBDICTIONARYWDFLT\n  2\nAcDbDictionaryWithDefault\n  3\nObjectDBX Classes\n 90\n0\n280\n0\n281\n0\n  0\nCLASS\n  1\nSUN\n  2\nAcDbSun\n  3\nSCENEOE\n 90\n1153\n280\n0\n281\n0\n  0\nCLASS\n  1\nVISUALSTYLE\n  2\nAcDbVisualStyle\n  3\nObjectDBX Classes\n 90\n4095\n280\n0\n281\n0\n  0\nCLASS\n  1\nMATERIAL\n  2\nAcDbMaterial\n  3\nObjectDBX Classes\n 90\n1153\n280\n0\n281\n0\n  0\nCLASS\n  1\nSCALE\n  2\nAcDbScale\n  3\nObjectDBX Classes\n 90\n1153\n280\n0\n281\n0\n  0\nCLASS\n  1\nTABLESTYLE\n  2\nAcDbTableStyle\n  3\nObjectDBX Classes\n 90\n4095\n280\n0\n281\n0\n  0\nCLASS\n  1\nMLEADERSTYLE\n  2\nAcDbMLeaderStyle\n  3\nACDB_MLEADERSTYLE_CLASS\n 90\n4095\n280\n0\n281\n0\n  0\nCLASS\n  1\nDICTIONARYVAR\n  2\nAcDbDictionaryVar\n  3\nObjectDBX Classes\n 90\n0\n280\n0\n281\n0\n  0\nCLASS\n  1\nCELLSTYLEMAP\n  2\nAcDbCellStyleMap\n  3\nObjectDBX Classes\n 90\n1152\n280\n0\n281\n0\n  0\nCLASS\n  1\nMENTALRAYRENDERSETTINGS\n  2\nAcDbMentalRayRenderSettings\n  3\nSCENEOE\n 90\n1024\n280\n0\n281\n0\n  0\nCLASS\n  1\nACDBDETAILVIEWSTYLE\n  2\nAcDbDetailViewStyle\n  3\nObjectDBX Classes\n 90\n1025\n280\n0\n281\n0\n  0\nCLASS\n  1\nACDBSECTIONVIEWSTYLE\n  2\nAcDbSectionViewStyle\n  3\nObjectDBX Classes\n 90\n1025\n280\n0\n281\n0\n  0\nCLASS\n  1\nRASTERVARIABLES\n  2\nAcDbRasterVariables\n  3\nISM\n 90\n0\n280\n0\n281\n0\n  0\nCLASS\n  1\nACDBPLACEHOLDER\n  2\nAcDbPlaceHolder\n  3\nObjectDBX Classes\n 90\n0\n280\n0\n281\n0\n  0\nCLASS\n  1\nLAYOUT\n  2\nAcDbLayout\n  3\nObjectDBX Classes\n 90\n0\n280\n0\n281\n0\n  0\nENDSEC\n  0\nSECTION\n  2\nTABLES\n  0\nTABLE\n  2\nVPORT\n  5\n8\n330\n0\n100\nAcDbSymbolTable\n 70\n1\n  0\nVPORT\n  5\n23\n330\n8\n100\nAcDbSymbolTableRecord\n100\nAcDbViewportTableRecord\n  2\n*Active\n 70\n0\n 10\n0.0\n 20\n0.0\n 11\n1.0\n 21\n1.0\n 12\n0.0\n 22\n0.0\n 13\n0.0\n 23\n0.0\n 14\n0.5\n 24\n0.5\n 15\n0.5\n 25\n0.5\n 16\n0.0\n 26\n0.0\n 36\n1.0\n 17\n0.0\n 27\n0.0\n 37\n0.0\n 40\n1000.0\n 41\n1.34\n 42\n50.0\n 43\n0.0\n 44\n0.0\n 50\n0.0\n 51\n0.0\n 71\n0\n 72\n1000\n 73\n1\n 74\n3\n 75\n0\n 76\n0\n 77\n0\n 78\n0\n281\n0\n 65\n0\n146\n0.0\n  0\nENDTAB\n  0\nTABLE\n  2\nLTYPE\n  5\n2\n330\n0\n100\nAcDbSymbolTable\n 70\n3\n  0\nLTYPE\n  5\n24\n330\n2\n100\nAcDbSymbolTableRecord\n100\nAcDbLinetypeTableRecord\n  2\nByBlock\n 70\n0\n  3\n\n 72\n65\n 73\n0\n 40\n0.0\n  0\nLTYPE\n  5\n25\n330\n2\n100\nAcDbSymbolTableRecord\n100\nAcDbLinetypeTableRecord\n  2\nByLayer\n 70\n0\n  3\n\n 72\n65\n 73\n0\n 40\n0.0\n  0\nLTYPE\n  5\n26\n330\n2\n100\nAcDbSymbolTableRecord\n100\nAcDbLinetypeTableRecord\n  2\nContinuous\n 70\n0\n  3\n\n 72\n65\n 73\n0\n 40\n0.0\n  0\nENDTAB\n  0\nTABLE\n  2\nLAYER\n  5\n1\n330\n0\n100\nAcDbSymbolTable\n 70\n9\n  0\nLAYER\n  5\n27\n330\n1\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTableRecord\n  2\n0\n 70\n0\n 62\n7\n  6\nContinuous\n370\n-3\n390\n13\n  0\nLAYER\n  5\n28\n330\n1\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTableRecord\n  2\nDefpoints\n 70\n0\n 62\n7\n  6\nContinuous\n290\n0\n370\n-3\n390\n13\n  0\nLAYER\n  5\n2F\n330\n1\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTableRecord\n  2\nWALLS\n 70\n0\n 62\n7\n  6\nContinuous\n370\n-3\n390\n13\n  0\nLAYER\n  5\n30\n330\n1\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTableRecord\n  2\nDOORS\n 70\n0\n 62\n3\n  6\nContinuous\n370\n-3\n390\n13\n  0\nLAYER\n  5\n31\n330\n1\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTableRecord\n  2\nWINDOWS\n 70\n0\n 62\n4\n  6\nContinuous\n370\n-3\n390\n13\n  0\nLAYER\n  5\n32\n330\n1\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTableRecord\n  2\nDIMS\n 70\n0\n 62\n1\n  6\nContinuous\n370\n-3\n390\n13\n  0\nLAYER\n  5\n33\n330\n1\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTableRecord\n  2\nTEXT\n 70\n0\n 62\n5\n  6\nContinuous\n370\n-3\n390\n13\n  0\nLAYER\n  5\n34\n330\n1\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTableRecord\n  2\nGRID\n 70\n0\n 62\n8\n  6\nContinuous\n370\n-3\n390\n13\n  0\nLAYER\n  5\n35\n330\n1\n100\nAcDbSymbolTableRecord\n100\nAcDbLayerTableRecord\n  2\nFIXTURES\n 70\n0\n 62\n6\n  6\nContinuous\n370\n-3\n390\n13\n  0\nENDTAB\n  0\nTABLE\n  2\nSTYLE\n  5\n5\n330\n0\n100\nAcDbSymbolTable\n 70\n1\n  0\nSTYLE\n  5\n29\n330\n5\n100\nAcDbSymbolTableRecord\n100\nAcDbTextStyleTableRecord\n  2\nStandard\n 70\n0\n 40\n0.0\n 41\n1.0\n 50\n0.0\n 71\n0\n 42\n2.5\n  3\ntxt\n  4\n\n  0\nENDTAB\n  0\nTABLE\n  2\nVIEW\n  5\n7\n330\n0\n100\nAcDbSymbolTable\n 70\n0\n  0\nENDTAB\n  0\nTABLE\n  2\nUCS\n  5\n6\n330\n0\n100\nAcDbSymbolTable\n 70\n0\n  0\nENDTAB\n  0\nTABLE\n  2\nAPPID\n  5\n3\n330\n0\n100\nAcDbSymbolTable\n 70\n3\n  0\nAPPID\n  5\n2A\n330\n3\n100\nAcDbSymbolTableRecord\n100\nAcDbRegAppTableRecord\n  2\nACAD\n 70\n0\n  0\nAPPID\n  5\n60\n330\n3\n100\nAcDbSymbolTableRecord\n100\nAcDbRegAppTableRecord\n  2\nHATCHBACKGROUNDCOLOR\n 70\n0\n  0\nAPPID\n  5\n61\n330\n3\n100\nAcDbSymbolTableRecord\n100\nAcDbRegAppTableRecord\n  2\nEZDXF\n 70\n0\n  0\nENDTAB\n  0\nTABLE\n  2\nDIMSTYLE\n  5\n4\n330\n0\n100\nAcDbSymbolTable\n 70\n1\n100\nAcDbDimStyleTable\n  0\nDIMSTYLE\n105\n2B\n330\n4\n100\nAcDbSymbolTableRecord\n100\nAcDbDimStyleTableRecord\n  2\nStandard\n 70\n0\n  3\n\n  4\n\n 40\n1.0\n 41\n2.5\n 42\n0.625\n 43\n3.75\n 44\n1.25\n 45\n0.0\n 46\n0.0\n 47\n0.0\n 48\n0.0\n140\n2.5\n141\n2.5\n142\n0.0\n143\n0.03937007874\n144\n1.0\n145\n0.0\n146\n1.0\n147\n0.625\n148\n0.0\n 71\n0\n 72\n0\n 73\n0\n 74\n0\n 75\n0\n 76\n0\n 77\n1\n 78\n8\n 79\n3\n170\n0\n171\n3\n172\n1\n173\n0\n174\n0\n175\n0\n176\n0\n177\n0\n178\n0\n179\n2\n271\n2\n272\n2\n273\n2\n274\n3\n275\n0\n276\n0\n277\n2\n278\n44\n279\n0\n280\n0\n281\n0\n282\n0\n283\n0\n284\n8\n285\n0\n286\n0\n288\n0\n289\n3\n371\n-2\n372\n-2\n  0\nENDTAB\n  0\nTABLE\n  2\nBLOCK_RECORD\n  5\n9\n330\n0\n100\nAcDbSymbolTable\n 70\n3\n  0\nBLOCK_RECORD\n  5\n17\n330\n9\n100\nAcDbSymbolTableRecord\n100\nAcDbBlockTableRecord\n  2\n*Model_Space\n340\n1A\n  0\nBLOCK_RECORD\n  5\n1B\n330\n9\n100\nAcDbSymbolTableRecord\n100\nAcDbBlockTableRecord\n  2\n*Paper_Space\n340\n1E\n  0\nBLOCK_RECORD\n  5\n36\n330\n9\n100\nAcDbSymbolTableRecord\n100\nAcDbBlockTableRecord\n  2\nWIN3\n340\n0\n  0\nENDTAB\n  0\nENDSEC\n  0\nSECTION\n  2\nBLOCKS\n  0\nBLOCK\n  5\n18\n330\n17\n100\nAcDbEntity\n  8\n0\n100\nAcDbBlockBegin\n  2\n*Model_Space\n 70\n0\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  3\n*Model_Space\n  1\n\n  0\nENDBLK\n  5\n19\n330\n17\n100\nAcDbEntity\n  8\n0\n100\nAcDbBlockEnd\n  0\nBLOCK\n  5\n1C\n330\n1B\n100\nAcDbEntity\n  8\n0\n100\nAcDbBlockBegin\n  2\n*Paper_Space\n 70\n0\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  3\n*Paper_Space\n  1\n\n  0\nENDBLK\n  5\n1D\n330\n1B\n100\nAcDbEntity\n  8\n0\n100\nAcDbBlockEnd\n  0\nBLOCK\n  5\n37\n330\n36\n100\nAcDbEntity\n  8\n0\n100\nAcDbBlockBegin\n  2\nWIN3\n 70\n0\n 10\n0.0\n 20\n0.0\n 30\n0.0\n  3\nWIN3\n  1\n\n  0\nLINE\n  5\n39\n330\n36\n100\nAcDbEntity\n  8\n0\n100\nAcDbLine\n 10\n0.0\n 20\n0.0\n 30\n0.0\n 11\n36.0\n 21\n0.0\n 31\n0.0\n  0\nLINE\n  5\n3A\n330\n36\n100\nAcDbEntity\n  8\n0\n100\nAcDbLine\n 10\n0.0\n 20\n3.0\n 30\n0.0\n 11\n36.0\n 21\n3.0\n 31\n0.0\n  0\nLINE\n  5\n3B\n330\n36\n100\nAcDbEntity\n  8\n0\n100\nAcDbLine\n 10\n0.0\n 20\n6.0\n 30\n0.0\n 11\n36.0\n 21\n6.0\n 31\n0.0\n  0\nENDBLK\n  5\n38\n330\n36\n100\nAcDbEntity\n  8\n0\n100\nAcDbBlockEnd\n  0\nENDSEC\n  0\nSECTION\n  2\nENTITIES\n  0\nLINE\n  5\n3C\n330\n17\n100\nAcDbEntity\n  8\nGRID\n100\nAcDbLine\n 10\n0.0\n 20\n-30.0\n 30\n0.0\n 11\n0.0\n 21\n390.0\n 31\n0.0\n  0\nLINE\n  5\n3D\n330\n17\n100\nAcDbEntity\n  8\nGRID\n100\nAcDbLine\n 10\n120.0\n 20\n-30.0\n 30\n0.0\n 11\n120.0\n 21\n390.0\n 31\n0.0\n  0\nLINE\n  5\n3E\n330\n17\n100\nAcDbEntity\n  8\nGRID\n100\nAcDbLine\n 10\n240.0\n 20\n-30.0\n 30\n0.0\n 11\n240.0\n 21\n390.0\n 31\n0.0\n  0\nLINE\n  5\n3F\n330\n17\n100\nAcDbEntity\n  8\nGRID\n100\nAcDbLine\n 10\n360.0\n 20\n-30.0\n 30\n0.0\n 11\n360.0\n 21\n390.0\n 31\n0.0\n  0\nLINE\n  5\n40\n330\n17\n100\nAcDbEntity\n  8\nGRID\n100\nAcDbLine\n 10\n480.0\n 20\n-30.0\n 30\n0.0\n 11\n480.0\n 21\n390.0\n 31\n0.0\n  0\nLWPOLYLINE\n  5\n41\n330\n17\n100\nAcDbEntity\n  8\nWALLS\n100\nAcDbPolyline\n 90\n4\n 70\n1\n 10\n0.0\n 20\n0.0\n 10\n480.0\n 20\n0.0\n 10\n480.0\n 20\n360.0\n 10\n0.0\n 20\n360.0\n  0\nLWPOLYLINE\n  5\n42\n330\n17\n100\nAcDbEntity\n  8\nWALLS\n100\nAcDbPolyline\n 90\n4\n 70\n1\n 10\n6.0\n 20\n6.0\n 10\n474.0\n 20\n6.0\n 10\n474.0\n 20\n354.0\n 10\n6.0\n 20\n354.0\n  0\nLINE\n  5\n43\n330\n17\n100\nAcDbEntity\n  8\nWALLS\n100\nAcDbLine\n 10\n240.0\n 20\n6.0\n 30\n0.0\n 11\n240.0\n 21\n354.0\n 31\n0.0\n  0\nLINE\n  5\n44\n330\n17\n100\nAcDbEntity\n  8\nWALLS\n100\nAcDbLine\n 10\n246.0\n 20\n6.0\n 30\n0.0\n 11\n246.0\n 21\n200.0\n 31\n0.0\n  0\nLINE\n  5\n45\n330\n17\n100\nAcDbEntity\n  8\nWALLS\n100\nAcDbLine\n 10\n246.0\n 20\n236.0\n 30\n0.0\n 11\n246.0\n 21\n354.0\n 31\n0.0\n  0\nLINE\n  5\n46\n330\n17\n100\nAcDbEntity\n  8\nWALLS\n100\nAcDbLine\n 10\n6.0\n 20\n180.0\n 30\n0.0\n 11\n240.0\n 21\n180.0\n 31\n0.0\n  0\nLINE\n  5\n47\n330\n17\n100\nAcDbEntity\n  8\nDOORS\n100\nAcDbLine\n 10\n246.0\n 20\n200.0\n 30\n0.0\n 11\n282.0\n 21\n200.0\n 31\n0.0\n  0\nARC\n  5\n48\n330\n17\n100\nAcDbEntity\n  8\nDOORS\n100\nAcDbCircle\n 10\n246.0\n 20\n200.0\n 30\n0.0\n 40\n36.0\n100\nAcDbArc\n 50\n0.0\n 51\n90.0\n  0\nLINE\n  5\n49\n330\n17\n100\nAcDbEntity\n  8\nDOORS\n100\nAcDbLine\n 10\n100.0\n 20\n0.0\n 30\n0.0\n 11\n100.0\n 21\n-36.0\n 31\n0.0\n  0\nARC\n  5\n4A\n330\n17\n100\nAcDbEntity\n  8\nDOORS\n100\nAcDbCircle\n 10\n100.0\n 20\n0.0\n 30\n0.0\n 40\n36.0\n100\nAcDbArc\n 50\n270.0\n 51\n360.0\n  0\nINSERT\n  5\n4B\n330\n17\n100\nAcDbEntity\n  8\nWINDOWS\n100\nAcDbBlockReference\n  2\nWIN3\n 10\n40.0\n 20\n357.0\n 30\n0.0\n  0\nINSERT\n  5\n4D\n330\n17\n100\nAcDbEntity\n  8\nWINDOWS\n100\nAcDbBlockReference\n  2\nWIN3\n 10\n300.0\n 20\n357.0\n 30\n0.0\n  0\nINSERT\n  5\n4F\n330\n17\n100\nAcDbEntity\n  8\nWINDOWS\n100\nAcDbBlockReference\n  2\nWIN3\n 10\n380.0\n 20\n357.0\n 30\n0.0\n  0\nINSERT\n  5\n51\n330\n17\n100\nAcDbEntity\n  8\nWINDOWS\n100\nAcDbBlockReference\n  2\nWIN3\n 10\n477.0\n 20\n80.0\n 30\n0.0\n 50\n90.0\n  0\nCIRCLE\n  5\n53\n330\n17\n100\nAcDbEntity\n  8\nFIXTURES\n100\nAcDbCircle\n 10\n420.0\n 20\n60.0\n 30\n0.0\n 40\n14.0\n  0\nELLIPSE\n  5\n54\n330\n17\n100\nAcDbEntity\n  8\nFIXTURES\n100\nAcDbEllipse\n 10\n60.0\n 20\n240.0\n 30\n0.0\n 11\n20.0\n 21\n0.0\n 31\n0.0\n 40\n0.6\n 41\n0.0\n 42\n6.283185307179586\n  0\nLWPOLYLINE\n  5\n55\n330\n17\n100\nAcDbEntity\n  8\nFIXTURES\n100\nAcDbPolyline\n 90\n4\n 70\n1\n 10\n300.0\n 20\n280.0\n 10\n360.0\n 20\n280.0\n 40\n0.4\n 41\n0.0\n 10\n360.0\n 20\n320.0\n 10\n300.0\n 20\n320.0\n  0\nLINE\n  5\n56\n330\n17\n100\nAcDbEntity\n  8\nDIMS\n100\nAcDbLine\n 10\n0.0\n 20\n-60.0\n 30\n0.0\n 11\n480.0\n 21\n-60.0\n 31\n0.0\n  0\nLINE\n  5\n57\n330\n17\n100\nAcDbEntity\n  8\nDIMS\n100\nAcDbLine\n 10\n0.0\n 20\n-52.0\n 30\n0.0\n 11\n0.0\n 21\n-68.0\n 31\n0.0\n  0\nLINE\n  5\n58\n330\n17\n100\nAcDbEntity\n  8\nDIMS\n100\nAcDbLine\n 10\n480.0\n 20\n-52.0\n 30\n0.0\n 11\n480.0\n 21\n-68.0\n 31\n0.0\n  0\nTEXT\n  5\n59\n330\n17\n100\nAcDbEntity\n  8\nDIMS\n100\nAcDbText\n 10\n240.0\n 20\n-54.0\n 30\n0.0\n 40\n9.0\n  1\n40'-0\"\n 72\n1\n 11\n240.0\n 21\n-54.0\n 31\n0.0\n100\nAcDbText\n 73\n1\n  0\nLINE\n  5\n5A\n330\n17\n100\nAcDbEntity\n  8\nDIMS\n100\nAcDbLine\n 10\n-60.0\n 20\n0.0\n 30\n0.0\n 11\n-60.0\n 21\n360.0\n 31\n0.0\n  0\nTEXT\n  5\n5B\n330\n17\n100\nAcDbEntity\n  8\nDIMS\n100\nAcDbText\n 10\n-66.0\n 20\n180.0\n 30\n0.0\n 40\n9.0\n  1\n30'-0\"\n 50\n90.0\n 72\n1\n 11\n-66.0\n 21\n180.0\n 31\n0.0\n100\nAcDbText\n 73\n1\n  0\nTEXT\n  5\n5C\n330\n17\n100\nAcDbEntity\n  8\nTEXT\n100\nAcDbText\n 10\n120.0\n 20\n90.0\n 30\n0.0\n 40\n10.0\n  1\nLIVING \\U+5ba2\\U+5385\n 72\n1\n 11\n120.0\n 21\n90.0\n 31\n0.0\n100\nAcDbText\n 73\n2\n  0\nTEXT\n  5\n5D\n330\n17\n100\nAcDbEntity\n  8\nTEXT\n100\nAcDbText\n 10\n120.0\n 20\n270.0\n 30\n0.0\n 40\n10.0\n  1\nKITCHEN \\U+53a8\\U+623f\n 72\n1\n 11\n120.0\n 21\n270.0\n 31\n0.0\n100\nAcDbText\n 73\n2\n  0\nTEXT\n  5\n5E\n330\n17\n100\nAcDbEntity\n  8\nTEXT\n100\nAcDbText\n 10\n360.0\n 20\n180.0\n 30\n0.0\n 40\n10.0\n  1\nBEDROOM \\U+5367\\U+5ba4\n 72\n1\n 11\n360.0\n 21\n180.0\n 31\n0.0\n100\nAcDbText\n 73\n2\n  0\nTEXT\n  5\n5F\n330\n17\n100\nAcDbEntity\n  8\nTEXT\n100\nAcDbText\n 10\n0.0\n 20\n410.0\n 30\n0.0\n 40\n12.0\n  1\nSAMPLE PLAN \\U+793a\\U+4f8b\\U+5e73\\U+9762\\U+56fe  SCALE 1/4\"=1'-0\"\n 11\n0.0\n 21\n410.0\n 31\n0.0\n100\nAcDbText\n  0\nENDSEC\n  0\nSECTION\n  2\nOBJECTS\n  0\nDICTIONARY\n  5\nA\n330\n0\n100\nAcDbDictionary\n281\n1\n  3\nACAD_COLOR\n350\nB\n  3\nACAD_GROUP\n350\nC\n  3\nACAD_LAYOUT\n350\nD\n  3\nACAD_MATERIAL\n350\nE\n  3\nACAD_MLEADERSTYLE\n350\nF\n  3\nACAD_MLINESTYLE\n350\n10\n  3\nACAD_PLOTSETTINGS\n350\n11\n  3\nACAD_PLOTSTYLENAME\n350\n12\n  3\nACAD_SCALELIST\n350\n14\n  3\nACAD_TABLESTYLE\n350\n15\n  3\nACAD_VISUALSTYLE\n350\n16\n  3\nEZDXF_META\n350\n2D\n  0\nDICTIONARY\n  5\nB\n330\nA\n100\nAcDbDictionary\n281\n1\n  0\nDICTIONARY\n  5\nC\n330\nA\n100\nAcDbDictionary\n281\n1\n  0\nDICTIONARY\n  5\nD\n330\nA\n100\nAcDbDictionary\n281\n1\n  3\nModel\n350\n1A\n  3\nLayout1\n350\n1E\n  0\nDICTIONARY\n  5\nE\n330\nA\n100\nAcDbDictionary\n281\n1\n  3\nByBlock\n350\n1F\n  3\nByLayer\n350\n20\n  3\nGlobal\n350\n21\n  0\nDICTIONARY\n  5\nF\n330\nA\n100\nAcDbDictionary\n281\n1\n  3\nStandard\n350\n2C\n  0\nDICTIONARY\n  5\n10\n330\nA\n100\nAcDbDictionary\n281\n1\n  3\nStandard\n350\n22\n  0\nDICTIONARY\n  5\n11\n330\nA\n100\nAcDbDictionary\n281\n1\n  0\nACDBDICTIONARYWDFLT\n  5\n12\n330\nA\n100\nAcDbDictionary\n281\n1\n  3\nNormal\n350\n13\n100\nAcDbDictionaryWithDefault\n340\n13\n  0\nACDBPLACEHOLDER\n  5\n13\n330\n12\n  0\nDICTIONARY\n  5\n14\n330\nA\n100\nAcDbDictionary\n281\n1\n  0\nDICTIONARY\n  5\n15\n330\nA\n100\nAcDbDictionary\n281\n1\n  0\nDICTIONARY\n  5\n16\n330\nA\n100\nAcDbDictionary\n281\n1\n  0\nLAYOUT\n  5\n1A\n330\nD\n100\nAcDbPlotSettings\n  1\n\n  4\nA3\n  6\n\n 40\n7.5\n 41\n20.0\n 42\n7.5\n 43\n20.0\n 44\n420.0\n 45\n297.0\n 46\n0.0\n 47\n0.0\n 48\n0.0\n 49\n0.0\n140\n0.0\n141\n0.0\n142\n1.0\n143\n1.0\n 70\n1024\n 72\n1\n 73\n0\n 74\n5\n  7\n\n 75\n16\n 76\n0\n 77\n2\n 78\n300\n147\n1.0\n148\n0.0\n149\n0.0\n100\nAcDbLayout\n  1\nModel\n 70\n1\n 71\n0\n 10\n0.0\n 20\n0.0\n 11\n420.0\n 21\n297.0\n 12\n0.0\n 22\n0.0\n 32\n0.0\n 14\n1e+20\n 24\n1e+20\n 34\n1e+20\n 15\n-1e+20\n 25\n-1e+20\n 35\n-1e+20\n146\n0.0\n 13\n0.0\n 23\n0.0\n 33\n0.0\n 16\n1.0\n 26\n0.0\n 36\n0.0\n 17\n0.0\n 27\n1.0\n 37\n0.0\n 76\n1\n330\n17\n  0\nLAYOUT\n  5\n1E\n330\nD\n100\nAcDbPlotSettings\n  1\n\n  4\nA3\n  6\n\n 40\n7.5\n 41\n20.0\n 42\n7.5\n 43\n20.0\n 44\n420.0\n 45\n297.0\n 46\n0.0\n 47\n0.0\n 48\n0.0\n 49\n0.0\n140\n0.0\n141\n0.0\n142\n1.0\n143\n1.0\n 70\n0\n 72\n1\n 73\n0\n 74\n5\n  7\n\n 75\n16\n 76\n0\n 77\n2\n 78\n300\n147\n1.0\n148\n0.0\n149\n0.0\n100\nAcDbLayout\n  1\nLayout1\n 70\n1\n 71\n1\n 10\n0.0\n 20\n0.0\n 11\n420.0\n 21\n297.0\n 12\n0.0\n 22\n0.0\n 32\n0.0\n 14\n1e+20\n 24\n1e+20\n 34\n1e+20\n 15\n-1e+20\n 25\n-1e+20\n 35\n-1e+20\n146\n0.0\n 13\n0.0\n 23\n0.0\n 33\n0.0\n 16\n1.0\n 26\n0.0\n 36\n0.0\n 17\n0.0\n 27\n1.0\n 37\n0.0\n 76\n1\n330\n1B\n  0\nMATERIAL\n  5\n1F\n102\n{ACAD_REACTORS\n330\nE\n102\n}\n330\nE\n100\nAcDbMaterial\n  1\nByBlock\n  2\n\n 70\n0\n 40\n1.0\n 71\n1\n 41\n1.0\n 91\n-1023410177\n 42\n1.0\n 72\n1\n  3\n\n 73\n1\n 74\n1\n 75\n1\n 44\n0.5\n 73\n0\n 45\n1.0\n 46\n1.0\n 77\n1\n  4\n\n 78\n1\n 79\n1\n170\n1\n 48\n1.0\n171\n1\n  6\n\n172\n1\n173\n1\n174\n1\n140\n1.0\n141\n1.0\n175\n1\n  7\n\n176\n1\n177\n1\n178\n1\n143\n1.0\n179\n1\n  8\n\n270\n1\n271\n1\n272\n1\n145\n1.0\n146\n1.0\n273\n1\n  9\n\n274\n1\n275\n1\n276\n1\n 42\n1.0\n 72\n1\n  3\n\n 73\n1\n 74\n1\n 75\n1\n 94\n63\n  0\nMATERIAL\n  5\n20\n102\n{ACAD_REACTORS\n330\nE\n102\n}\n330\nE\n100\nAcDbMaterial\n  1\nByLayer\n  2\n\n 70\n0\n 40\n1.0\n 71\n1\n 41\n1.0\n 91\n-1023410177\n 42\n1.0\n 72\n1\n  3\n\n 73\n1\n 74\n1\n 75\n1\n 44\n0.5\n 73\n0\n 45\n1.0\n 46\n1.0\n 77\n1\n  4\n\n 78\n1\n 79\n1\n170\n1\n 48\n1.0\n171\n1\n  6\n\n172\n1\n173\n1\n174\n1\n140\n1.0\n141\n1.0\n175\n1\n  7\n\n176\n1\n177\n1\n178\n1\n143\n1.0\n179\n1\n  8\n\n270\n1\n271\n1\n272\n1\n145\n1.0\n146\n1.0\n273\n1\n  9\n\n274\n1\n275\n1\n276\n1\n 42\n1.0\n 72\n1\n  3\n\n 73\n1\n 74\n1\n 75\n1\n 94\n63\n  0\nMATERIAL\n  5\n21\n102\n{ACAD_REACTORS\n330\nE\n102\n}\n330\nE\n100\nAcDbMaterial\n  1\nGlobal\n  2\n\n 70\n0\n 40\n1.0\n 71\n1\n 41\n1.0\n 91\n-1023410177\n 42\n1.0\n 72\n1\n  3\n\n 73\n1\n 74\n1\n 75\n1\n 44\n0.5\n 73\n0\n 45\n1.0\n 46\n1.0\n 77\n1\n  4\n\n 78\n1\n 79\n1\n170\n1\n 48\n1.0\n171\n1\n  6\n\n172\n1\n173\n1\n174\n1\n140\n1.0\n141\n1.0\n175\n1\n  7\n\n176\n1\n177\n1\n178\n1\n143\n1.0\n179\n1\n  8\n\n270\n1\n271\n1\n272\n1\n145\n1.0\n146\n1.0\n273\n1\n  9\n\n274\n1\n275\n1\n276\n1\n 42\n1.0\n 72\n1\n  3\n\n 73\n1\n 74\n1\n 75\n1\n 94\n63\n  0\nMLINESTYLE\n  5\n22\n102\n{ACAD_REACTORS\n330\n10\n102\n}\n330\n10\n100\nAcDbMlineStyle\n  2\nStandard\n 70\n0\n  3\n\n 62\n256\n 51\n90.0\n 52\n90.0\n 71\n2\n 49\n0.5\n 62\n256\n  6\nBYLAYER\n 49\n-0.5\n 62\n256\n  6\nBYLAYER\n  0\nMLEADERSTYLE\n  5\n2C\n102\n{ACAD_REACTORS\n330\nF\n102\n}\n330\nF\n100\nAcDbMLeaderStyle\n179\n2\n170\n2\n171\n1\n172\n0\n 90\n2\n 40\n0.0\n 41\n0.0\n173\n1\n 91\n-1056964608\n 92\n-2\n290\n1\n 42\n2.0\n291\n1\n 43\n8.0\n  3\nStandard\n 44\n4.0\n300\n\n342\n29\n174\n1\n175\n1\n176\n0\n178\n1\n 93\n-1056964608\n 45\n4.0\n292\n0\n297\n0\n 46\n4.0\n 94\n-1056964608\n 47\n1.0\n 49\n1.0\n140\n1.0\n294\n1\n141\n0.0\n177\n0\n142\n1.0\n295\n0\n296\n0\n143\n3.75\n271\n0\n272\n9\n273\n9\n  0\nDICTIONARY\n  5\n2D\n330\nA\n100\nAcDbDictionary\n280\n1\n281\n1\n  3\nCREATED_BY_EZDXF\n350\n2E\n  3\nWRITTEN_BY_EZDXF\n350\n62\n  0\nDICTIONARYVAR\n  5\n2E\n330\n2D\n100\nDictionaryVariables\n280\n0\n  1\n1.4.5 @ 2026-10-21T04:18:31.832102+00:00\n  0\nDICTIONARYVAR\n  5\n62\n330\n2D\n100\nDictionaryVariables\n280\n0\n  1\n1.4.5 @ 2026-10-21T04:18:31.835188+00:00\n  0\nENDSEC\n  0\nEOF\n";
+</script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const NS = "http://www.w3.org/2000/svg";
+
+  const STR = {
+    zh: {
+      h1: "DWG 图纸转 PDF", tag: "DWG · DXF → PDF · 文件只在本机浏览器里处理，不上传",
+      pick: "选择或拖入图纸", support: "支持 .dwg（R13–2018）和 .dxf", paper: "纸张", orient: "方向",
+      auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
+      darken: "浅色线加深（黄、青等在白纸上更清楚）", lw: "线宽",
+      lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
+      mode: "输出方式", mAuto: "自动（有中文就用高清图像）", mVec: "矢量（线条最清晰，中文会乱码）", mRas: "高清图像（中文正常）",
+      go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
+      sample: "示例图纸", sampleName: "示例平面图.dxf",
+      mFile: "文件", mCount: "图形", mPaper: "纸张", mText: "文字", tCJK: "含中文", tLatin: "英文/数字",
+      onlyExt: "只支持 .dwg 和 .dxf 文件。", readingDwg: "正在读取 DWG…", readingDxf: "正在读取 DXF…",
+      loadingLib: "第一次打开 DWG，正在加载读图组件（约 11 MB）…",
+      loaded: "已读入 {n}，确认预览没问题后点「生成 PDF」。",
+      dwgFail: "DWG 读取失败。可以在 AutoCAD 里另存为 DXF 再试。", dxfFail: "DXF 读取失败，文件可能已损坏。",
+      dwgUnreadable: "这个 DWG 文件读不出来，可能是版本太新或文件损坏。可以在 AutoCAD 里另存为 2018 或更早的 DWG / DXF 再试。",
+      convFail: "图纸内容转换失败。", empty: "图纸里没有找到可以画出来的图形（模型空间是空的）。",
+      noDxfLib: "DXF 读取组件没有加载，请检查网络后刷新页面。", noPdfLib: "PDF 组件没有加载，请检查网络后刷新页面。",
+      noVec: "矢量组件没有加载，请改用「高清图像」。", tooBig: "图纸太大，浏览器内存不够。可以换小一号纸张再试。",
+      noSave: "这个视图不能保存文件。请在 claude.ai 里打开此页面再生成 PDF。", wait: "页面还在准备，请稍等一两秒再点。",
+      making: "正在生成 PDF…", confirm: "请在弹出的窗口里确认保存。",
+      saved: "已保存 {n}（{s} MB，{m}）。", downloaded: "已下载 {n}（{s} MB，{m}）。", vec: "矢量", ras: "高清图像",
+      declined: "已取消保存。", rate: "上一个保存窗口还开着，处理完再点一次。",
+      large: "文件太大，无法保存。请换小一号纸张或改用矢量输出。", genFail: "生成 PDF 失败，请改用另一种输出方式再试。",
+      sampleFail: "示例图纸没有显示出来，可以直接选择你的图纸。"
+    },
+    en: {
+      h1: "DWG to PDF", tag: "DWG · DXF → PDF · Files stay in your browser, nothing is uploaded",
+      pick: "Choose or drop a drawing", support: ".dwg (R13–2018) and .dxf", paper: "Sheet size", orient: "Orientation",
+      auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
+      darken: "Darken light colors (yellow and cyan read better on white paper)", lw: "Line weight",
+      lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
+      mode: "Output", mAuto: "Auto (high-res image if the drawing has Chinese text)", mVec: "Vector (sharpest lines, Chinese text breaks)", mRas: "High-res image (Chinese text OK)",
+      go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
+      sample: "Sample drawing", sampleName: "sample-plan.dxf",
+      mFile: "File", mCount: "Objects", mPaper: "Sheet", mText: "Text", tCJK: "Has Chinese", tLatin: "Latin only",
+      onlyExt: "Only .dwg and .dxf files are supported.", readingDwg: "Reading DWG…", readingDxf: "Reading DXF…",
+      loadingLib: "Loading the DWG reader (about 11 MB) for the first time…",
+      loaded: "Loaded {n}. Check the preview, then click Create PDF.",
+      dwgFail: "Couldn't read this DWG. Try saving it as DXF in AutoCAD.", dxfFail: "Couldn't read this DXF. The file may be damaged.",
+      dwgUnreadable: "Couldn't read this DWG. It may be too new or damaged. Save it as DWG 2018 or earlier, or as DXF, and try again.",
+      convFail: "Couldn't convert the drawing.", empty: "No drawable objects found (model space is empty).",
+      noDxfLib: "The DXF reader didn't load. Check your connection and reload.", noPdfLib: "The PDF library didn't load. Check your connection and reload.",
+      noVec: "The vector exporter didn't load. Switch Output to High-res image.", tooBig: "The sheet is too large for this browser's memory. Try a smaller size.",
+      noSave: "This view can't save files. Open the page in claude.ai to create the PDF.", wait: "The page is still getting ready. Try again in a second.",
+      making: "Creating PDF…", confirm: "Confirm the save in the dialog.",
+      saved: "Saved {n} ({s} MB, {m}).", downloaded: "Downloaded {n} ({s} MB, {m}).", vec: "vector", ras: "high-res image",
+      declined: "Save cancelled.", rate: "A save dialog is already open. Finish it, then click again.",
+      large: "The file is too large to save. Try a smaller sheet or vector output.", genFail: "Couldn't create the PDF. Try the other output option.",
+      sampleFail: "The sample drawing didn't load. You can still choose your own drawing."
+    }
+  };
+  let lang = "zh";
+  try { const s = localStorage.getItem("cad2pdf-lang"); if (s === "en" || s === "zh") lang = s; else if (!/^zh/i.test(navigator.language || "")) lang = "en"; } catch (e) {}
+  class UserError extends Error {}
+  const t = (k, v) => { let s = (STR[lang] && STR[lang][k]) || STR.zh[k] || k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
+  const fail = (k) => { throw new UserError(t(k)); };
+  let lastStatus = null;
+  function applyLang() {
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-aria]").forEach(el => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
+    document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    if (state.isSample) state.name = t("sampleName");
+    if (lastStatus) setStatus(lastStatus.k, lastStatus.kind, lastStatus.v);
+    render();
+  }
+  const state = { name: "示例平面图.dxf", isSample: true, content: null, vb: null, layers: [], hasCJK: false, count: 0 };
+
+  // ---------- colors ----------
+  const ACI = [0x000000,0xFF0000,0xFFFF00,0x00FF00,0x00FFFF,0x0000FF,0xFF00FF,0xFFFFFF,0x808080,0xC0C0C0];
+  function hex(n) { return "#" + (n >>> 0 & 0xFFFFFF).toString(16).padStart(6, "0"); }
+  function parseColor(s) {
+    if (!s) return null;
+    s = s.trim().toLowerCase();
+    let m = s.match(/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/);
+    if (m) return [+m[1], +m[2], +m[3]];
+    m = s.match(/^#([0-9a-f]{6})$/);
+    if (m) { const n = parseInt(m[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+    m = s.match(/^#([0-9a-f]{3})$/);
+    if (m) return m[1].split("").map(c => parseInt(c + c, 16));
+    if (s === "white") return [255,255,255];
+    if (s === "black") return [0,0,0];
+    return null;
+  }
+  // Map a CAD screen color to a paper color.
+  function paperColor(rgb, opts) {
+    if (!rgb) return null;
+    if (opts.mono) return "#000000";
+    let [r, g, b] = rgb;
+    if (r > 235 && g > 235 && b > 235) return "#000000";          // ACI 7 / white → black ink
+    const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    if (opts.darken && lum > 0.6) { const k = 0.6 / lum; r *= k; g *= k; b *= k; }
+    return "#" + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, "0")).join("");
+  }
+
+  // ---------- DXF → SVG (y-up drawing coordinates) ----------
+  const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function cleanMText(t) {
+    return String(t || "")
+      .replace(/\\U\+([0-9A-Fa-f]{4})/g, (m, h) => String.fromCharCode(parseInt(h, 16)))
+      .replace(/\\P/g, "\n").replace(/\\[ACcfFHhQTWw][^;]*;/g, "").replace(/\\[LlOoKk]/g, "")
+      .replace(/\\S([^;]*)\^([^;]*);/g, "$1/$2").replace(/[{}]/g, "").replace(/%%[cC]/g, "Ø")
+      .replace(/%%[dD]/g, "°").replace(/%%[pP]/g, "±").replace(/\\~/g, " ");
+  }
+  function bulgeArc(p1, p2, bulge) {
+    const d = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+    if (!d) return "";
+    const r = Math.abs(d * (1 + bulge * bulge) / (4 * bulge));
+    const large = Math.abs(bulge) > 1 ? 1 : 0;
+    const sweep = bulge > 0 ? 1 : 0;
+    return `A${r} ${r} 0 ${large} ${sweep} ${p2.x} ${p2.y}`;
+  }
+  function polyPath(vs, closed) {
+    if (!vs || !vs.length) return "";
+    let d = `M${vs[0].x} ${vs[0].y}`;
+    const n = closed ? vs.length : vs.length - 1;
+    for (let i = 0; i < n; i++) {
+      const a = vs[i], b = vs[(i + 1) % vs.length];
+      d += a.bulge ? bulgeArc(a, b, a.bulge) : `L${b.x} ${b.y}`;
+    }
+    return d + (closed ? "Z" : "");
+  }
+  function arcPath(c, r, a0, a1) { // radians, CCW
+    while (a1 <= a0) a1 += Math.PI * 2;
+    const x0 = c.x + r * Math.cos(a0), y0 = c.y + r * Math.sin(a0);
+    const x1 = c.x + r * Math.cos(a1), y1 = c.y + r * Math.sin(a1);
+    return `M${x0} ${y0}A${r} ${r} 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1} ${y1}`;
+  }
+  function bspline(t, deg, pts, knots) {
+    const n = pts.length - 1;
+    if (!knots || knots.length !== n + deg + 2) {
+      knots = []; for (let i = 0; i <= n + deg + 1; i++) knots.push(i <= deg ? 0 : i > n ? n - deg + 1 : i - deg);
+    }
+    const lo = knots[deg], hi = knots[n + 1];
+    t = lo + t * (hi - lo);
+    let s = deg; while (s < n && t >= knots[s + 1]) s++;
+    const v = pts.map(p => [p.x, p.y]);
+    for (let l = 1; l <= deg; l++) for (let i = s; i > s - deg - 1 + l; i--) {
+      const den = knots[i + deg + 1 - l] - knots[i];
+      const a = den ? (t - knots[i]) / den : 0;
+      v[i] = [(1 - a) * v[i - 1][0] + a * v[i][0], (1 - a) * v[i - 1][1] + a * v[i][1]];
+    }
+    return v[s];
+  }
+  function dxfToSvg(text) {
+    const P = window.DxfParser && (window.DxfParser.default || window.DxfParser);
+    if (!P) fail("noDxfLib");
+    const dxf = new P().parseSync(text);
+    const layerTbl = (dxf.tables && dxf.tables.layer && dxf.tables.layer.layers) || {};
+    const used = new Map();
+    let count = 0, cjk = false;
+    const layerColor = (name) => { const L = layerTbl[name]; return L && L.color != null ? L.color : 0xFFFFFF; };
+    const colorOf = (e, inherit) => {
+      if (e.colorIndex === 0 && inherit != null) return inherit;         // BYBLOCK
+      if (e.color != null && e.colorIndex !== 256) return e.color;
+      return layerColor(e.layer);
+    };
+    function ent(e, inherit, depth) {
+      if (depth > 8) return "";
+      const L = layerTbl[e.layer];
+      if (L && (L.visible === false || L.frozen)) return "";
+      const col = colorOf(e, inherit);
+      const c = hex(col);
+      used.set(e.layer || "0", hex(layerColor(e.layer)));
+      count++;
+      const st = `stroke="${c}" fill="none"`;
+      switch (e.type) {
+        case "LINE": { const [a, b] = e.vertices; return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" ${st}/>`; }
+        case "LWPOLYLINE": case "POLYLINE": {
+          const vs = (e.vertices || []).filter(v => !v.faces);
+          return `<path d="${polyPath(vs, e.shape || e.closed)}" ${st}/>`;
+        }
+        case "CIRCLE": return `<circle cx="${e.center.x}" cy="${e.center.y}" r="${e.radius}" ${st}/>`;
+        case "ARC": return `<path d="${arcPath(e.center, e.radius, e.startAngle, e.endAngle)}" ${st}/>`;
+        case "ELLIPSE": {
+          const mx = e.majorAxisEndPoint.x, my = e.majorAxisEndPoint.y;
+          const a = Math.hypot(mx, my), b = a * e.axisRatio, rot = Math.atan2(my, mx);
+          let t0 = e.startAngle || 0, t1 = e.endAngle == null ? Math.PI * 2 : e.endAngle;
+          if (t1 <= t0) t1 += Math.PI * 2;
+          const N = 72, pts = [];
+          for (let i = 0; i <= N; i++) {
+            const t = t0 + (t1 - t0) * i / N, x = a * Math.cos(t), y = b * Math.sin(t);
+            pts.push(`${e.center.x + x * Math.cos(rot) - y * Math.sin(rot)} ${e.center.y + x * Math.sin(rot) + y * Math.cos(rot)}`);
+          }
+          return `<path d="M${pts.join("L")}" ${st}/>`;
+        }
+        case "SPLINE": {
+          const cp = e.controlPoints || e.fitPoints || [];
+          if (cp.length < 2) return "";
+          if (!e.controlPoints) return `<path d="M${cp.map(p => `${p.x} ${p.y}`).join("L")}" ${st}/>`;
+          const deg = Math.min(e.degreeOfSplineCurve || 3, cp.length - 1), pts = [];
+          for (let i = 0; i <= 80; i++) { const p = bspline(i / 80, deg, cp, e.knotValues); pts.push(`${p[0]} ${p[1]}`); }
+          return `<path d="M${pts.join("L")}" ${st}/>`;
+        }
+        case "SOLID": case "TRACE": {
+          const p = e.points || []; if (p.length < 3) return "";
+          const o = p.length === 4 ? [p[0], p[1], p[3], p[2]] : p;
+          return `<path d="M${o.map(q => `${q.x} ${q.y}`).join("L")}Z" stroke="${c}" fill="${c}"/>`;
+        }
+        case "POINT": return "";
+        case "TEXT": case "MTEXT": case "ATTRIB": {
+          const raw = e.type === "MTEXT" ? cleanMText(e.text) : cleanMText(e.text);
+          if (!raw.trim()) return "";
+          if (/[^\x00-\xFF]/.test(raw)) cjk = true;
+          const h = e.textHeight || e.height || 2.5;
+          const p = e.type === "MTEXT" ? e.position : (e.endPoint && (e.halign || e.valign) ? e.endPoint : e.startPoint);
+          if (!p) return "";
+          let rot = e.rotation || 0;
+          if (e.type === "MTEXT" && e.directionVector) rot = Math.atan2(e.directionVector.y, e.directionVector.x) * 180 / Math.PI;
+          const anchor = e.type === "MTEXT"
+            ? ["start", "middle", "end"][((e.attachmentPoint || 1) - 1) % 3]
+            : ["start", "middle", "end", "start", "middle", "start"][e.halign || 0];
+          const lines = raw.split("\n");
+          const topAligned = (e.type === "MTEXT" && (e.attachmentPoint || 1) <= 3) || (e.type !== "MTEXT" && e.valign === 3);
+          const midV = (e.type !== "MTEXT" && (e.valign === 2 || e.halign === 4)) || (e.type === "MTEXT" && (e.attachmentPoint || 1) >= 4 && e.attachmentPoint <= 6);
+          const y0 = topAligned ? h : midV ? h * 0.35 - (lines.length - 1) * h * 0.83 : -(lines.length - 1) * h * 1.66;
+          const tsp = lines.map((ln, i) => `<tspan x="0" y="${y0 + i * h * 1.66}">${esc(ln)}</tspan>`).join("");
+          return `<text transform="translate(${p.x} ${p.y}) rotate(${rot}) scale(1 -1)" font-size="${h}" fill="${c}" stroke="none" text-anchor="${anchor}">${tsp}</text>`;
+        }
+        case "INSERT": {
+          const blk = dxf.blocks && dxf.blocks[e.name];
+          if (!blk || !blk.entities) return "";
+          const bp = blk.position || { x: 0, y: 0 };
+          const sx = e.xScale || 1, sy = e.yScale || 1, r = e.rotation || 0;
+          const inner = blk.entities.map(x => ent(x, col, depth + 1)).join("");
+          const tf = `translate(${e.position.x} ${e.position.y}) rotate(${r}) scale(${sx} ${sy}) translate(${-bp.x} ${-bp.y})`;
+          const cols = Math.max(1, e.columnCount || 1), rows = Math.max(1, e.rowCount || 1);
+          if (cols === 1 && rows === 1) return `<g transform="${tf}">${inner}</g>`;
+          let out = "";
+          for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++)
+            out += `<g transform="translate(${j * (e.columnSpacing || 0)} ${i * (e.rowSpacing || 0)})"><g transform="${tf}">${inner}</g></g>`;
+          return out;
+        }
+        default: count--; return "";
+      }
+    }
+    const body = (dxf.entities || []).filter(e => !e.inPaperSpace).map(e => ent(e, null, 0)).join("");
+    return { content: `<g transform="scale(1 -1)">${body}</g>`, layers: [...used.entries()], hasCJK: cjk, count };
+  }
+
+  // ---------- DWG via LibreDWG (WebAssembly) ----------
+  let dwgLib = null;
+  async function loadDwgLib() {
+    if (dwgLib) return dwgLib;
+    const base = window.CAD2PDF_DWG_BASE || new URL("dwg/", document.baseURI).href;
+    const mod = await import(base + "dist/libredwg-web.js");
+    try { dwgLib = await mod.LibreDwg.create(base + "wasm/"); }
+    catch (e) { dwgLib = await mod.LibreDwg.create(); }
+    dwgLib.__types = mod.Dwg_File_Type;
+    return dwgLib;
+  }
+  async function dwgToSvg(buf) {
+    const lib = await loadDwgLib();
+    const ptr = lib.dwg_read_data(buf, lib.__types.DWG);
+    if (ptr == null) fail("dwgUnreadable");
+    let db;
+    try { db = lib.convert(ptr); } finally { try { lib.dwg_free(ptr); } catch (e) {} }
+    const svgText = lib.dwg_to_svg(db);
+    const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
+    const root = doc.documentElement;
+    if (!root || root.nodeName.toLowerCase() !== "svg") fail("convFail");
+    const layers = new Map();
+    for (const l of (db.tables && db.tables.LAYER && db.tables.LAYER.entries) || []) {
+      if (l && l.name != null && l.color != null) layers.set(l.name, typeof l.color === "number" ? hex(l.color) : String(l.color));
+    }
+    let cjk = false;
+    for (const t of root.querySelectorAll("text")) if (/[^\x00-\xFF]/.test(t.textContent)) { cjk = true; break; }
+    return { content: root.innerHTML, layers: [...layers.entries()].slice(0, 40), hasCJK: cjk, count: (db.entities || []).length };
+  }
+
+  // ---------- sheet composition ----------
+  function sheetSizePt() {
+    const v = $("size").value;
+    let w, h;
+    if (v.endsWith("mm")) { const [a, b] = v.slice(0, -2).split("x").map(Number); w = a / 25.4 * 72; h = b / 25.4 * 72; }
+    else { const [a, b] = v.split("x").map(Number); w = a * 72; h = b * 72; }
+    const short = Math.min(w, h), long = Math.max(w, h);
+    const o = document.querySelector('input[name="orient"]:checked').value;
+    let land = true;
+    if (o === "port") land = false;
+    else if (o === "auto" && state.vb) land = state.vb.w >= state.vb.h;
+    return land ? { w: long, h: short } : { w: short, h: long };
+  }
+  const hidden = document.createElementNS(NS, "svg");
+  hidden.setAttribute("style", "position:absolute;left:-99999px;top:0;width:10px;height:10px;overflow:hidden");
+  document.body.appendChild(hidden);
+  function measure(content) {
+    hidden.innerHTML = `<g id="m">${content}</g>`;
+    let bb;
+    try { bb = hidden.firstChild.getBBox(); } catch (e) { bb = null; }
+    hidden.innerHTML = "";
+    if (!bb || !isFinite(bb.width) || (bb.width === 0 && bb.height === 0)) fail("empty");
+    return { x: bb.x, y: bb.y, w: Math.max(bb.width, 1e-6), h: Math.max(bb.height, 1e-6) };
+  }
+  function buildSheet() {
+    const S = sheetSizePt(), m = 36; // 0.5 in margin
+    const vb = state.vb;
+    const s = Math.min((S.w - 2 * m) / vb.w, (S.h - 2 * m) / vb.h);
+    const ox = (S.w - vb.w * s) / 2 - vb.x * s, oy = (S.h - vb.h * s) / 2 - vb.y * s;
+    const lwPt = parseFloat($("lw").value) / 25.4 * 72;
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("xmlns", NS);
+    svg.setAttribute("viewBox", `0 0 ${S.w} ${S.h}`);
+    svg.setAttribute("width", S.w); svg.setAttribute("height", S.h);
+    svg.innerHTML = `<rect x="0" y="0" width="${S.w}" height="${S.h}" fill="#ffffff" stroke="none"/>` +
+      `<g transform="translate(${ox} ${oy}) scale(${s})" stroke-width="${lwPt / s}" stroke-linecap="round" stroke-linejoin="round" font-family="Arial, Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif">${state.content}</g>`;
+    const opts = { mono: document.querySelector('input[name="color"]:checked').value === "mono", darken: $("darken").checked };
+    for (const el of svg.querySelectorAll("*")) {
+      if (el.tagName === "rect" && el.parentNode === svg) continue;
+      el.removeAttribute("stroke-width");
+      el.removeAttribute("vector-effect");
+      for (const a of ["stroke", "fill"]) {
+        const v = el.getAttribute(a);
+        if (!v || v === "none") continue;
+        const rgb = parseColor(v);
+        if (rgb) el.setAttribute(a, paperColor(rgb, opts));
+      }
+    }
+    svg.firstElementChild.nextElementSibling.setAttribute("stroke-width", lwPt / s);
+    return { svg, S };
+  }
+  function render() {
+    if (!state.content) return;
+    const { svg, S } = buildSheet();
+    const box = $("sheet");
+    box.innerHTML = "";
+    box.style.aspectRatio = `${S.w} / ${S.h}`;
+    box.style.maxWidth = `min(100%, ${Math.round(620 * S.w / S.h)}px)`;
+    const view = svg.cloneNode(true);
+    view.removeAttribute("width"); view.removeAttribute("height");
+    box.appendChild(view);
+    if (state.isSample) { const b = document.createElement("span"); b.className = "badge"; b.textContent = t("sample"); box.appendChild(b); }
+    const inch = (pt) => +(pt / 72).toFixed(2);
+    $("meta").innerHTML =
+      `<span>${t("mFile")} <b>${esc(state.name)}</b></span>` +
+      `<span>${t("mCount")} <b>${state.count}</b></span>` +
+      `<span>${t("mPaper")} <b>${inch(S.w)} × ${inch(S.h)} in</b></span>` +
+      `<span>${t("mText")} <b>${state.hasCJK ? t("tCJK") : t("tLatin")}</b></span>`;
+    $("legend").innerHTML = state.layers.slice(0, 24).map(([n, c]) => {
+      const rgb = parseColor(c);
+      const pc = rgb ? paperColor(rgb, { mono: false, darken: $("darken").checked }) : c;
+      return `<span><i style="background:${pc}"></i>${esc(n)}</span>`;
+    }).join("");
+  }
+  function setStatus(k, kind, v) { const s = $("status"); lastStatus = k ? { k, kind, v } : null; s.textContent = k ? (k instanceof UserError ? k.message : t(k, v)) : ""; s.className = "status" + (kind ? " " + kind : ""); }
+  function showBusy(text) {
+    const box = $("sheet");
+    let b = box.querySelector(".busy");
+    if (!text) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement("div"); b.className = "busy"; box.appendChild(b); }
+    b.textContent = text;
+  }
+
+  async function loadFile(file) {
+    const ext = (file.name.split(".").pop() || "").toLowerCase();
+    if (ext !== "dwg" && ext !== "dxf") { setStatus("onlyExt", "err"); return; }
+    setStatus(""); showBusy(t(ext === "dwg" ? "readingDwg" : "readingDxf"));
+    if (!state.content) { $("sheet").style.minHeight = "240px"; }
+    try {
+      let r;
+      if (ext === "dxf") {
+        const text = await file.text();
+        r = dxfToSvg(text);
+      } else {
+        const buf = await file.arrayBuffer();
+        if (!dwgLib) showBusy(t("loadingLib"));
+        r = await dwgToSvg(buf);
+      }
+      Object.assign(state, r, { name: file.name, isSample: false });
+      state.vb = measure(r.content);
+      render();
+      setStatus("loaded", "ok", { n: file.name });
+    } catch (e) {
+      console.error(e);
+      showBusy("");
+      setStatus(e instanceof UserError ? e : (ext === "dwg" ? "dwgFail" : "dxfFail"), "err");
+    }
+  }
+
+  // ---------- PDF ----------
+  async function svgToPng(svg, S, dpi) {
+    const pxW = Math.round(S.w / 72 * dpi), pxH = Math.round(S.h / 72 * dpi);
+    const clone = svg.cloneNode(true);
+    clone.setAttribute("width", pxW); clone.setAttribute("height", pxH);
+    const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    try {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      const cv = document.createElement("canvas");
+      cv.width = pxW; cv.height = pxH;
+      const ctx = cv.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, pxW, pxH);
+      ctx.drawImage(img, 0, 0, pxW, pxH);
+      const out = await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("canvas")), "image/png"));
+      cv.width = cv.height = 0;
+      return new Uint8Array(await out.arrayBuffer());
+    } finally { URL.revokeObjectURL(url); }
+  }
+  async function makePdf() {
+    const { jsPDF } = window.jspdf || {};
+    if (!jsPDF) fail("noPdfLib");
+    const { svg, S } = buildSheet();
+    const pdf = new jsPDF({ orientation: S.w >= S.h ? "l" : "p", unit: "pt", format: [S.w, S.h], compress: true });
+    const modeSel = $("mode").value;
+    const raster = modeSel === "raster" || (modeSel === "auto" && state.hasCJK);
+    if (!raster) {
+      if (typeof pdf.svg !== "function") fail("noVec");
+      hidden.appendChild(svg);
+      try { await pdf.svg(svg, { x: 0, y: 0, width: S.w, height: S.h }); }
+      finally { hidden.innerHTML = ""; }
+    } else {
+      const inW = S.w / 72, inH = S.h / 72;
+      let dpi = Math.min(200, Math.floor(Math.sqrt(16e6 / (inW * inH))));
+      let png;
+      for (;;) {
+        try { png = await svgToPng(svg, S, dpi); break; }
+        catch (e) { if (dpi <= 72) fail("tooBig"); dpi = Math.floor(dpi * 0.75); }
+      }
+      pdf.addImage(png, "PNG", 0, 0, S.w, S.h, undefined, "FAST");
+    }
+    pdf.setProperties({ title: state.name, creator: "cad2pdf" });
+    return { blob: pdf.output("blob"), raster };
+  }
+
+  const inClaude = !!(window.claude && window.claude.use);
+  let downloads = null, dlReady = !inClaude;
+  if (inClaude) (async () => {
+    try { downloads = await window.claude.use("downloads"); } catch (e) { downloads = null; }
+    dlReady = true;
+    if (!downloads) setStatus("noSave", "err");
+  })();
+  function browserDownload(blob, fname) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  $("go").addEventListener("click", async () => {
+    if (!state.content) return;
+    if (!dlReady) { setStatus("wait"); return; }
+    if (inClaude && !downloads) { setStatus("noSave", "err"); return; }
+    const btn = $("go"); btn.disabled = true;
+    setStatus("making");
+    try {
+      const { blob, raster } = await makePdf();
+      const fname = state.name.replace(/\.(dwg|dxf)$/i, "") + ".pdf";
+      const info = { n: fname, s: (blob.size / 1048576).toFixed(1), m: t(raster ? "ras" : "vec") };
+      if (downloads) {
+        setStatus("confirm");
+        await downloads.save({ filename: fname, data: blob });
+        setStatus("saved", "ok", info);
+      } else {
+        browserDownload(blob, fname);
+        setStatus("downloaded", "ok", info);
+      }
+    } catch (e) {
+      console.error(e);
+      const code = e && e.code;
+      if (code === "declined") setStatus("declined", "");
+      else if (code === "rate_limited") setStatus("rate", "err");
+      else if (code === "too_large") setStatus("large", "err");
+      else if (code) setStatus("noSave", "err");
+      else setStatus(e instanceof UserError ? e : "genFail", "err");
+    } finally { btn.disabled = false; }
+  });
+
+  const fileInput = $("file"), drop = $("drop");
+  fileInput.addEventListener("change", () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); fileInput.value = ""; });
+  ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) loadFile(f); });
+  ["size", "lw", "darken"].forEach(id => $(id).addEventListener("change", render));
+  document.querySelectorAll('input[name="orient"], input[name="color"]').forEach(r => r.addEventListener("change", render));
+
+  // Open with the sample drawing so the sheet is visible right away.
+  try {
+    const r = dxfToSvg(window.SAMPLE_DXF);
+    Object.assign(state, r);
+    state.vb = measure(r.content);
+    render();
+  } catch (e) { console.error(e); setStatus("sampleFail"); }
+  document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => {
+    lang = b.dataset.lang;
+    try { localStorage.setItem("cad2pdf-lang", lang); } catch (e) {}
+    applyLang();
+  }));
+  applyLang();
+})();
+</script>
+
+</body>
+</html>
