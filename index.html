@@ -199,7 +199,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
       noplot: "打印「不打印」图层（AutoCAD 默认不打）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
       lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
-      hifiLoad: "正在加载高保真渲染组件…", hifiOpen: "正在准备高保真渲染（读取图纸和字体）…", hifiPage: "正在渲染第 {n}/{m} 页…（{p}%）", hifi: "高保真", vecFallback: "高保真渲染失败，已自动改用矢量方式，中文可能显示不正常",
+      hifiLoad: "正在加载高保真渲染组件…", hifiOpen: "正在准备高保真渲染（读取图纸和字体）…", hifiPage: "正在渲染第 {n}/{m} 页…（{p}%）", hifiProg: "正在生成 PDF…（{p}%）", hifiLines: "正在渲染线条…（{p}%）", hifiText: "正在渲染文字…（{p}%）", hifi: "高保真", vecFallback: "高保真渲染失败，已自动改用矢量方式，中文可能显示不正常",
       go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
       sample: "示例图纸", sampleName: "示例平面图.dxf",
       mFile: "文件", mCount: "图形", mPaper: "纸张", mText: "文字", tCJK: "含中文", tLatin: "英文/数字",
@@ -224,7 +224,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
       noplot: "Include layers set to not plot (AutoCAD leaves them out)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
       lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
-      hifiLoad: "Loading the high-fidelity renderer…", hifiOpen: "Preparing high-fidelity render (reading drawing and fonts)…", hifiPage: "Rendering page {n} of {m}… ({p}%)", hifi: "high fidelity", vecFallback: "high-fidelity rendering failed, so vector output was used; Chinese text may not display correctly",
+      hifiLoad: "Loading the high-fidelity renderer…", hifiOpen: "Preparing high-fidelity render (reading drawing and fonts)…", hifiPage: "Rendering page {n} of {m}… ({p}%)", hifiProg: "Creating PDF… ({p}%)", hifiLines: "Rendering linework… ({p}%)", hifiText: "Rendering text… ({p}%)", hifi: "high fidelity", vecFallback: "high-fidelity rendering failed, so vector output was used; Chinese text may not display correctly",
       go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
       sample: "Sample drawing", sampleName: "sample-plan.dxf",
       mFile: "File", mCount: "Objects", mPaper: "Sheet", mText: "Text", tCJK: "Has Chinese", tLatin: "Latin only",
@@ -867,14 +867,20 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   }
   // The viewer draws every line 1 px wide, which prints thin and pale. Grow ink to the chosen
   // plot width by darken-compositing the image onto itself, shifted one pixel at a time.
+  // Grow ink by `steps` pixels, centered on the original stroke, by darken-compositing shifted copies.
   function thicken(cv, steps) {
     if (steps < 1) return;
+    const a = Math.floor(steps / 2), b = steps - a;
     const ctx = cv.getContext("2d");
-    ctx.save();
-    ctx.globalCompositeOperation = "darken";
-    for (let i = 0; i < steps; i++) ctx.drawImage(cv, 1, 0);
-    for (let i = 0; i < steps; i++) ctx.drawImage(cv, 0, 1);
-    ctx.restore();
+    const tmp = document.createElement("canvas"); tmp.width = cv.width; tmp.height = cv.height;
+    const t = tmp.getContext("2d");
+    for (const axis of [0, 1]) {
+      t.globalCompositeOperation = "copy"; t.drawImage(cv, 0, 0);
+      ctx.save(); ctx.globalCompositeOperation = "darken";
+      for (let d = -a; d <= b; d++) if (d) ctx.drawImage(tmp, axis ? 0 : d, axis ? d : 0);
+      ctx.restore();
+    }
+    tmp.width = tmp.height = 0;
   }
   // Black-and-white output: turn every ink pixel black, keeping antialiasing soft.
   function treatPixels(cv, opts) {
@@ -893,25 +899,97 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       ctx.putImageData(img, 0, y);
     }
   }
-  async function hifiPage(H, vb, S, pageNo, pageCount) {
+  const HIFI_DPI = 200;              // linework resolution
+  const HIFI_TEXT_DPI = 450;         // text resolution, so small text stays readable when zoomed in
+  const HIFI_MARGIN = 8;             // px overlap around each tile so thickening has no seams
+  const HIFI_TEXT_MM = 0.12;          // text stroke weight: visible when printed, still readable when small
+  // Lays out one page at a given dpi: where the drawing sits on the sheet and how it splits into tiles.
+  function hifiLayout(H, vb, S, dpi, margin) {
     const m = 36;
     const s = Math.min((S.w - 2 * m) / vb.w, (S.h - 2 * m) / vb.h);
     const wPt = vb.w * s, hPt = vb.h * s;
-    const mobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
-    const cap = mobile ? 16e6 : 40e6;                              // canvas pixel budget
-    const dpi = Math.min(200, Math.sqrt(cap / ((wPt / 72) * (hPt / 72))));
     const pxW = Math.max(1, Math.round(wPt / 72 * dpi)), pxH = Math.max(1, Math.round(hPt / 72 * dpi));
     // Page boxes are in preview coordinates (y flipped); the renderer wants drawing coordinates.
     const box = { x0: vb.x, x1: vb.x + vb.w, y0: -(vb.y + vb.h), y1: -vb.y };
-    const cv = await H.render(box, pxW, pxH, (k, n) =>
-      setStatus("hifiPage", "", { n: pageNo, m: pageCount, p: Math.round(k / n * 100) }));
-    const lwPx = parseFloat($("lw").value) / 25.4 * dpi;          // chosen line weight in pixels
-    thicken(cv, Math.max(0, Math.round(lwPx) - 1));
-    treatPixels(cv, { mono: document.querySelector('input[name="color"]:checked').value === "mono" });
-    const blob = await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("canvas")), "image/png"));
-    cv.width = cv.height = 0;
-    return { png: new Uint8Array(await blob.arrayBuffer()), x: (S.w - wPt) / 2, y: (S.h - hPt) / 2, w: wPt, h: hPt };
+    const upp = (box.x1 - box.x0) / pxW;          // drawing units per pixel
+    const step = H.TILE - 2 * margin;
+    const tiles = [];
+    for (let oy = 0; oy < pxH; oy += step) for (let ox = 0; ox < pxW; ox += step) {
+      const w = Math.min(step, pxW - ox), h = Math.min(step, pxH - oy);
+      const x0 = box.x0 + (ox - margin) * upp, y1 = box.y1 - (oy - margin) * upp;
+      tiles.push({ ox, oy, w, h, wcs: { x0, y1, x1: x0 + H.TILE * upp, y0: y1 - H.TILE * upp },
+        inner: { x0: box.x0 + ox * upp, x1: box.x0 + (ox + w) * upp, y1: box.y1 - oy * upp, y0: box.y1 - (oy + h) * upp } });
+    }
+    return { x: (S.w - wPt) / 2, y: (S.h - hPt) / 2, pxW, pxH, pt: 72 / dpi, tiles };
   }
+  // ---- Fast tile embedding ----
+  // jsPDF re-decodes and re-compresses every PNG in JavaScript, which is slow for many big tiles.
+  // Instead, rows are filtered and zlib-compressed with the browser's native CompressionStream and
+  // handed to jsPDF as a ready Flate image (PNG predictor), optionally with a soft mask.
+  const canZlib = typeof CompressionStream === "function";
+  async function zlib(bytes) {
+    const cs = new CompressionStream("deflate");
+    const buf = await new Response(new Blob([bytes]).stream().pipeThrough(cs)).arrayBuffer();
+    return new Uint8Array(buf);
+  }
+  const tileStore = new Map();
+  if (window.jspdf && window.jspdf.jsPDF) {
+    window.jspdf.jsPDF.API.processCADTILE = function (_d, index, alias) {
+      const t = tileStore.get(alias); tileStore.delete(alias);
+      const bin = this.__addimage__.arrayBufferToBinaryString;
+      const dp = "/Predictor 15 /Colors 3 /BitsPerComponent 8 /Columns " + t.w;
+      return { alias, index, data: bin(t.rgb), filter: "FlateDecode", decodeParameters: dp,
+        sMask: t.alpha ? bin(t.alpha) : undefined, predictor: 15,
+        width: t.w, height: t.h, bitsPerComponent: 8, colorSpace: "DeviceRGB" };
+    };
+  }
+  // Encodes a canvas as PNG-filtered rows (filter "Up"). With `alpha`, white paper becomes
+  // transparent and antialiased edges are un-premultiplied against white. Returns null if blank.
+  async function encodeTile(cv, alpha) {
+    const w = cv.width, h = cv.height;
+    const d = cv.getContext("2d").getImageData(0, 0, w, h).data;
+    const rgb = new Uint8Array(h * (w * 3 + 1)), a = alpha ? new Uint8Array(h * (w + 1)) : null;
+    const prev = new Uint8Array(w * 3), prevA = alpha ? new Uint8Array(w) : null;
+    const row = new Uint8Array(w * 3), rowA = alpha ? new Uint8Array(w) : null;
+    let ink = !alpha;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0, i = y * w * 4; x < w; x++, i += 4) {
+        let R = d[i], G = d[i + 1], B = d[i + 2];
+        if (alpha) {
+          const A = Math.max(255 - R, 255 - G, 255 - B);
+          if (A < 6) { R = G = B = 255; rowA[x] = 0; }
+          else {
+            ink = true; const k = 255 / A;
+            R = 255 - (255 - R) * k; G = 255 - (255 - G) * k; B = 255 - (255 - B) * k; rowA[x] = A;
+          }
+        }
+        row[x * 3] = R; row[x * 3 + 1] = G; row[x * 3 + 2] = B;
+      }
+      let o = y * (w * 3 + 1); rgb[o++] = 2;
+      for (let k = 0; k < w * 3; k++) { rgb[o + k] = (row[k] - prev[k]) & 255; prev[k] = row[k]; }
+      if (alpha) {
+        let q = y * (w + 1); a[q++] = 2;
+        for (let k = 0; k < w; k++) { a[q + k] = (rowA[k] - prevA[k]) & 255; prevA[k] = rowA[k]; }
+      }
+    }
+    if (!ink) return null;
+    return { w, h, rgb: await zlib(rgb), alpha: alpha ? await zlib(a) : null };
+  }
+  let tileSeq = 0;
+  async function addTile(pdf, cv, alpha, x, y, w, h) {
+    if (canZlib) {
+      const t = await encodeTile(cv, alpha);
+      if (!t) return;
+      const alias = "cadtile" + (++tileSeq);
+      tileStore.set(alias, t);
+      pdf.addImage(new Uint8Array([0]), "CADTILE", x, y, w, h, alias);
+    } else {
+      if (alpha) { const t = await encodeTile(cv, true); if (!t) return; }   // skip blank text tiles
+      pdf.addImage(new Uint8Array(await (await toPng(cv)).arrayBuffer()), "PNG", x, y, w, h, undefined, "FAST");
+    }
+  }
+  const hits = (t, boxes) => boxes.some(b => b.x1 >= t.x0 && b.x0 <= t.x1 && b.y1 >= t.y0 && b.y0 <= t.y1);
+  const toPng = (cv) => new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("canvas")), "image/png"));
 
   // ---------- PDF ----------
 
@@ -921,15 +999,61 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   async function makePdfHifi(jsPDF, pages) {
     setStatus(hifiLib ? "hifiOpen" : "hifiLoad");
     const H = await hifiReady();
+    const mono = document.querySelector('input[name="color"]:checked').value === "mono";
+    const lwMm = parseFloat($("lw").value);
+    const steps = Math.max(0, Math.round(lwMm / 25.4 * HIFI_DPI) - 1);
+    const textSteps = Math.max(0, Math.round(Math.min(lwMm, HIFI_TEXT_MM) / 25.4 * HIFI_TEXT_DPI) - 1);
+    const sheets = pages.map(pg => {
+      const S = sheetSizePt(pg.vb);
+      return { S, lines: hifiLayout(H, pg.vb, S, HIFI_DPI, HIFI_MARGIN), text: hifiLayout(H, pg.vb, S, HIFI_TEXT_DPI, HIFI_MARGIN) };
+    });
+    const textBoxes = H.textBoxes();
+    for (const sh of sheets) sh.text.tiles = sh.text.tiles.filter(t => hits(t.inner, textBoxes));
+    const total = sheets.reduce((n, sh) => n + sh.lines.tiles.length + sh.text.tiles.length, 0);
+    let done = 0;
+    const tick = () => setStatus("hifiProg", "", { p: Math.round(++done / total * 100) });
+    const place = (pdf, L, tl, cv, alpha) => {
+      // Overlap neighbours by a hair so PDF viewers show no gap between tiles.
+      const ex = tl.ox + tl.w < L.pxW ? 0.5 : 0, ey = tl.oy + tl.h < L.pxH ? 0.5 : 0;
+      return addTile(pdf, cv, alpha, L.x + tl.ox * L.pt, L.y + tl.oy * L.pt, tl.w * L.pt + ex, tl.h * L.pt + ey);
+    };
+    // Pass 1: linework at 200 dpi, thickened to the plot line weight.
+    await H.setPass("lines");
     let pdf = null;
-    for (let i = 0; i < pages.length; i++) {
-      const S = sheetSizePt(pages[i].vb);
+    for (const sh of sheets) {
+      const { S, lines: L } = sh;
       if (!pdf) pdf = newPdf(jsPDF, S); else pdf.addPage([S.w, S.h], S.w >= S.h ? "l" : "p");
-      const pg = await hifiPage(H, pages[i].vb, S, i + 1, pages.length);
-      pdf.addImage(pg.png, "PNG", pg.x, pg.y, pg.w, pg.h, undefined, "FAST");
+      for (const tl of L.tiles) {
+        const cv = await H.renderTile(tl.wcs);
+        thicken(cv, steps);
+        const crop = document.createElement("canvas"); crop.width = tl.w; crop.height = tl.h;
+        crop.getContext("2d", { willReadFrequently: true }).drawImage(cv, HIFI_MARGIN, HIFI_MARGIN, tl.w, tl.h, 0, 0, tl.w, tl.h);
+        treatPixels(crop, { mono });
+        await place(pdf, L, tl, crop, false);
+        cv.width = cv.height = crop.width = crop.height = 0;
+        tick();
+      }
     }
+    // Pass 2: text at high resolution, unthickened, laid transparently over the linework.
+    await H.setPass("text");
+    for (let i = 0; i < sheets.length; i++) {
+      const L = sheets[i].text;
+      pdf.setPage(i + 1);
+      for (const tl of L.tiles) {
+        const cv = await H.renderTile(tl.wcs);
+        thicken(cv, textSteps);
+        const crop = document.createElement("canvas"); crop.width = tl.w; crop.height = tl.h;
+        crop.getContext("2d", { willReadFrequently: true }).drawImage(cv, HIFI_MARGIN, HIFI_MARGIN, tl.w, tl.h, 0, 0, tl.w, tl.h);
+        treatPixels(crop, { mono });
+        await place(pdf, L, tl, crop, true);
+        cv.width = cv.height = crop.width = crop.height = 0;
+        tick();
+      }
+    }
+    await H.setPass("all");
     return pdf;
   }
+
   async function makePdfVector(jsPDF, pages) {
     let pdf = null;
     for (let i = 0; i < pages.length; i++) {

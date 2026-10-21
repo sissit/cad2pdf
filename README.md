@@ -10,8 +10,10 @@ Convert AutoCAD DWG and DXF drawings to PDF in the browser. Files are never uplo
 ## Output
 
 Each page is rendered off screen with the [mlightcad CAD viewer](https://github.com/mlightcad/cad-viewer)
-at up to 200 dpi, so hatch patterns, CAD fonts, dimensions and Chinese text look close to AutoCAD.
-The viewer draws 1 px lines, so the image is thickened to the chosen line weight (default 0.35 mm).
+in two passes. Linework is rendered at 200 dpi and thickened to the chosen line weight
+(default 0.35 mm). Text is rendered separately at 450 dpi with a light 0.12 mm stroke and laid
+transparently on top, so small text stays readable when the PDF is zoomed in. Tiles are
+compressed with the browser's native zlib and embedded directly.
 Layers set to not plot are left out, as in AutoCAD, unless "Include layers set to not plot" is ticked. If high-fidelity rendering fails, the PDF is
 made with the vector renderer instead and the status line says so.
 

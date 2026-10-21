@@ -1,7 +1,9 @@
 // cad2pdf high-fidelity renderer: opens a drawing in the mlightcad viewer
-// (hidden), then renders any WCS box to a high-res canvas tile by tile.
+// (hidden) and renders any WCS box into a TILE x TILE canvas. setPass() shows
+// either the linework or the text, so the page can thicken lines to the plot
+// line weight without smearing text.
 import { AcApDocManager, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE } from '@mlightcad/cad-simple-viewer';
-import { AcDbDatabaseConverterManager, AcDbFileType } from '@mlightcad/data-model';
+import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbFileType, AcDbMLeader, AcDbMText, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
 import { AcGeBox2d } from '@mlightcad/geometry-engine';
 import { AcDbLibreDwgConverter } from '@mlightcad/libredwg-converter';
 
@@ -79,54 +81,106 @@ async function renderOnce(view) {
   });
 }
 
+// Text-like entities: drawn unthickened (AutoCAD does not apply plot lineweight to TrueType text).
+// Tables and multileaders go with the text because their text cannot be separated from them.
+const isText = (x) => x instanceof AcDbText || x instanceof AcDbMText || x instanceof AcDbArcAlignedText
+  || x instanceof AcDbTable || x instanceof AcDbMLeader;
+
+let pass = 'all';
+function applyPass(db, mode) {
+  let n = 0;
+  const set = (x) => {
+    const want = mode === 'all' || (isText(x) === (mode === 'text'));
+    if (x.visibility !== want) { x.visibility = want; n++; }
+  };
+  for (const rec of db.tables.blockTable.newIterator()) {
+    for (const x of rec.newIterator()) {
+      if (x instanceof AcDbBlockReference && !(x instanceof AcDbTable)) {
+        // Inserts stay visible in both passes; their contents and attributes are filtered.
+        if (!x.visibility) { x.visibility = true; n++; }
+        if (typeof x.attributeIterator === 'function') for (const a of x.attributeIterator()) set(a);
+      } else set(x);
+    }
+  }
+  return n;
+}
+
+async function settle(view) {
+  await frame();
+  await view.waitUntilIdle(120000);
+  await new Promise((res) => setTimeout(res, 500));   // let any queued auto-fit run first
+  await view.waitUntilIdle(120000);
+  await frame();
+}
+
 window.CADHIFI = {
+  TILE,
   // Opens the drawing; resolves when geometry and text are ready.
   async open(buf, name, opts) {
     const m = setup(opts);
     const ok = await m.openDocument(name, buf, { readOnly: true, drawNoPlotLayers: !!opts.drawNoPlotLayers });
     if (!ok) throw new Error('open failed');
+    pass = 'all';
     const view = m.curView;
     view.backgroundColor = 0xffffff;          // paper: ACI 7 draws black
     await view.waitUntilIdle(120000);
-    if (inheritLayer0(m.curDocument.database) > 0) {
-      m.regen();
-      await frame();
-      await view.waitUntilIdle(120000);
-      // A regen can schedule its own zoom-to-fit; let it run before we position tiles.
-      await new Promise((res) => setTimeout(res, 1000));
-      await view.waitUntilIdle(120000);
-    }
+    if (inheritLayer0(m.curDocument.database) > 0) { m.regen(); await settle(view); }
     await frame(); await frame();
     return true;
   },
-  // Renders WCS box {x0,y0,x1,y1} into a canvas of pxW × pxH.
-  async render(box, pxW, pxH, onProgress) {
+  // 'all' | 'lines' (everything except text) | 'text' (text only).
+  async setPass(mode) {
+    if (mode === pass) return;
+    const changed = applyPass(mgr.curDocument.database, mode);
+    pass = mode;
+    // Block graphics are cached per block definition; drop them so hidden contents really disappear.
+    if (changed) { AcDbRenderingCache.instance.clear(); mgr.regen(); await settle(mgr.curView); }
+  },
+  // Renders WCS box {x0,y0,x1,y1} (square) into a fresh TILE x TILE canvas.
+  async renderTile(box) {
     const view = mgr.curView;
-    const out = document.createElement('canvas');
-    out.width = pxW; out.height = pxH;
-    const ctx = out.getContext('2d');
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, pxW, pxH);
-    const upp = (box.x1 - box.x0) / pxW;       // drawing units per output pixel
-    const cols = Math.ceil(pxW / TILE), rows = Math.ceil(pxH / TILE);
-    let n = 0;
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const px0 = c * TILE, py0 = r * TILE;
-        // Each tile covers exactly TILE × TILE output pixels (the last ones spill past the page edge).
-        const x0 = box.x0 + px0 * upp, x1 = x0 + TILE * upp;
-        const y1 = box.y1 - py0 * upp, y0 = y1 - TILE * upp;   // WCS y grows up, pixels grow down
-        const tileBox = new AcGeBox2d({ x: x0, y: y0 }, { x: x1, y: y1 });
-        view.zoomTo(tileBox, 1);
-        await frame();
-        await view.waitUntilIdle(30000);
-        view.zoomTo(tileBox, 1);                 // re-assert: a late auto-fit must not move this tile
-        await frame();
-        const cv = await renderOnce(view);
-        ctx.drawImage(cv, 0, 0, cv.width, cv.height, px0, py0, TILE, TILE);
-        if (onProgress) onProgress(++n, rows * cols);
+    const b = new AcGeBox2d({ x: box.x0, y: box.y0 }, { x: box.x1, y: box.y1 });
+    view.zoomTo(b, 1);
+    await frame();
+    await view.waitUntilIdle(30000);
+    view.zoomTo(b, 1);                          // re-assert: a late auto-fit must not move this tile
+    await frame();
+    const src = await renderOnce(view);
+    const cv = document.createElement('canvas');
+    cv.width = TILE; cv.height = TILE;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, TILE, TILE);
+    ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, TILE, TILE);
+    return cv;
+  },
+  // WCS boxes that contain text (model-space text, and inserts whose block holds text).
+  textBoxes() {
+    const db = mgr.curDocument.database, bt = db.tables.blockTable;
+    const hasText = new Map();
+    const blockHasText = (name, depth) => {
+      if (hasText.has(name)) return hasText.get(name);
+      hasText.set(name, false);
+      const rec = bt.getAt(name); let r = false;
+      if (rec && depth < 8) for (const x of rec.newIterator()) {
+        if (isText(x) || (x.blockName != null && blockHasText(x.blockName, depth + 1))) { r = true; break; }
+        if (typeof x.attributeIterator === 'function') for (const _ of x.attributeIterator()) { r = true; break; }
+        if (r) break;
       }
+      hasText.set(name, r);
+      return r;
+    };
+    const boxes = [];
+    for (const x of bt.modelSpace.newIterator()) {
+      let t = isText(x);
+      if (!t && x.blockName != null) {
+        t = blockHasText(x.blockName, 0);
+        if (!t && typeof x.attributeIterator === 'function') for (const _ of x.attributeIterator()) { t = true; break; }
+      }
+      if (!t || !x.visibility && pass === 'all') continue;
+      let ex; try { ex = x.geometricExtents; } catch (err) { continue; }
+      if (ex && isFinite(ex.min.x) && isFinite(ex.max.x)) boxes.push({ x0: ex.min.x, y0: ex.min.y, x1: ex.max.x, y1: ex.max.y });
     }
-    return out;
+    return boxes;
   },
   extents() {
     const db = mgr.curDocument.database;
