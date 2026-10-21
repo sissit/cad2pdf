@@ -168,8 +168,8 @@ button.go:disabled { opacity: .5; cursor: progress; }
         <span class="label" id="lbl-lw" data-i18n="lw"></span>
         <select id="lw" aria-labelledby="lbl-lw">
           <option value="0.13" data-i18n="lw13"></option>
-          <option value="0.25" selected data-i18n="lw25"></option>
-          <option value="0.35" data-i18n="lw35"></option>
+          <option value="0.25" data-i18n="lw25"></option>
+          <option value="0.35" selected data-i18n="lw35"></option>
           <option value="0.5" data-i18n="lw50"></option>
         </select>
       </div>
@@ -1029,7 +1029,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   $("noplot").addEventListener("change", () => { if (state.file) loadFile(state.file); else render(); });
   ["trim", "frames"].forEach(id => $(id).addEventListener("change", () => { if (state.boxes) { applyFrame(); render(); } }));
   document.querySelectorAll('input[name="orient"], input[name="color"]').forEach(r => r.addEventListener("change", render));
-  const USE_PRESETS = { print: { size: "24x36", lw: "0.25", darken: false }, screen: { size: "11x17", lw: "0.35", darken: true } };
+  const USE_PRESETS = { print: { size: "24x36", lw: "0.35", darken: false }, screen: { size: "11x17", lw: "0.35", darken: true } };
   document.querySelectorAll('input[name="use"]').forEach(r => r.addEventListener("change", () => {
     const pr = USE_PRESETS[r.value];
     if (!pr) return;
