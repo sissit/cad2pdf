@@ -168,7 +168,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <div class="field">
         <span class="label" id="lbl-mode" data-i18n="mode"></span>
         <select id="mode" aria-labelledby="lbl-mode">
-          <option value="auto" selected data-i18n="mAuto"></option>
+          <option value="hifi" selected data-i18n="mHifi"></option>
           <option value="vector" data-i18n="mVec"></option>
           <option value="raster" data-i18n="mRas"></option>
         </select>
@@ -207,7 +207,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
       darken: "浅色线加深（黄、青等在白纸上更清楚）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
       lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
-      mode: "输出方式", mAuto: "自动（有中文就用高清图像）", mVec: "矢量（线条最清晰，中文会乱码）", mRas: "高清图像（中文正常）",
+      mode: "输出方式", mHifi: "高保真（推荐，效果接近 AutoCAD）", mVec: "矢量（可放大、可搜索，中文会乱码）", mRas: "简化图像（旧版效果）", hifiLoad: "正在加载高保真渲染组件…", hifiOpen: "正在准备高保真渲染（读取图纸和字体）…", hifiPage: "正在渲染第 {n}/{m} 页…（{p}%）", hifiFail: "高保真渲染失败，请改用「矢量」或「简化图像」。", hifi: "高保真图像",
       go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
       sample: "示例图纸", sampleName: "示例平面图.dxf",
       mFile: "文件", mCount: "图形", mPaper: "纸张", mText: "文字", tCJK: "含中文", tLatin: "英文/数字",
@@ -232,7 +232,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
       darken: "Darken light colors (yellow and cyan read better on white paper)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
       lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
-      mode: "Output", mAuto: "Auto (high-res image if the drawing has Chinese text)", mVec: "Vector (sharpest lines, Chinese text breaks)", mRas: "High-res image (Chinese text OK)",
+      mode: "Output", mHifi: "High fidelity (recommended, close to AutoCAD)", mVec: "Vector (zoomable and searchable, Chinese text breaks)", mRas: "Simplified image (previous look)", hifiLoad: "Loading the high-fidelity renderer…", hifiOpen: "Preparing high-fidelity render (reading drawing and fonts)…", hifiPage: "Rendering page {n} of {m}… ({p}%)", hifiFail: "High-fidelity rendering failed. Switch Output to Vector or Simplified image.", hifi: "high-fidelity image",
       go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
       sample: "Sample drawing", sampleName: "sample-plan.dxf",
       mFile: "File", mCount: "Objects", mPaper: "Sheet", mText: "Text", tCJK: "Has Chinese", tLatin: "Latin only",
@@ -837,11 +837,81 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       applyFrame();
       render();
       setStatus("loaded", "ok", { n: file.name });
+      if ($("mode").value === "hifi") hifiReady().catch(e => console.warn("hifi warm-up", e));
     } catch (e) {
       console.error(e);
       showBusy("");
       setStatus(e instanceof UserError ? e : (ext === "dwg" ? "dwgFail" : "dxfFail"), "err");
     }
+  }
+
+
+  // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
+  const HIFI_BASE = new URL("hifi/", document.baseURI).href;
+  const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
+  let hifiLib = null, hifiDoc = null;
+  function loadHifi() {
+    if (hifiLib) return hifiLib;
+    hifiLib = new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = HIFI_BASE + "cadhifi.js";
+      s.onload = () => window.CADHIFI ? res(window.CADHIFI) : rej(new Error("renderer missing"));
+      s.onerror = () => rej(new Error("renderer did not load"));
+      document.head.appendChild(s);
+    }).catch(e => { hifiLib = null; throw e; });
+    return hifiLib;
+  }
+  // Opens the current drawing in the renderer once per file.
+  async function hifiReady() {
+    const H = await loadHifi();
+    const key = state.file || state.name;
+    if (hifiDoc && hifiDoc.key === key) return hifiDoc.ready.then(() => H);
+    const file = state.file || new File([window.SAMPLE_DXF], "sample.dxf");
+    const ready = file.arrayBuffer().then(buf => H.open(buf, file.name, { assetBase: HIFI_BASE, fontBase: HIFI_FONTS }));
+    hifiDoc = { key, ready };
+    ready.catch(() => { if (hifiDoc && hifiDoc.key === key) hifiDoc = null; });
+    await ready;
+    return H;
+  }
+  // Paper treatment on rendered pixels: black-and-white, or darken light colors.
+  function treatPixels(cv, opts) {
+    if (!opts.mono && !opts.darken) return;
+    const ctx = cv.getContext("2d");
+    const band = 512;
+    for (let y = 0; y < cv.height; y += band) {
+      const h = Math.min(band, cv.height - y);
+      const img = ctx.getImageData(0, y, cv.width, h), d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        if (r > 245 && g > 245 && b > 245) continue;            // paper
+        if (opts.mono) {
+          const v = Math.min(r, g, b) > 200 ? 255 - (255 - Math.min(r, g, b)) * 3 : 0;  // keep antialiasing soft
+          d[i] = d[i + 1] = d[i + 2] = Math.max(0, v);
+          continue;
+        }
+        const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        const sat = Math.max(r, g, b) - Math.min(r, g, b);
+        if (lum > 0.6 && sat > 60) { const k = 0.6 / lum; d[i] = r * k; d[i + 1] = g * k; d[i + 2] = b * k; }
+      }
+      ctx.putImageData(img, 0, y);
+    }
+  }
+  async function hifiPage(H, vb, S, pageNo, pageCount) {
+    const m = 36;
+    const s = Math.min((S.w - 2 * m) / vb.w, (S.h - 2 * m) / vb.h);
+    const wPt = vb.w * s, hPt = vb.h * s;
+    const mobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+    const cap = mobile ? 16e6 : 40e6;                              // canvas pixel budget
+    const dpi = Math.min(200, Math.sqrt(cap / ((wPt / 72) * (hPt / 72))));
+    const pxW = Math.max(1, Math.round(wPt / 72 * dpi)), pxH = Math.max(1, Math.round(hPt / 72 * dpi));
+    // Page boxes are in preview coordinates (y flipped); the renderer wants drawing coordinates.
+    const box = { x0: vb.x, x1: vb.x + vb.w, y0: -(vb.y + vb.h), y1: -vb.y };
+    const cv = await H.render(box, pxW, pxH, (k, n) =>
+      setStatus("hifiPage", "", { n: pageNo, m: pageCount, p: Math.round(k / n * 100) }));
+    treatPixels(cv, { mono: document.querySelector('input[name="color"]:checked').value === "mono", darken: $("darken").checked });
+    const blob = await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("canvas")), "image/png"));
+    cv.width = cv.height = 0;
+    return { png: new Uint8Array(await blob.arrayBuffer()), x: (S.w - wPt) / 2, y: (S.h - hPt) / 2, w: wPt, h: hPt };
   }
 
   // ---------- PDF ----------
@@ -869,7 +939,13 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     const { jsPDF } = window.jspdf || {};
     if (!jsPDF) fail("noPdfLib");
     const modeSel = $("mode").value;
-    const raster = modeSel === "raster" || (modeSel === "auto" && state.hasCJK);
+    const hifi = modeSel === "hifi";
+    const raster = modeSel === "raster";
+    let H = null;
+    if (hifi) {
+      setStatus(hifiLib ? "hifiOpen" : "hifiLoad");
+      try { H = await hifiReady(); } catch (e) { console.error(e); fail("hifiFail"); }
+    }
     const pages = state.pages && state.pages.length ? state.pages : [{ vb: state.vb }];
     let pdf = null;
     for (let i = 0; i < pages.length; i++) {
@@ -877,7 +953,11 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       const orient = S.w >= S.h ? "l" : "p";
       if (!pdf) pdf = new jsPDF({ orientation: orient, unit: "pt", format: [S.w, S.h], compress: true });
       else pdf.addPage([S.w, S.h], orient);
-      if (!raster) {
+      if (hifi) {
+        let pg;
+        try { pg = await hifiPage(H, pages[i].vb, S, i + 1, pages.length); } catch (e) { console.error(e); fail("hifiFail"); }
+        pdf.addImage(pg.png, "PNG", pg.x, pg.y, pg.w, pg.h, undefined, "FAST");
+      } else if (!raster) {
         if (typeof pdf.svg !== "function") fail("noVec");
         hidden.appendChild(svg);
         try { await pdf.svg(svg, { x: 0, y: 0, width: S.w, height: S.h }); }
@@ -894,7 +974,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       }
     }
     pdf.setProperties({ title: state.name, creator: "cad2pdf" });
-    return { blob: pdf.output("blob"), raster };
+    return { blob: pdf.output("blob"), raster, hifi };
   }
 
   const inClaude = !!(window.claude && window.claude.use);
@@ -919,8 +999,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     setStatus("making");
     try {
       const fname = state.name.replace(/\.(dwg|dxf)$/i, "") + ".pdf";
-      const { blob, raster } = await makePdf();
-      const info = { n: fname, s: (blob.size / 1048576).toFixed(1), m: t(raster ? "ras" : "vec") };
+      const { blob, raster, hifi } = await makePdf();
+      const info = { n: fname, s: (blob.size / 1048576).toFixed(1), m: t(hifi ? "hifi" : raster ? "ras" : "vec") };
       if (downloads) {
         setStatus("confirm");
         await downloads.save({ filename: fname, data: blob });
