@@ -148,6 +148,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
           <label><input type="radio" name="color" id="c-mono" value="mono"><span data-i18n="cMono"></span></label>
         </div>
         <label class="check"><input type="checkbox" id="darken" checked> <span data-i18n="darken"></span></label>
+        <label class="check"><input type="checkbox" id="trim" checked> <span data-i18n="trim"></span></label>
       </div>
 
       <div class="field">
@@ -200,7 +201,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       h1: "DWG 图纸转 PDF", tag: "DWG · DXF → PDF · 文件只在本机浏览器里处理，不上传",
       pick: "选择或拖入图纸", support: "支持 .dwg（R13–2018）和 .dxf", paper: "纸张", orient: "方向",
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
-      darken: "浅色线加深（黄、青等在白纸上更清楚）", lw: "线宽",
+      darken: "浅色线加深（黄、青等在白纸上更清楚）", trim: "忽略离主图很远的零散对象", lw: "线宽", dropped: "已忽略远处对象", 
       lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
       mode: "输出方式", mAuto: "自动（有中文就用高清图像）", mVec: "矢量（线条最清晰，中文会乱码）", mRas: "高清图像（中文正常）",
       go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
@@ -225,7 +226,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       h1: "DWG to PDF", tag: "DWG · DXF → PDF · Files stay in your browser, nothing is uploaded",
       pick: "Choose or drop a drawing", support: ".dwg (R13–2018) and .dxf", paper: "Sheet size", orient: "Orientation",
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
-      darken: "Darken light colors (yellow and cyan read better on white paper)", lw: "Line weight",
+      darken: "Darken light colors (yellow and cyan read better on white paper)", trim: "Ignore stray objects far from the main drawing", lw: "Line weight", dropped: "Far-off objects ignored", 
       lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
       mode: "Output", mAuto: "Auto (high-res image if the drawing has Chinese text)", mVec: "Vector (sharpest lines, Chinese text breaks)", mRas: "High-res image (Chinese text OK)",
       go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
@@ -340,32 +341,38 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     }
     return v[s];
   }
-  function dxfToSvg(text) {
-    const P = window.DxfParser && (window.DxfParser.default || window.DxfParser);
-    if (!P) fail("noDxfLib");
-    const dxf = new P().parseSync(text);
-    const layerTbl = (dxf.tables && dxf.tables.layer && dxf.tables.layer.layers) || {};
+  // AutoCAD Color Index → 0xRRGGBB
+  const ACI_RGB = [0,16711680,16776960,65280,65535,255,16711935,16777215,8421504,12632256,16711680,16744319,10813440,10834514,8323072,8339263,4980736,4990502,2490368,2495251,16727808,16752511,10823936,10839890,8331008,8343359,4985600,4992806,2492672,2496275,16744192,16760703,10834432,10845266,8339200,8347455,4990464,4995366,2495232,2497555,16760576,16768895,10845184,10850642,8347392,8351551,4995328,4997670,2497536,2498835,16776960,16777087,10855680,10855762,8355584,8355647,5000192,5000230,2500096,2500115,12582656,14679935,8168704,9545042,6258432,7307071,3755008,4344870,1844736,2172435,8388352,12582783,5416192,8168786,4161280,6258495,2509824,3755046,1254912,1844755,4194048,10485631,2729216,6792530,2064128,5209919,1264640,3099686,599552,1517075,65280,8388479,42240,5416274,32512,4161343,19456,2509862,9728,1254931,65343,8388511,42281,5416295,32543,4161359,19475,2509871,9737,1267735,65407,8388543,42322,5416316,32575,4161375,19494,2509881,9747,1267740,65471,8388575,42364,5416337,32607,4161391,19513,2509890,9756,1267800,65535,8388607,42405,5416357,32639,4161407,19532,2509900,9766,1267800,49151,8380415,31909,5411237,24447,4157311,14668,2507390,7206,1267800,32767,8372223,21157,5405861,16255,4153215,9804,2505086,4902,1252440,16383,8364031,10661,5400485,8063,4149119,4940,2502526,2342,1251160,255,8355839,165,5395109,127,4145023,76,2500222,38,1250136,4129023,10452991,2687141,6771365,2031743,5193599,1245260,3090046,589862,1512280,8323327,12550143,5374117,8147621,4128895,6242175,2490444,3745406,1245222,1839960,12517631,14647295,8126629,9523877,6226047,7290751,3735628,4335180,1835046,5772120,16711935,16744447,10813605,10834597,8323199,8339327,4980812,4990540,2490406,5772120,16711871,16744415,10813564,10834577,8323167,8339311,4980793,4990530,2490396,5772120,16711807,16744383,10813522,10834556,8323135,8339295,4980774,4990521,2490387,5772060,16711743,16744351,10813481,10834535,8323103,8339279,4980755,4990511,2490377,5772055,0,6645093,6710886,10066329,13421772,16777215];
+  const aciRgb = (i) => ACI_RGB[Math.abs(i | 0)] != null ? ACI_RGB[Math.abs(i | 0)] : 0xFFFFFF;
+
+  // ---------- one renderer for both formats ----------
+  // model = { entities, blocks: { name: { entities, position } }, layers: { name: { color, visible } } }
+  // Entities use dxf-parser field names; DWG entities are normalized to the same shape first.
+  function renderModel(model) {
+    const layerTbl = model.layers || {};
     const used = new Map();
     let count = 0, cjk = false;
     const layerColor = (name) => { const L = layerTbl[name]; return L && L.color != null ? L.color : 0xFFFFFF; };
     const colorOf = (e, inherit) => {
-      if (e.colorIndex === 0 && inherit != null) return inherit;         // BYBLOCK
-      if (e.color != null && e.colorIndex !== 256) return e.color;
-      return layerColor(e.layer);
+      if (e.colorIndex === 0) return inherit != null ? inherit : layerColor(e.layer);   // BYBLOCK
+      if (e.colorIndex === 256 || e.colorIndex == null) return e.trueColor != null ? e.trueColor : layerColor(e.layer);
+      if (e.color != null) return e.color;
+      return aciRgb(e.colorIndex);
     };
     function ent(e, inherit, depth) {
-      if (depth > 8) return "";
+      if (!e || depth > 12) return "";
       const L = layerTbl[e.layer];
-      if (L && (L.visible === false || L.frozen)) return "";
+      if (L && L.visible === false) return "";
       const col = colorOf(e, inherit);
       const c = hex(col);
-      used.set(e.layer || "0", hex(layerColor(e.layer)));
+      if (depth === 0 || !used.has(e.layer || "0")) used.set(e.layer || "0", hex(layerColor(e.layer)));
       count++;
       const st = `stroke="${c}" fill="none"`;
       switch (e.type) {
         case "LINE": { const [a, b] = e.vertices; return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" ${st}/>`; }
         case "LWPOLYLINE": case "POLYLINE": {
           const vs = (e.vertices || []).filter(v => !v.faces);
+          if (vs.length < 2) return "";
           return `<path d="${polyPath(vs, e.shape || e.closed)}" ${st}/>`;
         }
         case "CIRCLE": return `<circle cx="${e.center.x}" cy="${e.center.y}" r="${e.radius}" ${st}/>`;
@@ -383,28 +390,37 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
           return `<path d="M${pts.join("L")}" ${st}/>`;
         }
         case "SPLINE": {
-          const cp = e.controlPoints || e.fitPoints || [];
+          const hasCp = e.controlPoints && e.controlPoints.length >= 2;
+          const cp = hasCp ? e.controlPoints : (e.fitPoints || []);
           if (cp.length < 2) return "";
-          if (!e.controlPoints) return `<path d="M${cp.map(p => `${p.x} ${p.y}`).join("L")}" ${st}/>`;
+          if (!hasCp) return `<path d="M${cp.map(p => `${p.x} ${p.y}`).join("L")}" ${st}/>`;
           const deg = Math.min(e.degreeOfSplineCurve || 3, cp.length - 1), pts = [];
           for (let i = 0; i <= 80; i++) { const p = bspline(i / 80, deg, cp, e.knotValues); pts.push(`${p[0]} ${p[1]}`); }
           return `<path d="M${pts.join("L")}" ${st}/>`;
         }
         case "SOLID": case "TRACE": {
-          const p = e.points || []; if (p.length < 3) return "";
+          const p = (e.points || []).filter(Boolean); if (p.length < 3) return "";
           const o = p.length === 4 ? [p[0], p[1], p[3], p[2]] : p;
           return `<path d="M${o.map(q => `${q.x} ${q.y}`).join("L")}Z" stroke="${c}" fill="${c}"/>`;
         }
-        case "POINT": return "";
+        case "3DFACE": case "FACE3D": {
+          const p = (e.points || e.vertices || []).filter(Boolean); if (p.length < 3) return "";
+          return `<path d="M${p.map(q => `${q.x} ${q.y}`).join("L")}Z" ${st}/>`;
+        }
+        case "HATCH": {
+          if (!e.paths || !e.paths.length) return "";
+          const d = e.paths.filter(pp => pp.length > 2).map(pp => "M" + pp.map(q => `${q.x} ${q.y}`).join("L") + "Z").join("");
+          return d ? `<path d="${d}" fill-rule="evenodd" stroke="none" fill="${c}"/>` : "";
+        }
         case "TEXT": case "MTEXT": case "ATTRIB": {
-          const raw = e.type === "MTEXT" ? cleanMText(e.text) : cleanMText(e.text);
+          const raw = cleanMText(e.text);
           if (!raw.trim()) return "";
           if (/[^\x00-\xFF]/.test(raw)) cjk = true;
           const h = e.textHeight || e.height || 2.5;
           const p = e.type === "MTEXT" ? e.position : (e.endPoint && (e.halign || e.valign) ? e.endPoint : e.startPoint);
           if (!p) return "";
           let rot = e.rotation || 0;
-          if (e.type === "MTEXT" && e.directionVector) rot = Math.atan2(e.directionVector.y, e.directionVector.x) * 180 / Math.PI;
+          if (e.type === "MTEXT" && e.directionVector && (e.directionVector.x || e.directionVector.y)) rot = Math.atan2(e.directionVector.y, e.directionVector.x) * 180 / Math.PI;
           const anchor = e.type === "MTEXT"
             ? ["start", "middle", "end"][((e.attachmentPoint || 1) - 1) % 3]
             : ["start", "middle", "end", "start", "middle", "start"][e.halign || 0];
@@ -416,24 +432,48 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
           return `<text transform="translate(${p.x} ${p.y}) rotate(${rot}) scale(1 -1)" font-size="${h}" fill="${c}" stroke="none" text-anchor="${anchor}">${tsp}</text>`;
         }
         case "INSERT": {
-          const blk = dxf.blocks && dxf.blocks[e.name];
-          if (!blk || !blk.entities) return "";
-          const bp = blk.position || { x: 0, y: 0 };
-          const sx = e.xScale || 1, sy = e.yScale || 1, r = e.rotation || 0;
-          const inner = blk.entities.map(x => ent(x, col, depth + 1)).join("");
-          const tf = `translate(${e.position.x} ${e.position.y}) rotate(${r}) scale(${sx} ${sy}) translate(${-bp.x} ${-bp.y})`;
-          const cols = Math.max(1, e.columnCount || 1), rows = Math.max(1, e.rowCount || 1);
-          if (cols === 1 && rows === 1) return `<g transform="${tf}">${inner}</g>`;
+          const blk = model.blocks && model.blocks[e.name];
           let out = "";
-          for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++)
-            out += `<g transform="translate(${j * (e.columnSpacing || 0)} ${i * (e.rowSpacing || 0)})"><g transform="${tf}">${inner}</g></g>`;
+          if (blk && blk.entities && blk.entities.length) {
+            const bp = blk.position || { x: 0, y: 0 };
+            const pos = e.position || { x: 0, y: 0 };
+            const sx = e.xScale || 1, sy = e.yScale || 1, r = e.rotation || 0;
+            const inner = blk.entities.map(x => ent(x, col, depth + 1)).join("");
+            const tf = `translate(${pos.x} ${pos.y}) rotate(${r}) scale(${sx} ${sy}) translate(${-bp.x} ${-bp.y})`;
+            const cols = Math.max(1, e.columnCount || 1), rows = Math.max(1, e.rowCount || 1);
+            const k = Math.sqrt(Math.abs(sx * sy)) || 1;
+            if (cols === 1 && rows === 1) out = `<g transform="${tf}" data-k="${k}">${inner}</g>`;
+            else for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++)
+              out += `<g transform="translate(${j * (e.columnSpacing || 0)} ${i * (e.rowSpacing || 0)})"><g transform="${tf}" data-k="${k}">${inner}</g></g>`;
+          }
+          for (const a of e.attribs || []) out += ent(a, col, depth + 1);   // attributes sit in world coordinates
           return out;
         }
-        default: count--; return "";
+        default: count--; return "";   // XLINE, RAY, POINT, VIEWPORT, WIPEOUT, ATTDEF … are not plotted
       }
     }
-    const body = (dxf.entities || []).filter(e => !e.inPaperSpace).map(e => ent(e, null, 0)).join("");
+    const body = (model.entities || []).map(e => ent(e, null, 0)).join("");
     return { content: `<g transform="scale(1 -1)">${body}</g>`, layers: [...used.entries()], hasCJK: cjk, count };
+  }
+
+  function dxfToSvg(text) {
+    const P = window.DxfParser && (window.DxfParser.default || window.DxfParser);
+    if (!P) fail("noDxfLib");
+    const dxf = new P().parseSync(text);
+    const layers = {};
+    const lt = (dxf.tables && dxf.tables.layer && dxf.tables.layer.layers) || {};
+    for (const n in lt) layers[n] = { color: lt[n].color != null ? lt[n].color : 0xFFFFFF, visible: lt[n].visible !== false && !lt[n].frozen };
+    const fix = (e) => {
+      if (e.type === "DIMENSION" && e.block) return { ...e, type: "INSERT", name: e.block, position: { x: 0, y: 0 }, xScale: 1, yScale: 1, rotation: 0 };
+      if (e.color != null && e.colorIndex == null) return { ...e, trueColor: e.color };
+      return e;
+    };
+    const blocks = {};
+    for (const n in dxf.blocks || {}) {
+      const b = dxf.blocks[n];
+      blocks[n] = { position: b.position, entities: (b.entities || []).map(fix) };
+    }
+    return renderModel({ layers, blocks, entities: (dxf.entities || []).filter(e => !e.inPaperSpace).map(fix) });
   }
 
   // ---------- DWG via LibreDWG (WebAssembly) ----------
@@ -447,23 +487,90 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     dwgLib.__types = mod.Dwg_File_Type;
     return dwgLib;
   }
+  const deg = (r) => (r || 0) * 180 / Math.PI;   // DWG stores angles in radians
+  function hatchPaths(h) {
+    const out = [];
+    for (const bp of h.boundaryPaths || []) {
+      const pts = [];
+      if (bp.vertices && bp.vertices.length) {
+        const vs = bp.vertices;
+        for (let i = 0; i < vs.length; i++) {
+          const a = vs[i], b = vs[(i + 1) % vs.length];
+          pts.push({ x: a.x, y: a.y });
+          if (a.bulge) {   // sample the arc
+            const ang = 4 * Math.atan(a.bulge), d = Math.hypot(b.x - a.x, b.y - a.y);
+            if (d) {
+              const r = d / (2 * Math.sin(Math.abs(ang) / 2));
+              const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, k = Math.sqrt(Math.max(r * r - d * d / 4, 0)) * (a.bulge > 0 ? 1 : -1) * (Math.abs(ang) > Math.PI ? -1 : 1);
+              const cx = mx - k * (b.y - a.y) / d, cy = my + k * (b.x - a.x) / d;
+              const s = Math.atan2(a.y - cy, a.x - cx);
+              for (let j = 1; j < 16; j++) { const t = s + ang * j / 16; pts.push({ x: cx + r * Math.cos(t), y: cy + r * Math.sin(t) }); }
+            }
+          }
+        }
+      } else for (const ed of bp.edges || []) {
+        if (ed.type === 1 && ed.start) pts.push(ed.start, ed.end);
+        else if (ed.type === 2 && ed.center) {
+          let s = ed.startAngle || 0, t = ed.endAngle || 0;
+          if (ed.isCCW === false || ed.isCcw === 0) { s = -s; t = -t; }
+          if (t < s) t += Math.PI * 2;
+          for (let j = 0; j <= 24; j++) { const a = s + (t - s) * j / 24; pts.push({ x: ed.center.x + ed.radius * Math.cos(a), y: ed.center.y + ed.radius * Math.sin(a) }); }
+        } else if (ed.start) pts.push(ed.start);
+      }
+      if (pts.length > 2) out.push(pts);
+    }
+    return out;
+  }
+  function normDwg(e) {
+    if (!e || e.isVisible === false) return null;
+    const base = { type: e.type, layer: e.layer, colorIndex: e.colorIndex, trueColor: (e.colorIndex === 256 || e.colorIndex == null) ? null : undefined };
+    if (e.colorIndex > 0 && e.colorIndex < 256) base.color = aciRgb(e.colorIndex);
+    switch (e.type) {
+      case "LINE": return { ...base, vertices: [e.startPoint, e.endPoint] };
+      case "LWPOLYLINE": return { ...base, vertices: e.vertices, shape: !!((e.flag & 1) || (e.flag & 512)) };
+      case "POLYLINE2D": case "POLYLINE3D": case "POLYLINE": return { ...base, type: "POLYLINE", vertices: (e.vertices || []).filter(v => !(v.flag & 128) || (v.flag & 64)), shape: !!(e.flag & 1) };
+      case "CIRCLE": case "ARC": case "ELLIPSE": return { ...e, ...base };
+      case "SPLINE": return { ...base, controlPoints: e.controlPoints, fitPoints: e.fitPoints, degreeOfSplineCurve: e.degree, knotValues: e.knots };
+      case "TEXT": return { ...base, text: e.text, startPoint: e.startPoint, endPoint: e.endPoint, textHeight: e.textHeight, rotation: deg(e.rotation), halign: e.halign, valign: e.valign };
+      case "ATTRIB": {
+        const t = e.text || {};
+        if (e.flags & 1) return null;   // invisible attribute
+        return { ...base, type: "TEXT", text: t.text, startPoint: t.startPoint, endPoint: t.endPoint, textHeight: t.textHeight, rotation: deg(t.rotation), halign: t.halign, valign: t.valign };
+      }
+      case "MTEXT": return { ...base, text: e.text, position: e.insertionPoint, textHeight: e.textHeight, attachmentPoint: e.attachmentPoint, directionVector: e.direction, rotation: deg(e.rotation) };
+      case "INSERT": return { ...base, name: e.name, position: e.insertionPoint, xScale: e.xScale, yScale: e.yScale, rotation: deg(e.rotation),
+        columnCount: e.columnCount, rowCount: e.rowCount, columnSpacing: e.columnSpacing, rowSpacing: e.rowSpacing,
+        attribs: (e.attribs || []).map(normDwg).filter(Boolean) };
+      case "DIMENSION": return e.name ? { ...base, type: "INSERT", name: e.name, position: { x: 0, y: 0 }, xScale: 1, yScale: 1, rotation: 0 } : null;
+      case "SOLID": case "TRACE": return { ...base, points: [e.corner1, e.corner2, e.corner3, e.corner4] };
+      case "3DFACE": return { ...base, type: "FACE3D", points: [e.corner1, e.corner2, e.corner3, e.corner4] };
+      case "HATCH": return e.solidFill ? { ...base, paths: hatchPaths(e) } : null;   // pattern hatches are skipped
+      case "MLINE": return { ...base, type: "POLYLINE", vertices: (e.vertices || []).map(v => v.vertex).filter(Boolean), shape: !!(e.flags & 2) };
+      default: return null;
+    }
+  }
   async function dwgToSvg(buf) {
     const lib = await loadDwgLib();
     const ptr = lib.dwg_read_data(buf, lib.__types.DWG);
     if (ptr == null) fail("dwgUnreadable");
     let db;
     try { db = lib.convert(ptr); } finally { try { lib.dwg_free(ptr); } catch (e) {} }
-    const svgText = lib.dwg_to_svg(db);
-    const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
-    const root = doc.documentElement;
-    if (!root || root.nodeName.toLowerCase() !== "svg") fail("convFail");
-    const layers = new Map();
+    const layers = {};
     for (const l of (db.tables && db.tables.LAYER && db.tables.LAYER.entries) || []) {
-      if (l && l.name != null && l.color != null) layers.set(l.name, typeof l.color === "number" ? hex(l.color) : String(l.color));
+      if (!l || l.name == null) continue;
+      const ci = l.colorIndex == null ? 7 : l.colorIndex;
+      layers[l.name] = { color: aciRgb(ci), visible: !(l.off || l.frozen || ci < 0) };
     }
-    let cjk = false;
-    for (const t of root.querySelectorAll("text")) if (/[^\x00-\xFF]/.test(t.textContent)) { cjk = true; break; }
-    return { content: root.innerHTML, layers: [...layers.entries()].slice(0, 40), hasCJK: cjk, count: (db.entities || []).length };
+    const blocks = {};
+    let model = null;
+    for (const b of (db.tables && db.tables.BLOCK_RECORD && db.tables.BLOCK_RECORD.entries) || []) {
+      if (!b || b.name == null) continue;
+      const ents = (b.entities || []).map(normDwg).filter(Boolean);
+      if (/^\*model_space$/i.test(b.name)) model = ents;
+      else blocks[b.name] = { position: b.basePoint, entities: ents };
+    }
+    if (!model) model = (db.entities || []).filter(e => !/^\*paper_space/i.test(e.ownerBlockRecordSoftId || "")).map(normDwg).filter(Boolean);
+    return renderModel({ layers, blocks, entities: model });
   }
 
   // ---------- sheet composition ----------
@@ -482,13 +589,50 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   const hidden = document.createElementNS(NS, "svg");
   hidden.setAttribute("style", "position:absolute;left:-99999px;top:0;width:10px;height:10px;overflow:hidden");
   document.body.appendChild(hidden);
-  function measure(content) {
+  function measureBoxes(content) {
     hidden.innerHTML = `<g id="m">${content}</g>`;
-    let bb;
-    try { bb = hidden.firstChild.getBBox(); } catch (e) { bb = null; }
-    hidden.innerHTML = "";
-    if (!bb || !isFinite(bb.width) || (bb.width === 0 && bb.height === 0)) fail("empty");
-    return { x: bb.x, y: bb.y, w: Math.max(bb.width, 1e-6), h: Math.max(bb.height, 1e-6) };
+    const boxes = [];
+    try {
+      const root = hidden.firstChild;
+      const inv = root.getCTM().inverse();
+      const flip = root.firstElementChild;              // the scale(1 -1) group
+      for (const el of (flip ? flip.children : [])) {
+        let bb; try { bb = el.getBBox(); } catch (e) { continue; }
+        if (!bb || !isFinite(bb.width) || !isFinite(bb.height) || (bb.width === 0 && bb.height === 0 && el.tagName !== "text")) continue;
+        const m = inv.multiply(el.getCTM());
+        const pts = [[bb.x, bb.y], [bb.x + bb.width, bb.y], [bb.x, bb.y + bb.height], [bb.x + bb.width, bb.y + bb.height]]
+          .map(([x, y]) => [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f]);
+        const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+        boxes.push({ x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) });
+      }
+    } finally { hidden.innerHTML = ""; }
+    if (!boxes.length) fail("empty");
+    return boxes;
+  }
+  // Frame the drawing. With trim on, objects far from the main cluster (stray points, a block
+  // dropped miles away) are left off the sheet instead of shrinking everything to a dot.
+  function frame(boxes, trim) {
+    const union = (bs) => bs.reduce((u, b) => ({ x0: Math.min(u.x0, b.x0), y0: Math.min(u.y0, b.y0), x1: Math.max(u.x1, b.x1), y1: Math.max(u.y1, b.y1) }),
+      { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
+    let keep = boxes;
+    if (trim && boxes.length >= 5) {
+      const q = (arr, f) => { const s = arr.slice().sort((a, b) => a - b); return s[Math.min(s.length - 1, Math.max(0, Math.floor(f * (s.length - 1))))]; };
+      const cx = boxes.map(b => (b.x0 + b.x1) / 2), cy = boxes.map(b => (b.y0 + b.y1) / 2);
+      const lo = [q(cx, 0.1), q(cy, 0.1)], hi = [q(cx, 0.9), q(cy, 0.9)];
+      const span = Math.max(hi[0] - lo[0], hi[1] - lo[1], 1e-9);
+      const pad = span * 1.5;
+      const core = { x0: lo[0] - pad, y0: lo[1] - pad, x1: hi[0] + pad, y1: hi[1] + pad };
+      const inCore = (b) => b.x1 >= core.x0 && b.x0 <= core.x1 && b.y1 >= core.y0 && b.y0 <= core.y1;
+      const coreSize = Math.max(core.x1 - core.x0, core.y1 - core.y0);
+      keep = boxes.filter(b => inCore(b) && Math.max(b.x1 - b.x0, b.y1 - b.y0) < coreSize * 3);
+      if (keep.length < boxes.length * 0.5) keep = boxes;   // not a clear cluster: frame everything
+    }
+    const u = union(keep);
+    return { vb: { x: u.x0, y: u.y0, w: Math.max(u.x1 - u.x0, 1e-6), h: Math.max(u.y1 - u.y0, 1e-6) }, dropped: boxes.length - keep.length };
+  }
+  function applyFrame() {
+    const f = frame(state.boxes, $("trim").checked);
+    state.vb = f.vb; state.dropped = f.dropped;
   }
   function buildSheet() {
     const S = sheetSizePt(), m = 36; // 0.5 in margin
@@ -504,7 +648,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       `<g transform="translate(${ox} ${oy}) scale(${s})" stroke-width="${lwPt / s}" stroke-linecap="round" stroke-linejoin="round" font-family="Arial, Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif">${state.content}</g>`;
     const opts = { mono: document.querySelector('input[name="color"]:checked').value === "mono", darken: $("darken").checked };
     for (const el of svg.querySelectorAll("*")) {
-      if (el.tagName === "rect" && el.parentNode === svg) continue;
+      if ((el.tagName === "rect" && el.parentNode === svg) || el.tagName === "clipPath") continue;
       el.removeAttribute("stroke-width");
       el.removeAttribute("vector-effect");
       for (const a of ["stroke", "fill"]) {
@@ -514,7 +658,27 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
         if (rgb) el.setAttribute(a, paperColor(rgb, opts));
       }
     }
-    svg.firstElementChild.nextElementSibling.setAttribute("stroke-width", lwPt / s);
+    const top = svg.firstElementChild.nextElementSibling;
+    const lwUnits = lwPt / s;
+    top.setAttribute("stroke-width", lwUnits);
+    (function walk(node, k) {
+      for (const ch of node.children) {
+        let kk = k;
+        if (ch.tagName === "g" && ch.hasAttribute("data-k")) {
+          kk = k * (parseFloat(ch.getAttribute("data-k")) || 1);
+          ch.setAttribute("stroke-width", lwUnits / kk);
+        }
+        if (ch.children.length) walk(ch, kk);
+      }
+    })(top, 1);
+    const cp = document.createElementNS(NS, "clipPath");
+    cp.setAttribute("id", "sheet-clip");
+    cp.innerHTML = `<rect x="${m / 2}" y="${m / 2}" width="${S.w - m}" height="${S.h - m}"/>`;
+    svg.insertBefore(cp, svg.firstChild);
+    const clipG = document.createElementNS(NS, "g");
+    clipG.setAttribute("clip-path", "url(#sheet-clip)");
+    svg.insertBefore(clipG, top);
+    clipG.appendChild(top);
     return { svg, S };
   }
   function render() {
@@ -533,7 +697,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       `<span>${t("mFile")} <b>${esc(state.name)}</b></span>` +
       `<span>${t("mCount")} <b>${state.count}</b></span>` +
       `<span>${t("mPaper")} <b>${inch(S.w)} × ${inch(S.h)} in</b></span>` +
-      `<span>${t("mText")} <b>${state.hasCJK ? t("tCJK") : t("tLatin")}</b></span>`;
+      `<span>${t("mText")} <b>${state.hasCJK ? t("tCJK") : t("tLatin")}</b></span>` +
+      (state.dropped ? `<span>${t("dropped")} <b>${state.dropped}</b></span>` : "");
     $("legend").innerHTML = state.layers.slice(0, 24).map(([n, c]) => {
       const rgb = parseColor(c);
       const pc = rgb ? paperColor(rgb, { mono: false, darken: $("darken").checked }) : c;
@@ -565,7 +730,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
         r = await dwgToSvg(buf);
       }
       Object.assign(state, r, { name: file.name, isSample: false });
-      state.vb = measure(r.content);
+      state.boxes = measureBoxes(r.content);
+      applyFrame();
       render();
       setStatus("loaded", "ok", { n: file.name });
     } catch (e) {
@@ -671,13 +837,15 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
   drop.addEventListener("drop", e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) loadFile(f); });
   ["size", "lw", "darken"].forEach(id => $(id).addEventListener("change", render));
+  $("trim").addEventListener("change", () => { if (state.boxes) { applyFrame(); render(); } });
   document.querySelectorAll('input[name="orient"], input[name="color"]').forEach(r => r.addEventListener("change", render));
 
   // Open with the sample drawing so the sheet is visible right away.
   try {
     const r = dxfToSvg(window.SAMPLE_DXF);
     Object.assign(state, r);
-    state.vb = measure(r.content);
+    state.boxes = measureBoxes(r.content);
+    applyFrame();
     render();
   } catch (e) { console.error(e); setStatus("sampleFail"); }
   document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => {
