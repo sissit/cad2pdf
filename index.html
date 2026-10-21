@@ -6,6 +6,7 @@
 <meta name="description" content="Convert DWG and DXF drawings to PDF in your browser. Files are never uploaded.">
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
+<script>window.CAD2PDF_API = "/api/convert";</script>
 <script>window.CAD2PDF_DWG_BASE = "https://cdn.jsdelivr.net/npm/@mlightcad/libredwg-web@0.8.1/";</script>
 <title>cad2pdf</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -121,6 +122,15 @@ button.go:disabled { opacity: .5; cursor: progress; }
         <span data-i18n="support"></span>
       </label>
 
+      <div class="field" id="engine-field" hidden>
+        <span class="label" id="lbl-engine" data-i18n="engine"></span>
+        <select id="engine" aria-labelledby="lbl-engine">
+          <option value="cloud" selected data-i18n="eCloud"></option>
+          <option value="local" data-i18n="eLocal"></option>
+        </select>
+        <p class="hint" id="engine-hint" data-i18n="cloudNote"></p>
+      </div>
+
       <div class="field">
         <span class="label" id="lbl-size" data-i18n="paper"></span>
         <select id="size" aria-labelledby="lbl-size">
@@ -207,7 +217,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       darken: "浅色线加深（黄、青等在白纸上更清楚）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
       lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
       mode: "输出方式", mAuto: "自动（有中文就用高清图像）", mVec: "矢量（线条最清晰，中文会乱码）", mRas: "高清图像（中文正常）",
-      go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
+      go: "生成 PDF", engine: "转换引擎", eCloud: "云端高保真（ConvertAPI，效果同 AutoCAD）", eLocal: "本机浏览器（不上传，简化效果）", cloudNote: "云端引擎会把图纸上传到 ConvertAPI 转换；上面的预览是简化效果，PDF 以云端结果为准。", uploading: "正在上传到云端转换…（大图要几十秒）", noToken: "网站还没配置 ConvertAPI 密钥，请先在 Vercel 里添加 CONVERTAPI_TOKEN。现在可以改用「本机浏览器」引擎。", upTooBig: "文件超过 4.4 MB，云端转换暂时不支持，请改用「本机浏览器」引擎。", cloudFail: "云端转换失败：{m}", cloudOpen: "PDF 已在新标签页打开，请在那里保存。", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
       sample: "示例图纸", sampleName: "示例平面图.dxf",
       mFile: "文件", mCount: "图形", mPaper: "纸张", mText: "文字", tCJK: "含中文", tLatin: "英文/数字",
       onlyExt: "只支持 .dwg 和 .dxf 文件。", readingDwg: "正在读取 DWG…", readingDxf: "正在读取 DXF…",
@@ -232,7 +242,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       darken: "Darken light colors (yellow and cyan read better on white paper)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
       lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
       mode: "Output", mAuto: "Auto (high-res image if the drawing has Chinese text)", mVec: "Vector (sharpest lines, Chinese text breaks)", mRas: "High-res image (Chinese text OK)",
-      go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
+      go: "Create PDF", engine: "Engine", eCloud: "Cloud, high fidelity (ConvertAPI, matches AutoCAD)", eLocal: "In this browser (no upload, simplified)", cloudNote: "The cloud engine uploads the drawing to ConvertAPI. The preview above is simplified; the PDF comes from the cloud result.", uploading: "Uploading for cloud conversion… (large drawings take a while)", noToken: "The site has no ConvertAPI key yet. Add CONVERTAPI_TOKEN in Vercel, or switch Engine to In this browser.", upTooBig: "Files over 4.4 MB can't use the cloud engine yet. Switch Engine to In this browser.", cloudFail: "Cloud conversion failed: {m}", cloudOpen: "The PDF opened in a new tab. Save it from there.", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
       sample: "Sample drawing", sampleName: "sample-plan.dxf",
       mFile: "File", mCount: "Objects", mPaper: "Sheet", mText: "Text", tCJK: "Has Chinese", tLatin: "Latin only",
       onlyExt: "Only .dwg and .dxf files are supported.", readingDwg: "Reading DWG…", readingDxf: "Reading DXF…",
@@ -594,22 +604,30 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   document.body.appendChild(hidden);
   function measureBoxes(content) {
     hidden.innerHTML = `<g id="m">${content}</g>`;
-    const boxes = [];
+    const boxes = [], tops = [];
     try {
       const root = hidden.firstChild;
       const inv = root.getCTM().inverse();
       const flip = root.firstElementChild;              // the scale(1 -1) group
-      for (const el of (flip ? flip.children : [])) {
-        let bb; try { bb = el.getBBox(); } catch (e) { continue; }
-        if (!bb || !isFinite(bb.width) || !isFinite(bb.height) || (bb.width === 0 && bb.height === 0 && el.tagName !== "text")) continue;
+      const add = (el, list) => {
+        let bb; try { bb = el.getBBox(); } catch (e) { return; }
+        if (!bb || !isFinite(bb.width) || !isFinite(bb.height) || (bb.width === 0 && bb.height === 0 && el.tagName !== "text")) return;
         const m = inv.multiply(el.getCTM());
         const pts = [[bb.x, bb.y], [bb.x + bb.width, bb.y], [bb.x, bb.y + bb.height], [bb.x + bb.width, bb.y + bb.height]]
           .map(([x, y]) => [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f]);
         const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
-        boxes.push({ x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys), tag: el.tagName });
-      }
+        list.push({ x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys), tag: el.tagName });
+      };
+      // Large blocks (a bound xref holding a whole background plan, say) are measured object by
+      // object, so one stray item inside them can be left off without losing the whole block.
+      const visit = (el, depth) => {
+        if (el.tagName === "g" && el.childElementCount > 30 && depth < 4) { for (const ch of el.children) visit(ch, depth + 1); }
+        else add(el, boxes);
+      };
+      for (const el of (flip ? flip.children : [])) { add(el, tops); visit(el, 0); }
     } finally { hidden.innerHTML = ""; }
     if (!boxes.length) fail("empty");
+    boxes.tops = tops;   // top-level objects, used to find sheet frames
     return boxes;
   }
   // Frame the drawing. With trim on, objects far from the main cluster (stray points, a block
@@ -630,18 +648,51 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       keep = boxes.filter(b => inCore(b) && Math.max(b.x1 - b.x0, b.y1 - b.y0) < coreSize * 3);
       if (keep.length < boxes.length * 0.5) keep = boxes;   // not a clear cluster: frame everything
     }
-    const u = union(keep);
+    if (trim && keep.length >= 20) {
+      // Peel off small isolated groups at the edges: a handful of objects separated from the
+      // drawing by a wide empty gap (a stray arc, a forgotten copy) shouldn't set the sheet edge.
+      for (let pass = 0; pass < 6; pass++) {
+        let changed = false;
+        for (const ax of ["x", "y"]) {
+          const c = (b) => ax === "x" ? (b.x0 + b.x1) / 2 : (b.y0 + b.y1) / 2;
+          const sorted = keep.slice().sort((a, b) => c(a) - c(b));
+          const n = sorted.length, span = c(sorted[n - 1]) - c(sorted[0]);
+          if (!(span > 0)) continue;
+          const maxOut = Math.max(2, Math.floor(n * 0.01));
+          let lo = 0, hi = n;
+          for (let i = 0; i < maxOut && i < n - 1; i++) if (c(sorted[i + 1]) - c(sorted[i]) > span * 0.08) lo = i + 1;
+          for (let i = n - 1; i > n - 1 - maxOut && i > 0; i--) if (c(sorted[i]) - c(sorted[i - 1]) > span * 0.08) hi = i;
+          if (lo > 0 || hi < n) { keep = sorted.slice(lo, hi); changed = true; }
+        }
+        if (!changed || keep.length < 20) break;
+      }
+    }
+    let u = union(keep);
+    if (trim && keep.length >= 20) {
+      // Long objects (a grid line or wall drawn far past the plan) shouldn't drag the framing
+      // off-centre: frame the bulk of the drawing, and let a long object widen it only when it
+      // stays close to that bulk. Anything past the frame is cut at the sheet edge.
+      const span = Math.max(u.x1 - u.x0, u.y1 - u.y0);
+      const small = keep.filter(b => Math.max(b.x1 - b.x0, b.y1 - b.y0) < span * 0.25);
+      if (small.length >= keep.length * 0.8) {
+        const s = union(small);
+        const pad = Math.max(s.x1 - s.x0, s.y1 - s.y0) * 0.08;
+        const near = (b) => b.x0 >= s.x0 - pad && b.y0 >= s.y0 - pad && b.x1 <= s.x1 + pad && b.y1 <= s.y1 + pad;
+        u = union(keep.filter(b => small.includes(b) || near(b)));
+      }
+    }
     return { vb: { x: u.x0, y: u.y0, w: Math.max(u.x1 - u.x0, 1e-6), h: Math.max(u.y1 - u.y0, 1e-6) }, dropped: boxes.length - keep.length };
   }
   // Find drawing frames: large sheet-shaped rectangles (a border polyline or a title-block
   // insert) that each hold a group of objects. Several sheets are often laid out side by
   // side or stacked in model space; each frame becomes its own page.
-  function findFrames(boxes) {
+  function findFrames(fine) {
+    const boxes = fine.tops && fine.tops.length ? fine.tops : fine;
     if (boxes.length < 10) return [];
     const W = (b) => b.x1 - b.x0, H = (b) => b.y1 - b.y0;
     const all = boxes.reduce((u, b) => ({ x0: Math.min(u.x0, b.x0), y0: Math.min(u.y0, b.y0), x1: Math.max(u.x1, b.x1), y1: Math.max(u.y1, b.y1) }),
       { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
-    const core = frame(boxes, true).vb;                     // main cluster, ignoring far-off strays
+    const core = frame(boxes, true).vb;                     // main cluster of top-level objects
     const big = Math.max(core.w, core.h);
     const centers = boxes.map(b => [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2]);
     const inside = (f, x, y) => x >= f.x0 && x <= f.x1 && y >= f.y0 && y <= f.y1;
@@ -790,7 +841,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
         if (!dwgLib) showBusy(t("loadingLib"));
         r = await dwgToSvg(buf);
       }
-      Object.assign(state, r, { name: file.name, isSample: false });
+      Object.assign(state, r, { name: file.name, isSample: false, file });
       state.boxes = measureBoxes(r.content);
       applyFrame();
       render();
@@ -855,6 +906,39 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     return { blob: pdf.output("blob"), raster };
   }
 
+  const hasCloud = !!window.CAD2PDF_API;
+  if (hasCloud) $("engine-field").hidden = false;
+  async function cloudConvert() {
+    if (!state.file) fail("noPdfLib");
+    if (state.file.size > 4.4 * 1024 * 1024) fail("upTooBig");
+    const S = sheetSizePt(state.vb);
+    const mm = (pt) => Math.round(pt / 72 * 25.4);
+    const mono = document.querySelector('input[name="color"]:checked').value === "mono";
+    const qs = new URLSearchParams({ name: state.file.name, w: mm(S.w), h: mm(S.h), color: mono ? "monochrome" : "truecolors", space: "default" });
+    const res = await fetch(`${window.CAD2PDF_API}?${qs}`, { method: "POST", headers: { "Content-Type": "application/octet-stream" }, body: state.file });
+    let data = null; try { data = await res.json(); } catch (e) {}
+    if (!res.ok || !data || !data.files || !data.files.length) {
+      if (data && data.error === "NO_TOKEN") fail("noToken");
+      if (res.status === 413 || (data && data.error === "TOO_LARGE")) fail("upTooBig");
+      throw new UserError(t("cloudFail", { m: (data && (data.message || data.error)) || ("HTTP " + res.status) }));
+    }
+    return data.files[0];
+  }
+  async function saveCloudFile(f, fname) {
+    try {
+      const r = await fetch(f.url);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const blob = await r.blob();
+      browserDownload(blob, fname);
+      return { size: blob.size, opened: false };
+    } catch (e) {   // the file host may refuse cross-site reads; open it instead
+      const a = document.createElement("a");
+      a.href = f.url; a.target = "_blank"; a.rel = "noopener";
+      document.body.appendChild(a); a.click(); a.remove();
+      return { size: f.size || 0, opened: true };
+    }
+  }
+
   const inClaude = !!(window.claude && window.claude.use);
   let downloads = null, dlReady = !inClaude;
   if (inClaude) (async () => {
@@ -876,8 +960,16 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     const btn = $("go"); btn.disabled = true;
     setStatus("making");
     try {
-      const { blob, raster } = await makePdf();
       const fname = state.name.replace(/\.(dwg|dxf)$/i, "") + ".pdf";
+      if (hasCloud && $("engine").value === "cloud" && state.file) {
+        setStatus("uploading");
+        const f = await cloudConvert();
+        const saved = await saveCloudFile(f, fname);
+        if (saved.opened) setStatus("cloudOpen", "ok");
+        else setStatus("downloaded", "ok", { n: fname, s: (saved.size / 1048576).toFixed(1), m: "ConvertAPI" });
+        return;
+      }
+      const { blob, raster } = await makePdf();
       const info = { n: fname, s: (blob.size / 1048576).toFixed(1), m: t(raster ? "ras" : "vec") };
       if (downloads) {
         setStatus("confirm");
