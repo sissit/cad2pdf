@@ -151,6 +151,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
           <label><input type="radio" name="color" id="c-mono" value="mono"><span data-i18n="cMono"></span></label>
         </div>
         <label class="check"><input type="checkbox" id="darken" checked> <span data-i18n="darken"></span></label>
+        <label class="check"><input type="checkbox" id="noplot"> <span data-i18n="noplot"></span></label>
         <label class="check"><input type="checkbox" id="frames" checked> <span data-i18n="frames"></span></label>
         <label class="check"><input type="checkbox" id="trim" checked> <span data-i18n="trim"></span></label>
       </div>
@@ -197,7 +198,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       h1: "DWG 图纸转 PDF", tag: "DWG · DXF → PDF · 文件只在本机浏览器里处理，不上传",
       pick: "选择或拖入图纸", support: "支持 .dwg（R13–2018）和 .dxf", paper: "纸张", orient: "方向",
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
-      darken: "浅色线加深（黄、青等在白纸上更清楚）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
+      darken: "浅色线加深（黄、青等在白纸上更清楚）", noplot: "打印「不打印」图层（AutoCAD 默认不打）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
       lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
       hifiLoad: "正在加载高保真渲染组件…", hifiOpen: "正在准备高保真渲染（读取图纸和字体）…", hifiPage: "正在渲染第 {n}/{m} 页…（{p}%）", hifi: "高保真", vecFallback: "高保真渲染失败，已自动改用矢量方式，中文可能显示不正常",
       go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
@@ -222,7 +223,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       h1: "DWG to PDF", tag: "DWG · DXF → PDF · Files stay in your browser, nothing is uploaded",
       pick: "Choose or drop a drawing", support: ".dwg (R13–2018) and .dxf", paper: "Sheet size", orient: "Orientation",
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
-      darken: "Darken light colors (yellow and cyan read better on white paper)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
+      darken: "Darken light colors (yellow and cyan read better on white paper)", noplot: "Include layers set to not plot (AutoCAD leaves them out)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
       lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
       hifiLoad: "Loading the high-fidelity renderer…", hifiOpen: "Preparing high-fidelity render (reading drawing and fonts)…", hifiPage: "Rendering page {n} of {m}… ({p}%)", hifi: "high fidelity", vecFallback: "high-fidelity rendering failed, so vector output was used; Chinese text may not display correctly",
       go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
@@ -555,7 +556,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     for (const l of (db.tables && db.tables.LAYER && db.tables.LAYER.entries) || []) {
       if (!l || l.name == null) continue;
       const ci = l.colorIndex == null ? 7 : l.colorIndex;
-      layers[l.name] = { color: aciRgb(ci), visible: !(l.off || l.frozen || ci < 0 || l.plotFlag === 0 || /^defpoints$/i.test(l.name)) };
+      layers[l.name] = { color: aciRgb(ci), visible: !(l.off || l.frozen || ci < 0 || (l.plotFlag === 0 && !$("noplot").checked) || /^defpoints$/i.test(l.name)) };
     }
     const blocks = {};
     let model = null;
@@ -856,11 +857,11 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   // Opens the current drawing in the renderer once per file.
   async function hifiReady() {
     const H = await loadHifi();
-    const key = state.file || state.name;
-    if (hifiDoc && hifiDoc.key === key) return hifiDoc.ready.then(() => H);
+    const key = state.file || state.name, noplot = $("noplot").checked;
+    if (hifiDoc && hifiDoc.key === key && hifiDoc.noplot === noplot) return hifiDoc.ready.then(() => H);
     const file = state.file || new File([window.SAMPLE_DXF], "sample.dxf");
-    const ready = file.arrayBuffer().then(buf => H.open(buf, file.name, { assetBase: HIFI_BASE, fontBase: HIFI_FONTS }));
-    hifiDoc = { key, ready };
+    const ready = file.arrayBuffer().then(buf => H.open(buf, file.name, { assetBase: HIFI_BASE, fontBase: HIFI_FONTS, drawNoPlotLayers: noplot }));
+    hifiDoc = { key, noplot, ready };
     ready.catch(() => { if (hifiDoc && hifiDoc.key === key) hifiDoc = null; });
     await ready;
     return H;
@@ -1014,6 +1015,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
   drop.addEventListener("drop", e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) loadFile(f); });
   ["size", "lw", "darken"].forEach(id => $(id).addEventListener("change", render));
+  // Plot flags are applied while reading the drawing, so re-read it.
+  $("noplot").addEventListener("change", () => { if (state.file) loadFile(state.file); else render(); });
   ["trim", "frames"].forEach(id => $(id).addEventListener("change", () => { if (state.boxes) { applyFrame(); render(); } }));
   document.querySelectorAll('input[name="orient"], input[name="color"]').forEach(r => r.addEventListener("change", render));
 

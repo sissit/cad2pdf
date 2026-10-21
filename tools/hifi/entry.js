@@ -50,7 +50,7 @@ window.CADHIFI = {
   // Opens the drawing; resolves when geometry and text are ready.
   async open(buf, name, opts) {
     const m = setup(opts);
-    const ok = await m.openDocument(name, buf, { readOnly: true });
+    const ok = await m.openDocument(name, buf, { readOnly: true, drawNoPlotLayers: !!opts.drawNoPlotLayers });
     if (!ok) throw new Error('open failed');
     const view = m.curView;
     view.backgroundColor = 0xffffff;          // paper: ACI 7 draws black
