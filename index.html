@@ -165,14 +165,6 @@ button.go:disabled { opacity: .5; cursor: progress; }
         </select>
       </div>
 
-      <div class="field">
-        <span class="label" id="lbl-mode" data-i18n="mode"></span>
-        <select id="mode" aria-labelledby="lbl-mode">
-          <option value="hifi" selected data-i18n="mHifi"></option>
-          <option value="vector" data-i18n="mVec"></option>
-          <option value="raster" data-i18n="mRas"></option>
-        </select>
-      </div>
 
       <button class="go" id="go" type="button" data-i18n="go"></button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
@@ -207,7 +199,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
       darken: "浅色线加深（黄、青等在白纸上更清楚）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
       lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
-      mode: "输出方式", mHifi: "高保真（推荐，效果接近 AutoCAD）", mVec: "矢量（可放大、可搜索，中文会乱码）", mRas: "简化图像（旧版效果）", hifiLoad: "正在加载高保真渲染组件…", hifiOpen: "正在准备高保真渲染（读取图纸和字体）…", hifiPage: "正在渲染第 {n}/{m} 页…（{p}%）", hifiFail: "高保真渲染失败，请改用「矢量」或「简化图像」。", hifi: "高保真图像",
+      hifiLoad: "正在加载高保真渲染组件…", hifiOpen: "正在准备高保真渲染（读取图纸和字体）…", hifiPage: "正在渲染第 {n}/{m} 页…（{p}%）", hifi: "高保真", vecFallback: "高保真渲染失败，已自动改用矢量方式，中文可能显示不正常",
       go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
       sample: "示例图纸", sampleName: "示例平面图.dxf",
       mFile: "文件", mCount: "图形", mPaper: "纸张", mText: "文字", tCJK: "含中文", tLatin: "英文/数字",
@@ -232,7 +224,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
       darken: "Darken light colors (yellow and cyan read better on white paper)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
       lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
-      mode: "Output", mHifi: "High fidelity (recommended, close to AutoCAD)", mVec: "Vector (zoomable and searchable, Chinese text breaks)", mRas: "Simplified image (previous look)", hifiLoad: "Loading the high-fidelity renderer…", hifiOpen: "Preparing high-fidelity render (reading drawing and fonts)…", hifiPage: "Rendering page {n} of {m}… ({p}%)", hifiFail: "High-fidelity rendering failed. Switch Output to Vector or Simplified image.", hifi: "high-fidelity image",
+      hifiLoad: "Loading the high-fidelity renderer…", hifiOpen: "Preparing high-fidelity render (reading drawing and fonts)…", hifiPage: "Rendering page {n} of {m}… ({p}%)", hifi: "high fidelity", vecFallback: "high-fidelity rendering failed, so vector output was used; Chinese text may not display correctly",
       go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
       sample: "Sample drawing", sampleName: "sample-plan.dxf",
       mFile: "File", mCount: "Objects", mPaper: "Sheet", mText: "Text", tCJK: "Has Chinese", tLatin: "Latin only",
@@ -837,7 +829,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       applyFrame();
       render();
       setStatus("loaded", "ok", { n: file.name });
-      if ($("mode").value === "hifi") hifiReady().catch(e => console.warn("hifi warm-up", e));
+      hifiReady().catch(e => console.warn("hifi warm-up", e));
     } catch (e) {
       console.error(e);
       showBusy("");
@@ -872,6 +864,17 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     ready.catch(() => { if (hifiDoc && hifiDoc.key === key) hifiDoc = null; });
     await ready;
     return H;
+  }
+  // The viewer draws every line 1 px wide, which prints thin and pale. Grow ink to the chosen
+  // plot width by darken-compositing the image onto itself, shifted one pixel at a time.
+  function thicken(cv, steps) {
+    if (steps < 1) return;
+    const ctx = cv.getContext("2d");
+    ctx.save();
+    ctx.globalCompositeOperation = "darken";
+    for (let i = 0; i < steps; i++) ctx.drawImage(cv, 1, 0);
+    for (let i = 0; i < steps; i++) ctx.drawImage(cv, 0, 1);
+    ctx.restore();
   }
   // Paper treatment on rendered pixels: black-and-white, or darken light colors.
   function treatPixels(cv, opts) {
@@ -908,6 +911,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     const box = { x0: vb.x, x1: vb.x + vb.w, y0: -(vb.y + vb.h), y1: -vb.y };
     const cv = await H.render(box, pxW, pxH, (k, n) =>
       setStatus("hifiPage", "", { n: pageNo, m: pageCount, p: Math.round(k / n * 100) }));
+    const lwPx = parseFloat($("lw").value) / 25.4 * dpi;          // chosen line weight in pixels
+    thicken(cv, Math.max(0, Math.round(lwPx) - 1));
     treatPixels(cv, { mono: document.querySelector('input[name="color"]:checked').value === "mono", darken: $("darken").checked });
     const blob = await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("canvas")), "image/png"));
     cv.width = cv.height = 0;
@@ -915,67 +920,50 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   }
 
   // ---------- PDF ----------
-  async function svgToPng(svg, S, dpi) {
-    const pxW = Math.round(S.w / 72 * dpi), pxH = Math.round(S.h / 72 * dpi);
-    const clone = svg.cloneNode(true);
-    clone.setAttribute("width", pxW); clone.setAttribute("height", pxH);
-    const blob = new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(blob);
-    try {
-      const img = new Image();
-      img.src = url;
-      await img.decode();
-      const cv = document.createElement("canvas");
-      cv.width = pxW; cv.height = pxH;
-      const ctx = cv.getContext("2d");
-      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, pxW, pxH);
-      ctx.drawImage(img, 0, 0, pxW, pxH);
-      const out = await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("canvas")), "image/png"));
-      cv.width = cv.height = 0;
-      return new Uint8Array(await out.arrayBuffer());
-    } finally { URL.revokeObjectURL(url); }
+
+  function newPdf(jsPDF, S) {
+    return new jsPDF({ orientation: S.w >= S.h ? "l" : "p", unit: "pt", format: [S.w, S.h], compress: true });
+  }
+  async function makePdfHifi(jsPDF, pages) {
+    setStatus(hifiLib ? "hifiOpen" : "hifiLoad");
+    const H = await hifiReady();
+    let pdf = null;
+    for (let i = 0; i < pages.length; i++) {
+      const S = sheetSizePt(pages[i].vb);
+      if (!pdf) pdf = newPdf(jsPDF, S); else pdf.addPage([S.w, S.h], S.w >= S.h ? "l" : "p");
+      const pg = await hifiPage(H, pages[i].vb, S, i + 1, pages.length);
+      pdf.addImage(pg.png, "PNG", pg.x, pg.y, pg.w, pg.h, undefined, "FAST");
+    }
+    return pdf;
+  }
+  async function makePdfVector(jsPDF, pages) {
+    let pdf = null;
+    for (let i = 0; i < pages.length; i++) {
+      const { svg, S } = buildSheet(pages[i].vb, i);
+      if (!pdf) pdf = newPdf(jsPDF, S); else pdf.addPage([S.w, S.h], S.w >= S.h ? "l" : "p");
+      if (typeof pdf.svg !== "function") fail("noVec");
+      hidden.appendChild(svg);
+      try { await pdf.svg(svg, { x: 0, y: 0, width: S.w, height: S.h }); }
+      finally { hidden.innerHTML = ""; }
+    }
+    return pdf;
   }
   async function makePdf() {
     const { jsPDF } = window.jspdf || {};
     if (!jsPDF) fail("noPdfLib");
-    const modeSel = $("mode").value;
-    const hifi = modeSel === "hifi";
-    const raster = modeSel === "raster";
-    let H = null;
-    if (hifi) {
-      setStatus(hifiLib ? "hifiOpen" : "hifiLoad");
-      try { H = await hifiReady(); } catch (e) { console.error(e); fail("hifiFail"); }
-    }
     const pages = state.pages && state.pages.length ? state.pages : [{ vb: state.vb }];
-    let pdf = null;
-    for (let i = 0; i < pages.length; i++) {
-      const { svg, S } = buildSheet(pages[i].vb, i);
-      const orient = S.w >= S.h ? "l" : "p";
-      if (!pdf) pdf = new jsPDF({ orientation: orient, unit: "pt", format: [S.w, S.h], compress: true });
-      else pdf.addPage([S.w, S.h], orient);
-      if (hifi) {
-        let pg;
-        try { pg = await hifiPage(H, pages[i].vb, S, i + 1, pages.length); } catch (e) { console.error(e); fail("hifiFail"); }
-        pdf.addImage(pg.png, "PNG", pg.x, pg.y, pg.w, pg.h, undefined, "FAST");
-      } else if (!raster) {
-        if (typeof pdf.svg !== "function") fail("noVec");
-        hidden.appendChild(svg);
-        try { await pdf.svg(svg, { x: 0, y: 0, width: S.w, height: S.h }); }
-        finally { hidden.innerHTML = ""; }
-      } else {
-        const inW = S.w / 72, inH = S.h / 72;
-        let dpi = Math.min(200, Math.floor(Math.sqrt(16e6 / (inW * inH))));
-        let png;
-        for (;;) {
-          try { png = await svgToPng(svg, S, dpi); break; }
-          catch (e) { if (dpi <= 72) fail("tooBig"); dpi = Math.floor(dpi * 0.75); }
-        }
-        pdf.addImage(png, "PNG", 0, 0, S.w, S.h, undefined, "FAST");
-      }
+    let pdf, fellBack = false;
+    try { pdf = await makePdfHifi(jsPDF, pages); }
+    catch (e) {
+      console.error("high-fidelity render failed, using vector", e);
+      fellBack = true;
+      setStatus("making");
+      pdf = await makePdfVector(jsPDF, pages);
     }
     pdf.setProperties({ title: state.name, creator: "cad2pdf" });
-    return { blob: pdf.output("blob"), raster, hifi };
+    return { blob: pdf.output("blob"), fellBack };
   }
+
 
   const inClaude = !!(window.claude && window.claude.use);
   let downloads = null, dlReady = !inClaude;
@@ -999,8 +987,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     setStatus("making");
     try {
       const fname = state.name.replace(/\.(dwg|dxf)$/i, "") + ".pdf";
-      const { blob, raster, hifi } = await makePdf();
-      const info = { n: fname, s: (blob.size / 1048576).toFixed(1), m: t(hifi ? "hifi" : raster ? "ras" : "vec") };
+      const { blob, fellBack } = await makePdf();
+      const info = { n: fname, s: (blob.size / 1048576).toFixed(1), m: t(fellBack ? "vecFallback" : "hifi") };
       if (downloads) {
         setStatus("confirm");
         await downloads.save({ filename: fname, data: blob });

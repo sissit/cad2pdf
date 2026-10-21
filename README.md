@@ -7,16 +7,16 @@ Convert AutoCAD DWG and DXF drawings to PDF in the browser. Files are never uplo
 - Color or black & white, light-color darkening
 - Chinese / English interface
 
-## Output modes
+## Output
 
-| Mode | What it uses | Good for |
-|------|--------------|----------|
-| High fidelity (default) | [mlightcad CAD viewer](https://github.com/mlightcad/cad-viewer) rendered off screen at up to 200 dpi | Printing; hatch patterns, CAD fonts, dimensions and Chinese text look close to AutoCAD |
-| Vector | Own SVG renderer + [svg2pdf.js](https://github.com/yWorks/svg2pdf.js) | Zooming and searching; Chinese text does not survive |
-| Simplified image | Own SVG renderer rasterized | The previous look |
+Each page is rendered off screen with the [mlightcad CAD viewer](https://github.com/mlightcad/cad-viewer)
+at up to 200 dpi, so hatch patterns, CAD fonts, dimensions and Chinese text look close to AutoCAD.
+The viewer draws 1 px lines, so the image is thickened to the chosen line weight (default 0.25 mm).
+Layers set to not plot are left out, as in AutoCAD. If high-fidelity rendering fails, the PDF is
+made with the vector renderer instead and the status line says so.
 
-The preview on the page always uses the fast SVG renderer; the high-fidelity renderer
-loads in the background after a drawing is opened.
+The preview on the page uses a fast SVG renderer; the high-fidelity renderer loads in the
+background after a drawing is opened.
 
 ## Layout
 
