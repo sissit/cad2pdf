@@ -3,6 +3,7 @@
 Convert AutoCAD DWG and DXF drawings to PDF in the browser. Files are never uploaded.
 
 - Default sheet: 24 × 36 in (ARCH D), full color; also ARCH E/C, Tabloid, Letter, A1, A3
+- Use presets: Print (24 × 36 in, 0.25 mm lines, default) or Phone / screen (11 × 17 in, 0.35 mm lines, stronger colors); size and line weight stay adjustable
 - One PDF page per drawing frame; orientation auto/landscape/portrait
 - Color or black & white, light-color darkening
 - Chinese / English interface
