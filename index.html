@@ -123,14 +123,6 @@ button.go:disabled { opacity: .5; cursor: progress; }
 
 
       <div class="field">
-        <span class="label" data-i18n="use"></span>
-        <div class="seg" role="radiogroup" data-i18n-aria="use">
-          <label><input type="radio" name="use" id="u-print" value="print" checked><span data-i18n="usePrint"></span></label>
-          <label><input type="radio" name="use" id="u-screen" value="screen"><span data-i18n="useScreen"></span></label>
-        </div>
-      </div>
-
-      <div class="field">
         <span class="label" id="lbl-size" data-i18n="paper"></span>
         <select id="size" aria-labelledby="lbl-size">
           <option value="24x36" selected>24 × 36 in (ARCH D)</option>
@@ -158,7 +150,6 @@ button.go:disabled { opacity: .5; cursor: progress; }
           <label><input type="radio" name="color" id="c-color" value="color" checked><span data-i18n="cColor"></span></label>
           <label><input type="radio" name="color" id="c-mono" value="mono"><span data-i18n="cMono"></span></label>
         </div>
-        <label class="check"><input type="checkbox" id="darken"> <span data-i18n="darken"></span></label>
         <label class="check"><input type="checkbox" id="noplot"> <span data-i18n="noplot"></span></label>
         <label class="check"><input type="checkbox" id="frames" checked> <span data-i18n="frames"></span></label>
         <label class="check"><input type="checkbox" id="trim" checked> <span data-i18n="trim"></span></label>
@@ -204,9 +195,9 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   const STR = {
     zh: {
       h1: "DWG 图纸转 PDF", tag: "DWG · DXF → PDF · 文件只在本机浏览器里处理，不上传",
-      use: "用途", usePrint: "打印", useScreen: "手机/电脑查看", pick: "选择或拖入图纸", support: "支持 .dwg（R13–2018）和 .dxf", paper: "纸张", orient: "方向",
+      pick: "选择或拖入图纸", support: "支持 .dwg（R13–2018）和 .dxf", paper: "纸张", orient: "方向",
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
-      darken: "浅色线加深（黄、青等在白纸上更清楚）", noplot: "打印「不打印」图层（AutoCAD 默认不打）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
+      noplot: "打印「不打印」图层（AutoCAD 默认不打）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
       lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
       hifiLoad: "正在加载高保真渲染组件…", hifiOpen: "正在准备高保真渲染（读取图纸和字体）…", hifiPage: "正在渲染第 {n}/{m} 页…（{p}%）", hifi: "高保真", vecFallback: "高保真渲染失败，已自动改用矢量方式，中文可能显示不正常",
       go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
@@ -229,9 +220,9 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     },
     en: {
       h1: "DWG to PDF", tag: "DWG · DXF → PDF · Files stay in your browser, nothing is uploaded",
-      use: "Use", usePrint: "Print", useScreen: "Phone / screen", pick: "Choose or drop a drawing", support: ".dwg (R13–2018) and .dxf", paper: "Sheet size", orient: "Orientation",
+      pick: "Choose or drop a drawing", support: ".dwg (R13–2018) and .dxf", paper: "Sheet size", orient: "Orientation",
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
-      darken: "Darken light colors (yellow and cyan read better on white paper)", noplot: "Include layers set to not plot (AutoCAD leaves them out)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
+      noplot: "Include layers set to not plot (AutoCAD leaves them out)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
       lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
       hifiLoad: "Loading the high-fidelity renderer…", hifiOpen: "Preparing high-fidelity render (reading drawing and fonts)…", hifiPage: "Rendering page {n} of {m}… ({p}%)", hifi: "high fidelity", vecFallback: "high-fidelity rendering failed, so vector output was used; Chinese text may not display correctly",
       go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
@@ -740,7 +731,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     svg.setAttribute("width", S.w); svg.setAttribute("height", S.h);
     svg.innerHTML = `<rect x="0" y="0" width="${S.w}" height="${S.h}" fill="#ffffff" stroke="none"/>` +
       `<g transform="translate(${ox} ${oy}) scale(${s})" stroke-width="${lwPt / s}" stroke-linecap="round" stroke-linejoin="round" font-family="Arial, Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif">${state.content}</g>`;
-    const opts = { mono: document.querySelector('input[name="color"]:checked').value === "mono", darken: $("darken").checked };
+    const opts = { mono: document.querySelector('input[name="color"]:checked').value === "mono", darken: false };
     for (const el of svg.querySelectorAll("*")) {
       if ((el.tagName === "rect" && el.parentNode === svg) || el.tagName === "clipPath") continue;
       el.removeAttribute("stroke-width");
@@ -805,7 +796,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       (state.dropped ? `<span>${t("dropped")} <b>${state.dropped}</b></span>` : "");
     $("legend").innerHTML = state.layers.slice(0, 24).map(([n, c]) => {
       const rgb = parseColor(c);
-      const pc = rgb ? paperColor(rgb, { mono: false, darken: $("darken").checked }) : c;
+      const pc = rgb ? paperColor(rgb, { mono: false, darken: false }) : c;
       return `<span><i style="background:${pc}"></i>${esc(n)}</span>`;
     }).join("");
   }
@@ -885,9 +876,9 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     for (let i = 0; i < steps; i++) ctx.drawImage(cv, 0, 1);
     ctx.restore();
   }
-  // Paper treatment on rendered pixels: black-and-white, or darken light colors.
+  // Black-and-white output: turn every ink pixel black, keeping antialiasing soft.
   function treatPixels(cv, opts) {
-    if (!opts.mono && !opts.darken) return;
+    if (!opts.mono) return;
     const ctx = cv.getContext("2d");
     const band = 512;
     for (let y = 0; y < cv.height; y += band) {
@@ -896,15 +887,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       for (let i = 0; i < d.length; i += 4) {
         const r = d[i], g = d[i + 1], b = d[i + 2];
         if (r > 245 && g > 245 && b > 245) continue;            // paper
-        if (opts.mono) {
-          const v = Math.min(r, g, b) > 200 ? 255 - (255 - Math.min(r, g, b)) * 3 : 0;  // keep antialiasing soft
-          d[i] = d[i + 1] = d[i + 2] = Math.max(0, v);
-          continue;
-        }
-        const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-        const sat = Math.max(r, g, b) - Math.min(r, g, b);
-        const cap = opts.strong ? 0.45 : 0.6;
-        if (lum > cap && sat > 60) { const k = cap / lum; d[i] = r * k; d[i + 1] = g * k; d[i + 2] = b * k; }
+        const v = Math.min(r, g, b) > 200 ? 255 - (255 - Math.min(r, g, b)) * 3 : 0;
+        d[i] = d[i + 1] = d[i + 2] = Math.max(0, v);
       }
       ctx.putImageData(img, 0, y);
     }
@@ -923,8 +907,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       setStatus("hifiPage", "", { n: pageNo, m: pageCount, p: Math.round(k / n * 100) }));
     const lwPx = parseFloat($("lw").value) / 25.4 * dpi;          // chosen line weight in pixels
     thicken(cv, Math.max(0, Math.round(lwPx) - 1));
-    treatPixels(cv, { mono: document.querySelector('input[name="color"]:checked').value === "mono", darken: $("darken").checked,
-      strong: document.querySelector('input[name="use"]:checked').value === "screen" });
+    treatPixels(cv, { mono: document.querySelector('input[name="color"]:checked').value === "mono" });
     const blob = await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("canvas")), "image/png"));
     cv.width = cv.height = 0;
     return { png: new Uint8Array(await blob.arrayBuffer()), x: (S.w - wPt) / 2, y: (S.h - hPt) / 2, w: wPt, h: hPt };
@@ -1024,18 +1007,11 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
   ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
   drop.addEventListener("drop", e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) loadFile(f); });
-  ["size", "lw", "darken"].forEach(id => $(id).addEventListener("change", render));
+  ["size", "lw"].forEach(id => $(id).addEventListener("change", render));
   // Plot flags are applied while reading the drawing, so re-read it.
   $("noplot").addEventListener("change", () => { if (state.file) loadFile(state.file); else render(); });
   ["trim", "frames"].forEach(id => $(id).addEventListener("change", () => { if (state.boxes) { applyFrame(); render(); } }));
   document.querySelectorAll('input[name="orient"], input[name="color"]').forEach(r => r.addEventListener("change", render));
-  const USE_PRESETS = { print: { size: "24x36", lw: "0.35", darken: false }, screen: { size: "11x17", lw: "0.35", darken: true } };
-  document.querySelectorAll('input[name="use"]').forEach(r => r.addEventListener("change", () => {
-    const pr = USE_PRESETS[r.value];
-    if (!pr) return;
-    $("size").value = pr.size; $("lw").value = pr.lw; $("darken").checked = pr.darken;
-    render();
-  }));
 
   // Open with the sample drawing so the sheet is visible right away.
   try {
