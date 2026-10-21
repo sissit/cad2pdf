@@ -971,7 +971,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       setStatus("making");
       pdf = await makePdfVector(jsPDF, pages);
     }
-    pdf.setProperties({ title: state.name, creator: "cad2pdf" });
+    pdf.setProperties({ title: state.name.replace(/\.(dwg|dxf)$/i, ""), creator: "cad2pdf" });
     return { blob: pdf.output("blob"), fellBack };
   }
 
