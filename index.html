@@ -93,6 +93,8 @@ button.go:disabled { opacity: .5; cursor: progress; }
 .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--mono); font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .meta b { color: var(--ink); font-weight: 500; }
 .sheetbox { background: color-mix(in srgb, var(--ink) 6%, var(--bg)); border-radius: 6px; padding: 18px; display: grid; place-items: center; min-height: 260px; }
+.sheets { display: grid; gap: 16px; width: 100%; justify-items: center; position: relative; }
+.pagecap { font-family: var(--mono); font-size: .75rem; color: var(--muted); justify-self: start; }
 .sheet { width: 100%; max-width: 100%; background: var(--sheet); box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.10); position: relative; }
 .sheet svg { display: block; width: 100%; height: auto; }
 .badge { position: absolute; top: 8px; left: 8px; font-family: var(--mono); font-size: .72rem; background: #18202b; color: #fff; padding: 2px 7px; border-radius: 3px; letter-spacing: .04em; }
@@ -135,8 +137,8 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <div class="field">
         <span class="label" data-i18n="orient"></span>
         <div class="seg" role="radiogroup" data-i18n-aria="orient">
-          <label><input type="radio" name="orient" id="o-auto" value="auto" checked><span data-i18n="auto"></span></label>
-          <label><input type="radio" name="orient" id="o-land" value="land"><span data-i18n="land"></span></label>
+          <label><input type="radio" name="orient" id="o-auto" value="auto"><span data-i18n="auto"></span></label>
+          <label><input type="radio" name="orient" id="o-land" value="land" checked><span data-i18n="land"></span></label>
           <label><input type="radio" name="orient" id="o-port" value="port"><span data-i18n="port"></span></label>
         </div>
       </div>
@@ -148,6 +150,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
           <label><input type="radio" name="color" id="c-mono" value="mono"><span data-i18n="cMono"></span></label>
         </div>
         <label class="check"><input type="checkbox" id="darken" checked> <span data-i18n="darken"></span></label>
+        <label class="check"><input type="checkbox" id="frames" checked> <span data-i18n="frames"></span></label>
         <label class="check"><input type="checkbox" id="trim" checked> <span data-i18n="trim"></span></label>
       </div>
 
@@ -178,7 +181,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
     <section class="stage">
       <div class="meta" id="meta"></div>
       <div class="sheetbox">
-        <div class="sheet" id="sheet"></div>
+        <div class="sheets" id="sheet"></div>
       </div>
       <div class="legend" id="legend"></div>
     </section>
@@ -201,7 +204,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       h1: "DWG 图纸转 PDF", tag: "DWG · DXF → PDF · 文件只在本机浏览器里处理，不上传",
       pick: "选择或拖入图纸", support: "支持 .dwg（R13–2018）和 .dxf", paper: "纸张", orient: "方向",
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
-      darken: "浅色线加深（黄、青等在白纸上更清楚）", trim: "忽略离主图很远的零散对象", lw: "线宽", dropped: "已忽略远处对象", 
+      darken: "浅色线加深（黄、青等在白纸上更清楚）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
       lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
       mode: "输出方式", mAuto: "自动（有中文就用高清图像）", mVec: "矢量（线条最清晰，中文会乱码）", mRas: "高清图像（中文正常）",
       go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
@@ -226,7 +229,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       h1: "DWG to PDF", tag: "DWG · DXF → PDF · Files stay in your browser, nothing is uploaded",
       pick: "Choose or drop a drawing", support: ".dwg (R13–2018) and .dxf", paper: "Sheet size", orient: "Orientation",
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
-      darken: "Darken light colors (yellow and cyan read better on white paper)", trim: "Ignore stray objects far from the main drawing", lw: "Line weight", dropped: "Far-off objects ignored", 
+      darken: "Darken light colors (yellow and cyan read better on white paper)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
       lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
       mode: "Output", mAuto: "Auto (high-res image if the drawing has Chinese text)", mVec: "Vector (sharpest lines, Chinese text breaks)", mRas: "High-res image (Chinese text OK)",
       go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
@@ -410,7 +413,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
         case "HATCH": {
           if (!e.paths || !e.paths.length) return "";
           const d = e.paths.filter(pp => pp.length > 2).map(pp => "M" + pp.map(q => `${q.x} ${q.y}`).join("L") + "Z").join("");
-          return d ? `<path d="${d}" fill-rule="evenodd" stroke="none" fill="${c}"/>` : "";
+          return d ? `<path d="${d}" fill-rule="evenodd" stroke="none" fill="${c}"${e.tint ? ' fill-opacity="0.22"' : ""}/>` : "";
         }
         case "TEXT": case "MTEXT": case "ATTRIB": {
           const raw = cleanMText(e.text);
@@ -544,7 +547,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       case "DIMENSION": return e.name ? { ...base, type: "INSERT", name: e.name, position: { x: 0, y: 0 }, xScale: 1, yScale: 1, rotation: 0 } : null;
       case "SOLID": case "TRACE": return { ...base, points: [e.corner1, e.corner2, e.corner3, e.corner4] };
       case "3DFACE": return { ...base, type: "FACE3D", points: [e.corner1, e.corner2, e.corner3, e.corner4] };
-      case "HATCH": return e.solidFill ? { ...base, paths: hatchPaths(e) } : null;   // pattern hatches are skipped
+      case "HATCH": return { ...base, paths: hatchPaths(e), tint: !e.solidFill };   // pattern hatch → light tint
       case "MLINE": return { ...base, type: "POLYLINE", vertices: (e.vertices || []).map(v => v.vertex).filter(Boolean), shape: !!(e.flags & 2) };
       default: return null;
     }
@@ -559,7 +562,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     for (const l of (db.tables && db.tables.LAYER && db.tables.LAYER.entries) || []) {
       if (!l || l.name == null) continue;
       const ci = l.colorIndex == null ? 7 : l.colorIndex;
-      layers[l.name] = { color: aciRgb(ci), visible: !(l.off || l.frozen || ci < 0) };
+      layers[l.name] = { color: aciRgb(ci), visible: !(l.off || l.frozen || ci < 0 || l.plotFlag === 0 || /^defpoints$/i.test(l.name)) };
     }
     const blocks = {};
     let model = null;
@@ -574,7 +577,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   }
 
   // ---------- sheet composition ----------
-  function sheetSizePt() {
+  function sheetSizePt(vb) {
     const v = $("size").value;
     let w, h;
     if (v.endsWith("mm")) { const [a, b] = v.slice(0, -2).split("x").map(Number); w = a / 25.4 * 72; h = b / 25.4 * 72; }
@@ -583,7 +586,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     const o = document.querySelector('input[name="orient"]:checked').value;
     let land = true;
     if (o === "port") land = false;
-    else if (o === "auto" && state.vb) land = state.vb.w >= state.vb.h;
+    else if (o === "auto" && vb) land = vb.w >= vb.h;
     return land ? { w: long, h: short } : { w: short, h: long };
   }
   const hidden = document.createElementNS(NS, "svg");
@@ -603,7 +606,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
         const pts = [[bb.x, bb.y], [bb.x + bb.width, bb.y], [bb.x, bb.y + bb.height], [bb.x + bb.width, bb.y + bb.height]]
           .map(([x, y]) => [m.a * x + m.c * y + m.e, m.b * x + m.d * y + m.f]);
         const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
-        boxes.push({ x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) });
+        boxes.push({ x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys), tag: el.tagName });
       }
     } finally { hidden.innerHTML = ""; }
     if (!boxes.length) fail("empty");
@@ -630,13 +633,61 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     const u = union(keep);
     return { vb: { x: u.x0, y: u.y0, w: Math.max(u.x1 - u.x0, 1e-6), h: Math.max(u.y1 - u.y0, 1e-6) }, dropped: boxes.length - keep.length };
   }
-  function applyFrame() {
-    const f = frame(state.boxes, $("trim").checked);
-    state.vb = f.vb; state.dropped = f.dropped;
+  // Find drawing frames: large sheet-shaped rectangles (a border polyline or a title-block
+  // insert) that each hold a group of objects. Several sheets are often laid out side by
+  // side or stacked in model space; each frame becomes its own page.
+  function findFrames(boxes) {
+    if (boxes.length < 10) return [];
+    const W = (b) => b.x1 - b.x0, H = (b) => b.y1 - b.y0;
+    const all = boxes.reduce((u, b) => ({ x0: Math.min(u.x0, b.x0), y0: Math.min(u.y0, b.y0), x1: Math.max(u.x1, b.x1), y1: Math.max(u.y1, b.y1) }),
+      { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity });
+    const core = frame(boxes, true).vb;                     // main cluster, ignoring far-off strays
+    const big = Math.max(core.w, core.h);
+    const centers = boxes.map(b => [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2]);
+    const inside = (f, x, y) => x >= f.x0 && x <= f.x1 && y >= f.y0 && y <= f.y1;
+    let cands = boxes.filter(b => {
+      if (b.tag !== "path" && b.tag !== "g") return false;
+      const w = W(b), h = H(b); if (!(w > 0 && h > 0)) return false;
+      const ar = Math.max(w, h) / Math.min(w, h);
+      if (ar < 1.15 || ar > 1.9) return false;                 // sheet proportions: ARCH, ANSI, ISO A
+      if (Math.max(w, h) < big * 0.12) return false;          // too small to be a sheet
+      let n = 0; for (const [x, y] of centers) if (inside(b, x, y)) n++;
+      return n >= 8;
+    });
+    // Drop candidates that sit inside a larger candidate (inner border lines, title-block cells).
+    cands.sort((a, b) => W(b) * H(b) - W(a) * H(a));
+    const frames = [];
+    for (const c of cands) {
+      const tol = Math.max(W(c), H(c)) * 0.03;
+      if (frames.some(f => c.x0 >= f.x0 - tol && c.y0 >= f.y0 - tol && c.x1 <= f.x1 + tol && c.y1 <= f.y1 + tol)) continue;
+      if (frames.some(f => c.x0 < f.x1 && c.x1 > f.x0 && c.y0 < f.y1 && c.y1 > f.y0)) continue;   // overlaps a frame already taken
+      frames.push(c);
+    }
+    if (!frames.length) return [];
+    // A real frame set covers most of the drawing; otherwise treat the drawing as one sheet.
+    let covered = 0; for (const [x, y] of centers) if (frames.some(f => inside(f, x, y))) covered++;
+    if (covered < boxes.length * 0.6) return [];
+    // Reading order: top row first, left to right (SVG y grows downward).
+    const rowTol = Math.min(...frames.map(H)) * 0.5;
+    frames.sort((a, b) => Math.abs(a.y0 - b.y0) > rowTol ? a.y0 - b.y0 : a.x0 - b.x0);
+    const outside = boxes.length - covered;
+    return frames.map((f, i) => ({ vb: { x: f.x0, y: f.y0, w: W(f), h: H(f) }, outside: i === 0 ? outside : 0 }));
   }
-  function buildSheet() {
-    const S = sheetSizePt(), m = 36; // 0.5 in margin
-    const vb = state.vb;
+  function applyFrame() {
+    const frames = $("frames").checked ? findFrames(state.boxes) : [];
+    if (frames.length) {
+      state.pages = frames.map(f => ({ vb: f.vb }));
+      state.dropped = frames[0].outside;
+    } else {
+      const f = frame(state.boxes, $("trim").checked);
+      state.pages = [{ vb: f.vb }];
+      state.dropped = f.dropped;
+    }
+    state.vb = state.pages[0].vb;
+  }
+  function buildSheet(vb, idx) {
+    vb = vb || state.vb; idx = idx || 0;
+    const S = sheetSizePt(vb), m = 36; // 0.5 in margin
     const s = Math.min((S.w - 2 * m) / vb.w, (S.h - 2 * m) / vb.h);
     const ox = (S.w - vb.w * s) / 2 - vb.x * s, oy = (S.h - vb.h * s) / 2 - vb.y * s;
     const lwPt = parseFloat($("lw").value) / 25.4 * 72;
@@ -672,31 +723,41 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       }
     })(top, 1);
     const cp = document.createElementNS(NS, "clipPath");
-    cp.setAttribute("id", "sheet-clip");
+    cp.setAttribute("id", "sheet-clip-" + idx);
     cp.innerHTML = `<rect x="${m / 2}" y="${m / 2}" width="${S.w - m}" height="${S.h - m}"/>`;
     svg.insertBefore(cp, svg.firstChild);
     const clipG = document.createElementNS(NS, "g");
-    clipG.setAttribute("clip-path", "url(#sheet-clip)");
+    clipG.setAttribute("clip-path", `url(#sheet-clip-${idx})`);
     svg.insertBefore(clipG, top);
     clipG.appendChild(top);
     return { svg, S };
   }
   function render() {
     if (!state.content) return;
-    const { svg, S } = buildSheet();
-    const box = $("sheet");
-    box.innerHTML = "";
-    box.style.aspectRatio = `${S.w} / ${S.h}`;
-    box.style.maxWidth = `min(100%, ${Math.round(620 * S.w / S.h)}px)`;
-    const view = svg.cloneNode(true);
-    view.removeAttribute("width"); view.removeAttribute("height");
-    box.appendChild(view);
-    if (state.isSample) { const b = document.createElement("span"); b.className = "badge"; b.textContent = t("sample"); box.appendChild(b); }
+    const wrap = $("sheet");
+    wrap.innerHTML = "";
+    const pages = state.pages && state.pages.length ? state.pages : [{ vb: state.vb }];
+    let S;
+    pages.forEach((pg, i) => {
+      const built = buildSheet(pg.vb, i);
+      if (i === 0) S = built.S;
+      if (pages.length > 1) { const cap = document.createElement("div"); cap.className = "pagecap"; cap.textContent = t("pageN", { n: i + 1 }); wrap.appendChild(cap); }
+      const box = document.createElement("div");
+      box.className = "sheet";
+      box.style.aspectRatio = `${built.S.w} / ${built.S.h}`;
+      box.style.maxWidth = `min(100%, ${Math.round(620 * built.S.w / built.S.h)}px)`;
+      const view = built.svg;
+      view.removeAttribute("width"); view.removeAttribute("height");
+      box.appendChild(view);
+      if (i === 0 && state.isSample) { const b = document.createElement("span"); b.className = "badge"; b.textContent = t("sample"); box.appendChild(b); }
+      wrap.appendChild(box);
+    });
     const inch = (pt) => +(pt / 72).toFixed(2);
     $("meta").innerHTML =
       `<span>${t("mFile")} <b>${esc(state.name)}</b></span>` +
       `<span>${t("mCount")} <b>${state.count}</b></span>` +
       `<span>${t("mPaper")} <b>${inch(S.w)} × ${inch(S.h)} in</b></span>` +
+      (pages.length > 1 ? `<span>${t("mPages")} <b>${pages.length}</b></span>` : "") +
       `<span>${t("mText")} <b>${state.hasCJK ? t("tCJK") : t("tLatin")}</b></span>` +
       (state.dropped ? `<span>${t("dropped")} <b>${state.dropped}</b></span>` : "");
     $("legend").innerHTML = state.layers.slice(0, 24).map(([n, c]) => {
@@ -765,24 +826,30 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   async function makePdf() {
     const { jsPDF } = window.jspdf || {};
     if (!jsPDF) fail("noPdfLib");
-    const { svg, S } = buildSheet();
-    const pdf = new jsPDF({ orientation: S.w >= S.h ? "l" : "p", unit: "pt", format: [S.w, S.h], compress: true });
     const modeSel = $("mode").value;
     const raster = modeSel === "raster" || (modeSel === "auto" && state.hasCJK);
-    if (!raster) {
-      if (typeof pdf.svg !== "function") fail("noVec");
-      hidden.appendChild(svg);
-      try { await pdf.svg(svg, { x: 0, y: 0, width: S.w, height: S.h }); }
-      finally { hidden.innerHTML = ""; }
-    } else {
-      const inW = S.w / 72, inH = S.h / 72;
-      let dpi = Math.min(200, Math.floor(Math.sqrt(16e6 / (inW * inH))));
-      let png;
-      for (;;) {
-        try { png = await svgToPng(svg, S, dpi); break; }
-        catch (e) { if (dpi <= 72) fail("tooBig"); dpi = Math.floor(dpi * 0.75); }
+    const pages = state.pages && state.pages.length ? state.pages : [{ vb: state.vb }];
+    let pdf = null;
+    for (let i = 0; i < pages.length; i++) {
+      const { svg, S } = buildSheet(pages[i].vb, i);
+      const orient = S.w >= S.h ? "l" : "p";
+      if (!pdf) pdf = new jsPDF({ orientation: orient, unit: "pt", format: [S.w, S.h], compress: true });
+      else pdf.addPage([S.w, S.h], orient);
+      if (!raster) {
+        if (typeof pdf.svg !== "function") fail("noVec");
+        hidden.appendChild(svg);
+        try { await pdf.svg(svg, { x: 0, y: 0, width: S.w, height: S.h }); }
+        finally { hidden.innerHTML = ""; }
+      } else {
+        const inW = S.w / 72, inH = S.h / 72;
+        let dpi = Math.min(200, Math.floor(Math.sqrt(16e6 / (inW * inH))));
+        let png;
+        for (;;) {
+          try { png = await svgToPng(svg, S, dpi); break; }
+          catch (e) { if (dpi <= 72) fail("tooBig"); dpi = Math.floor(dpi * 0.75); }
+        }
+        pdf.addImage(png, "PNG", 0, 0, S.w, S.h, undefined, "FAST");
       }
-      pdf.addImage(png, "PNG", 0, 0, S.w, S.h, undefined, "FAST");
     }
     pdf.setProperties({ title: state.name, creator: "cad2pdf" });
     return { blob: pdf.output("blob"), raster };
@@ -837,7 +904,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
   drop.addEventListener("drop", e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) loadFile(f); });
   ["size", "lw", "darken"].forEach(id => $(id).addEventListener("change", render));
-  $("trim").addEventListener("change", () => { if (state.boxes) { applyFrame(); render(); } });
+  ["trim", "frames"].forEach(id => $(id).addEventListener("change", () => { if (state.boxes) { applyFrame(); render(); } }));
   document.querySelectorAll('input[name="orient"], input[name="color"]').forEach(r => r.addEventListener("change", render));
 
   // Open with the sample drawing so the sheet is visible right away.
