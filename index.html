@@ -158,7 +158,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
           <label><input type="radio" name="color" id="c-color" value="color" checked><span data-i18n="cColor"></span></label>
           <label><input type="radio" name="color" id="c-mono" value="mono"><span data-i18n="cMono"></span></label>
         </div>
-        <label class="check"><input type="checkbox" id="darken" checked> <span data-i18n="darken"></span></label>
+        <label class="check"><input type="checkbox" id="darken"> <span data-i18n="darken"></span></label>
         <label class="check"><input type="checkbox" id="noplot"> <span data-i18n="noplot"></span></label>
         <label class="check"><input type="checkbox" id="frames" checked> <span data-i18n="frames"></span></label>
         <label class="check"><input type="checkbox" id="trim" checked> <span data-i18n="trim"></span></label>
@@ -1029,11 +1029,11 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   $("noplot").addEventListener("change", () => { if (state.file) loadFile(state.file); else render(); });
   ["trim", "frames"].forEach(id => $(id).addEventListener("change", () => { if (state.boxes) { applyFrame(); render(); } }));
   document.querySelectorAll('input[name="orient"], input[name="color"]').forEach(r => r.addEventListener("change", render));
-  const USE_PRESETS = { print: { size: "24x36", lw: "0.25" }, screen: { size: "11x17", lw: "0.35" } };
+  const USE_PRESETS = { print: { size: "24x36", lw: "0.25", darken: false }, screen: { size: "11x17", lw: "0.35", darken: true } };
   document.querySelectorAll('input[name="use"]').forEach(r => r.addEventListener("change", () => {
     const pr = USE_PRESETS[r.value];
     if (!pr) return;
-    $("size").value = pr.size; $("lw").value = pr.lw; $("darken").checked = true;
+    $("size").value = pr.size; $("lw").value = pr.lw; $("darken").checked = pr.darken;
     render();
   }));
 

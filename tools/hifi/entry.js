@@ -37,6 +37,39 @@ function setup(opts) {
 
 const frame = () => new Promise((res) => requestAnimationFrame(() => res()));
 
+// AutoCAD rule: ByLayer contents on layer "0" inside a block take the layer of the INSERT.
+// The viewer applies this only when layer 0 is ACI 7, so drawings whose layer 0 is another
+// color (often 8, grey) show fixtures and equipment grey. Apply the rule in the database:
+// every block inserted on exactly one layer gets its layer-0 contents moved to that layer.
+function inheritLayer0(db) {
+  const bt = db.tables.blockTable;
+  const layersOf = new Map();
+  const visit = (record, inherited, depth) => {
+    if (!record || depth > 8) return;
+    for (const e of record.newIterator()) {
+      if (e.blockName == null) continue;
+      const eff = e.layer === '0' && inherited ? inherited : e.layer;
+      let s = layersOf.get(e.blockName);
+      if (!s) layersOf.set(e.blockName, s = new Set());
+      if (s.has(eff)) continue;
+      s.add(eff);
+      visit(e.blockTableRecord || bt.getAt(e.blockName), eff, depth + 1);
+    }
+  };
+  visit(bt.modelSpace, null, 0);
+  let moved = 0;
+  for (const [name, set] of layersOf) {
+    if (set.size !== 1) continue;                 // inserted on several layers: leave as is
+    const L = [...set][0];
+    if (L === '0') continue;
+    const rec = bt.getAt(name);
+    if (!rec) continue;
+    for (const e of rec.newIterator()) if (e.layer === '0') { e.layer = L; moved++; }
+  }
+  return moved;
+}
+
+
 async function renderOnce(view) {
   return new Promise((resolve) => {
     hook = resolve;
@@ -55,6 +88,14 @@ window.CADHIFI = {
     const view = m.curView;
     view.backgroundColor = 0xffffff;          // paper: ACI 7 draws black
     await view.waitUntilIdle(120000);
+    if (inheritLayer0(m.curDocument.database) > 0) {
+      m.regen();
+      await frame();
+      await view.waitUntilIdle(120000);
+      // A regen can schedule its own zoom-to-fit; let it run before we position tiles.
+      await new Promise((res) => setTimeout(res, 1000));
+      await view.waitUntilIdle(120000);
+    }
     await frame(); await frame();
     return true;
   },
@@ -74,9 +115,12 @@ window.CADHIFI = {
         // Each tile covers exactly TILE × TILE output pixels (the last ones spill past the page edge).
         const x0 = box.x0 + px0 * upp, x1 = x0 + TILE * upp;
         const y1 = box.y1 - py0 * upp, y0 = y1 - TILE * upp;   // WCS y grows up, pixels grow down
-        view.zoomTo(new AcGeBox2d({ x: x0, y: y0 }, { x: x1, y: y1 }), 1);
+        const tileBox = new AcGeBox2d({ x: x0, y: y0 }, { x: x1, y: y1 });
+        view.zoomTo(tileBox, 1);
         await frame();
         await view.waitUntilIdle(30000);
+        view.zoomTo(tileBox, 1);                 // re-assert: a late auto-fit must not move this tile
+        await frame();
         const cv = await renderOnce(view);
         ctx.drawImage(cv, 0, 0, cv.width, cv.height, px0, py0, TILE, TILE);
         if (onProgress) onProgress(++n, rows * cols);
