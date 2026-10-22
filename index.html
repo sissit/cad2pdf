@@ -25,7 +25,7 @@
 <script defer src="/_vercel/insights/script.js"></script>
 <script>window.CAD2PDF_DWG_BASE = "https://cdn.jsdelivr.net/npm/@mlightcad/libredwg-web@0.8.1/";</script>
 <title>DWG 转 PDF 在线免费转换 · DWG/DXF to PDF Converter | cad2pdf</title>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "怎么把 DWG 转成 PDF？", "acceptedAnswer": {"@type": "Answer", "text": "点「选择或拖入图纸」，选好 .dwg 或 .dxf 文件，看一眼右边的预览，选纸张大小、方向和彩色或黑白，再点「生成 PDF」。PDF 会直接下载到你的电脑或手机。"}}, {"@type": "Question", "name": "支持哪些 AutoCAD 版本？", "acceptedAnswer": {"@type": "Answer", "text": "支持 AutoCAD R13 到 2018 格式的 DWG 文件，以及 DXF 文件。更新版本的 AutoCAD 另存为 2018 格式即可。"}}, {"@type": "Question", "name": "图纸会上传到服务器吗？", "acceptedAnswer": {"@type": "Answer", "text": "不会。图纸只在你自己的浏览器里读取和转换，不经过任何服务器，适合有保密要求的图纸。"}}, {"@type": "Question", "name": "一个文件里有多个图框怎么办？", "acceptedAnswer": {"@type": "Answer", "text": "默认按图框分页：每个图框生成一页，和在 AutoCAD 里逐个打印图框一样。也可以取消勾选，把整张图放在一页。"}}, {"@type": "Question", "name": "「矢量」和「图片」输出有什么区别？", "acceptedAnswer": {"@type": "Answer", "text": "矢量（默认）把线条和文字原样写进 PDF，放大多少倍都清楚，文件小、转得快。图片是把图纸渲染成高分辨率图像，图纸里插入了照片时请选图片。"}}, {"@type": "Question", "name": "不打印的图层会出现在 PDF 里吗？", "acceptedAnswer": {"@type": "Answer", "text": "默认不会，和 AutoCAD 打印一样。需要的话可以勾选「打印不打印图层」。"}}, {"@type": "Question", "name": "收费吗？需要注册吗？", "acceptedAnswer": {"@type": "Answer", "text": "完全免费，不用注册，打开网页就能用，电脑和手机都可以。"}}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "怎么把 DWG 转成 PDF？", "acceptedAnswer": {"@type": "Answer", "text": "点「选择或拖入图纸」，选好 .dwg 或 .dxf 文件，看一眼右边的预览，选纸张大小、方向和彩色或黑白，再点「生成 PDF」。PDF 会直接下载到你的电脑或手机。"}}, {"@type": "Question", "name": "支持哪些 AutoCAD 版本？", "acceptedAnswer": {"@type": "Answer", "text": "支持 AutoCAD R13 到最新版（包括 2019–2026）画的 DWG 文件，以及 DXF 文件。AutoCAD 2018 以后各版本用的都是同一种「2018 格式」DWG，直接上传就能转，不用另存。"}}, {"@type": "Question", "name": "图纸会上传到服务器吗？", "acceptedAnswer": {"@type": "Answer", "text": "不会。图纸只在你自己的浏览器里读取和转换，不经过任何服务器，适合有保密要求的图纸。"}}, {"@type": "Question", "name": "一个文件里有多个图框怎么办？", "acceptedAnswer": {"@type": "Answer", "text": "默认按图框分页：每个图框生成一页，和在 AutoCAD 里逐个打印图框一样。也可以取消勾选，把整张图放在一页。"}}, {"@type": "Question", "name": "「矢量」和「图片」输出有什么区别？", "acceptedAnswer": {"@type": "Answer", "text": "矢量（默认）把线条和文字原样写进 PDF，放大多少倍都清楚，文件小、转得快。图片是把图纸渲染成高分辨率图像，图纸里插入了照片时请选图片。"}}, {"@type": "Question", "name": "不打印的图层会出现在 PDF 里吗？", "acceptedAnswer": {"@type": "Answer", "text": "默认不会，和 AutoCAD 打印一样。需要的话可以勾选「打印不打印图层」。"}}, {"@type": "Question", "name": "收费吗？需要注册吗？", "acceptedAnswer": {"@type": "Answer", "text": "完全免费，不用注册，打开网页就能用，电脑和手机都可以。"}}]}</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -142,7 +142,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <label class="drop" id="drop">
         <input type="file" id="file" accept=".dwg,.dxf">
         <strong data-i18n="pick">选择或拖入图纸</strong>
-        <span data-i18n="support">支持 .dwg（R13–2018）和 .dxf</span>
+        <span data-i18n="support">支持 .dwg（R13 至最新版）和 .dxf</span>
       </label>
 
 
@@ -217,7 +217,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
     <h2 id="about-h" data-i18n="aboutH">常见问题</h2>
     <p class="about-lead" data-i18n="aboutP">cad2pdf 是免费的在线 DWG 转 PDF 工具：把 AutoCAD DWG / DXF 图纸转成可打印的 PDF，支持 24×36、A1、A3 等纸张，按图框分页，颜色和图纸一致。</p>
     <details><summary data-i18n="q0">怎么把 DWG 转成 PDF？</summary><p data-i18n="a0">点「选择或拖入图纸」，选好 .dwg 或 .dxf 文件，看一眼右边的预览，选纸张大小、方向和彩色或黑白，再点「生成 PDF」。PDF 会直接下载到你的电脑或手机。</p></details>
-    <details><summary data-i18n="q1">支持哪些 AutoCAD 版本？</summary><p data-i18n="a1">支持 AutoCAD R13 到 2018 格式的 DWG 文件，以及 DXF 文件。更新版本的 AutoCAD 另存为 2018 格式即可。</p></details>
+    <details><summary data-i18n="q1">支持哪些 AutoCAD 版本？</summary><p data-i18n="a1">支持 AutoCAD R13 到最新版（包括 2019–2026）画的 DWG 文件，以及 DXF 文件。AutoCAD 2018 以后各版本用的都是同一种「2018 格式」DWG，直接上传就能转，不用另存。</p></details>
     <details><summary data-i18n="q2">图纸会上传到服务器吗？</summary><p data-i18n="a2">不会。图纸只在你自己的浏览器里读取和转换，不经过任何服务器，适合有保密要求的图纸。</p></details>
     <details><summary data-i18n="q3">一个文件里有多个图框怎么办？</summary><p data-i18n="a3">默认按图框分页：每个图框生成一页，和在 AutoCAD 里逐个打印图框一样。也可以取消勾选，把整张图放在一页。</p></details>
     <details><summary data-i18n="q4">「矢量」和「图片」输出有什么区别？</summary><p data-i18n="a4">矢量（默认）把线条和文字原样写进 PDF，放大多少倍都清楚，文件小、转得快。图片是把图纸渲染成高分辨率图像，图纸里插入了照片时请选图片。</p></details>
@@ -244,7 +244,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       q0: "怎么把 DWG 转成 PDF？",
       a0: "点「选择或拖入图纸」，选好 .dwg 或 .dxf 文件，看一眼右边的预览，选纸张大小、方向和彩色或黑白，再点「生成 PDF」。PDF 会直接下载到你的电脑或手机。",
       q1: "支持哪些 AutoCAD 版本？",
-      a1: "支持 AutoCAD R13 到 2018 格式的 DWG 文件，以及 DXF 文件。更新版本的 AutoCAD 另存为 2018 格式即可。",
+      a1: "支持 AutoCAD R13 到最新版（包括 2019–2026）画的 DWG 文件，以及 DXF 文件。AutoCAD 2018 以后各版本用的都是同一种「2018 格式」DWG，直接上传就能转，不用另存。",
       q2: "图纸会上传到服务器吗？",
       a2: "不会。图纸只在你自己的浏览器里读取和转换，不经过任何服务器，适合有保密要求的图纸。",
       q3: "一个文件里有多个图框怎么办？",
@@ -256,7 +256,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       q6: "收费吗？需要注册吗？",
       a6: "完全免费，不用注册，打开网页就能用，电脑和手机都可以。",
       h1: "DWG 图纸转 PDF", tag: "DWG · DXF → PDF · 文件只在本机浏览器里处理，不上传",
-      pick: "选择或拖入图纸", support: "支持 .dwg（R13–2018）和 .dxf", paper: "纸张", orient: "方向",
+      pick: "选择或拖入图纸", support: "支持 .dwg（R13 至最新版）和 .dxf", paper: "纸张", orient: "方向",
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
       noplot: "打印「不打印」图层（AutoCAD 默认不打）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
       fmt: "输出方式", fmtImg: "图片", fmtVec: "矢量", fmtHint: "矢量（默认）：线条和文字放大不糊，转得快，文件小。图片：原来的方式；图纸里有插入的照片时请选图片。", vecProg: "正在生成矢量 PDF…第 {n}/{m} 页", vec: "矢量",
@@ -286,7 +286,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       q0: "How do I convert DWG to PDF?",
       a0: "Click “Choose or drop a drawing”, pick a .dwg or .dxf file, check the preview, choose the sheet size, orientation and color, then click “Create PDF”. The PDF downloads straight to your computer or phone.",
       q1: "Which AutoCAD versions are supported?",
-      a1: "DWG files from AutoCAD R13 to 2018 format, and DXF files. Drawings from newer AutoCAD can be saved as 2018 format.",
+      a1: "DWG files from AutoCAD R13 up to the latest release (including 2019–2026), and DXF files. Every AutoCAD release since 2018 saves the same “2018 format” DWG, so newer drawings convert directly without re-saving.",
       q2: "Are my drawings uploaded?",
       a2: "No. Drawings are read and converted only in your own browser and never pass through a server, so it suits confidential drawings.",
       q3: "What if one file has several title blocks?",
@@ -298,7 +298,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       q6: "Is it free? Do I need an account?",
       a6: "It is completely free with no sign-up. Just open the page, on a computer or a phone.",
       h1: "DWG to PDF", tag: "DWG · DXF → PDF · Files stay in your browser, nothing is uploaded",
-      pick: "Choose or drop a drawing", support: ".dwg (R13–2018) and .dxf", paper: "Sheet size", orient: "Orientation",
+      pick: "Choose or drop a drawing", support: ".dwg (R13 to latest) and .dxf", paper: "Sheet size", orient: "Orientation",
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
       noplot: "Include layers set to not plot (AutoCAD leaves them out)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
       fmt: "Output", fmtImg: "Image", fmtVec: "Vector", fmtHint: "Vector (default): lines and text stay sharp at any zoom, faster, smaller files. Image: the original method; choose it if the drawing contains inserted photos.", vecProg: "Creating vector PDF… page {n} of {m}", vec: "vector",
