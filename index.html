@@ -704,8 +704,28 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     // Reading order: top row first, left to right (SVG y grows downward).
     const rowTol = Math.min(...frames.map(H)) * 0.5;
     frames.sort((a, b) => Math.abs(a.y0 - b.y0) > rowTol ? a.y0 - b.y0 : a.x0 - b.x0);
-    const outside = boxes.length - covered;
-    return frames.map((f, i) => ({ vb: { x: f.x0, y: f.y0, w: W(f), h: H(f) }, outside: i === 0 ? outside : 0 }));
+    // Notes and labels just outside a frame belong to that sheet: grow its page to include them.
+    // Anything far from every frame is left off and counted.
+    const pagesBox = frames.map(f => ({ x0: f.x0, y0: f.y0, x1: f.x1, y1: f.y1 }));
+    let outside = 0;
+    boxes.forEach((b, k) => {
+      const [x, y] = centers[k];
+      if (frames.some(f => inside(f, x, y))) return;
+      let best = -1, bestD = Infinity;
+      frames.forEach((f, i) => {
+        const dx = Math.max(f.x0 - b.x1, 0, b.x0 - f.x1), dy = Math.max(f.y0 - b.y1, 0, b.y0 - f.y1);
+        const d = Math.hypot(dx, dy) / Math.max(W(f), H(f));
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      // Only small items (notes, labels, legends) are pulled in; big geometry is not part of a sheet.
+      const f = frames[best];
+      const small = best >= 0 && Math.max(b.x1 - b.x0, b.y1 - b.y0) < 0.5 * Math.min(W(f), H(f));
+      if (best >= 0 && bestD < 0.25 && small) {
+        const g = pagesBox[best];
+        g.x0 = Math.min(g.x0, b.x0); g.y0 = Math.min(g.y0, b.y0); g.x1 = Math.max(g.x1, b.x1); g.y1 = Math.max(g.y1, b.y1);
+      } else outside++;
+    });
+    return pagesBox.map((g, i) => ({ vb: { x: g.x0, y: g.y0, w: g.x1 - g.x0, h: g.y1 - g.y0 }, outside: i === 0 ? outside : 0 }));
   }
   function applyFrame() {
     const frames = $("frames").checked ? findFrames(state.boxes) : [];
