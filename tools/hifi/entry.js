@@ -3,7 +3,7 @@
 // either the linework or the text, so the page can thicken lines to the plot
 // line weight without smearing text.
 import { AcApDocManager, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE } from '@mlightcad/cad-simple-viewer';
-import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbFileType, AcDbMLeader, AcDbMText, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
+import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
 import { AcGeBox2d } from '@mlightcad/geometry-engine';
 import { AcDbLibreDwgConverter } from '@mlightcad/libredwg-converter';
 
@@ -81,6 +81,36 @@ async function renderOnce(view) {
   });
 }
 
+// AutoCAD draws a LEADER in its dimension style's dimension-line color (DIMCLRD) when that is
+// set; the viewer uses the entity color instead, so leaders came out black instead of green.
+function leaderDimColors(db) {
+  const styles = db.tables.dimStyleTable;
+  const find = (key) => {
+    if (!key) return undefined;
+    let s = styles.getAt ? styles.getAt(key) : undefined;
+    if (!s) for (const rec of styles.newIterator()) if (rec.objectId === key || rec.name === key) { s = rec; break; }
+    return s;
+  };
+  // DIMCLRD may arrive as an ACI number or as LibreDWG's raw color (method 0xC3 = ACI in the low byte).
+  const aci = (v) => typeof v === 'number' ? v
+    : v && typeof v === 'object' && (v.method === 195 || v.method === 0xC3) ? (v.rgb & 0xff) : undefined;
+  // Leaders whose style was not read fall back to the style most dimensions use, then the current one.
+  const usage = new Map();
+  for (const rec of db.tables.blockTable.newIterator()) for (const x of rec.newIterator())
+    if (x instanceof AcDbDimension && x.dimensionStyleName) usage.set(x.dimensionStyleName, (usage.get(x.dimensionStyleName) || 0) + 1);
+  const common = [...usage.entries()].sort((p, q) => q[1] - p[1]).map(p => p[0])[0];
+  const current = find(common) || find(db.dimstyle);
+  let n = 0;
+  for (const rec of db.tables.blockTable.newIterator()) for (const x of rec.newIterator()) {
+    if (!(x instanceof AcDbLeader)) continue;
+    const s = find(x.dimensionStyle) || current;
+    const ci = s && aci(s.dimclrd);
+    if (!(ci >= 1 && ci <= 255)) continue;
+    const c = x.color.clone(); c.colorIndex = ci; x.color = c; n++;
+  }
+  return n;
+}
+
 // Text-like entities: drawn unthickened (AutoCAD does not apply plot lineweight to TrueType text).
 // Tables and multileaders go with the text because their text cannot be separated from them.
 const isText = (x) => x instanceof AcDbText || x instanceof AcDbMText || x instanceof AcDbArcAlignedText
@@ -127,7 +157,9 @@ window.CADHIFI = {
     const view = m.curView;
     view.backgroundColor = 0xffffff;          // paper: ACI 7 draws black
     await view.waitUntilIdle(120000);
-    if (inheritLayer0(m.curDocument.database) > 0) { m.regen(); await settle(view); }
+    const db = m.curDocument.database;
+    const fixed = inheritLayer0(db) + leaderDimColors(db);
+    if (fixed > 0) { AcDbRenderingCache.instance.clear(); m.regen(); await settle(view); }
     await frame(); await frame();
     return true;
   },
