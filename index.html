@@ -169,6 +169,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <button class="go" id="go" type="button" data-i18n="go"></button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
       <p class="hint" data-i18n="hint"></p>
+      <p class="hint ver" id="ver"></p>
     </aside>
 
     <section class="stage">
@@ -255,6 +256,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll("[data-i18n-aria]").forEach(el => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
     document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    $("ver").textContent = (lang === "zh" ? "版本 " : "Version ") + HIFI_VER;
     if (state.isSample) state.name = t("sampleName");
     if (lastStatus) setStatus(lastStatus.k, lastStatus.kind, lastStatus.v);
     render();
@@ -859,6 +861,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
 
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
+  const HIFI_VER = "595a0281d4";   // set by tools/hifi/build.js
   const HIFI_BASE = new URL("hifi/", document.baseURI).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
@@ -866,7 +869,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     if (hifiLib) return hifiLib;
     hifiLib = new Promise((res, rej) => {
       const s = document.createElement("script");
-      s.src = HIFI_BASE + "cadhifi.js";
+      s.src = HIFI_BASE + "cadhifi.js?v=" + HIFI_VER;      // new build = new URL, never a stale copy
       s.onload = () => window.CADHIFI ? res(window.CADHIFI) : rej(new Error("renderer missing"));
       s.onerror = () => rej(new Error("renderer did not load"));
       document.head.appendChild(s);

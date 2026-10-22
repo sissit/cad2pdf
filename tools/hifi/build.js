@@ -19,4 +19,9 @@ for (const [from, to] of [
   ["@mlightcad/libredwg-converter/dist/libredwg-web.wasm", "libredwg-web.wasm"],
   ["@mlightcad/cad-simple-viewer/dist/mtext-renderer-worker.js", "mtext-renderer-worker.js"],
 ]) fs.copyFileSync(path.join(nm, from), path.join(out, "workers", to));
-console.log("built", fs.readdirSync(out), fs.readdirSync(path.join(out, "workers")));
+// Stamp the bundle hash into index.html so browsers always fetch the matching renderer.
+const hash = require("crypto").createHash("sha256").update(fs.readFileSync(path.join(out, "cadhifi.js"))).digest("hex").slice(0, 10);
+const indexPath = path.join(__dirname, "..", "..", "index.html");
+const html = fs.readFileSync(indexPath, "utf8").replace(/const HIFI_VER = "[^"]*";/, `const HIFI_VER = "${hash}";`);
+fs.writeFileSync(indexPath, html);
+console.log("built", hash, fs.readdirSync(out), fs.readdirSync(path.join(out, "workers")));
