@@ -156,6 +156,15 @@ button.go:disabled { opacity: .5; cursor: progress; }
       </div>
 
       <div class="field">
+        <span class="label" data-i18n="fmt"></span>
+        <div class="seg" role="radiogroup" data-i18n-aria="fmt">
+          <label><input type="radio" name="fmt" id="f-img" value="img" checked><span data-i18n="fmtImg"></span></label>
+          <label><input type="radio" name="fmt" id="f-vec" value="vec"><span data-i18n="fmtVec"></span></label>
+        </div>
+        <p class="hint" data-i18n="fmtHint"></p>
+      </div>
+
+      <div class="field">
         <span class="label" id="lbl-lw" data-i18n="lw"></span>
         <select id="lw" aria-labelledby="lbl-lw">
           <option value="0.13" data-i18n="lw13"></option>
@@ -199,6 +208,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       pick: "选择或拖入图纸", support: "支持 .dwg（R13–2018）和 .dxf", paper: "纸张", orient: "方向",
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
       noplot: "打印「不打印」图层（AutoCAD 默认不打）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
+      fmt: "输出方式", fmtImg: "图片", fmtVec: "矢量", fmtHint: "矢量：线条和文字放大不糊，文件通常更小。图片：原来的方式，效果已核对过。", vecProg: "正在生成矢量 PDF…第 {n}/{m} 页", vec: "矢量",
       lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
       hifiLoad: "正在加载高保真渲染组件…", hifiOpen: "正在准备高保真渲染（读取图纸和字体）…", hifiPage: "正在渲染第 {n}/{m} 页…（{p}%）", hifiProg: "正在生成 PDF…（{p}%）", hifiLines: "正在渲染线条…（{p}%）", hifiText: "正在渲染文字…（{p}%）", hifi: "高保真", vecFallback: "高保真渲染失败，已自动改用矢量方式，中文可能显示不正常",
       go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
@@ -224,6 +234,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       pick: "Choose or drop a drawing", support: ".dwg (R13–2018) and .dxf", paper: "Sheet size", orient: "Orientation",
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
       noplot: "Include layers set to not plot (AutoCAD leaves them out)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
+      fmt: "Output", fmtImg: "Image", fmtVec: "Vector", fmtHint: "Vector: lines and text stay sharp at any zoom and files are usually smaller. Image: the original, already-checked method.", vecProg: "Creating vector PDF… page {n} of {m}", vec: "vector",
       lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
       hifiLoad: "Loading the high-fidelity renderer…", hifiOpen: "Preparing high-fidelity render (reading drawing and fonts)…", hifiPage: "Rendering page {n} of {m}… ({p}%)", hifiProg: "Creating PDF… ({p}%)", hifiLines: "Rendering linework… ({p}%)", hifiText: "Rendering text… ({p}%)", hifi: "high fidelity", vecFallback: "high-fidelity rendering failed, so vector output was used; Chinese text may not display correctly",
       go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
@@ -861,8 +872,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
 
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
-  const HIFI_VER = "e6e59f3136";   // set by tools/hifi/build.js
-  const HIFI_DATE = "2026-10-22 01:24";  // build date, shown as the version; set by tools/hifi/build.js
+  const HIFI_VER = "61c3c4e49e";   // set by tools/hifi/build.js
+  const HIFI_DATE = "2026-10-22 02:18";  // build date, shown as the version; set by tools/hifi/build.js
   const HIFI_BASE = new URL("hifi/", document.baseURI).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
@@ -1078,6 +1089,30 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     return pdf;
   }
 
+  // Vector output: the renderer's own geometry written as PDF paths (sharp at any zoom).
+  async function makePdfVec(jsPDF, pages) {
+    setStatus(hifiLib ? "hifiOpen" : "hifiLoad");
+    const H = await hifiReady();
+    await H.setPass("all");
+    const mono = document.querySelector('input[name="color"]:checked').value === "mono";
+    const lineW = parseFloat($("lw").value) / 25.4 * 72;
+    const hatchW = Math.min(lineW, 0.18 / 25.4 * 72);
+    let pdf = null;
+    for (let i = 0; i < pages.length; i++) {
+      setStatus("vecProg", "", { n: i + 1, m: pages.length });
+      const vb = pages[i].vb, S = sheetSizePt(vb);
+      const m = 36, s = Math.min((S.w - 2 * m) / vb.w, (S.h - 2 * m) / vb.h);
+      const wPt = vb.w * s, hPt = vb.h * s, x = (S.w - wPt) / 2, yTop = (S.h - hPt) / 2;
+      if (!pdf) pdf = newPdf(jsPDF, S); else pdf.addPage([S.w, S.h], S.w >= S.h ? "l" : "p");
+      const box = { x0: vb.x, x1: vb.x + vb.w, y0: -(vb.y + vb.h), y1: -vb.y };
+      const oy = S.h - yTop - hPt;
+      const { chunks, stats } = await H.vectorPage({ box, ox: x, oy, s, clip: [x, oy, wPt, hPt], lineW, hatchW, mono });
+      console.log("vector page", i + 1, JSON.stringify(stats));
+      for (const c of chunks) pdf.internal.write(c);
+    }
+    return pdf;
+  }
+
   async function makePdfVector(jsPDF, pages) {
     let pdf = null;
     for (let i = 0; i < pages.length; i++) {
@@ -1095,15 +1130,23 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     if (!jsPDF) fail("noPdfLib");
     const pages = state.pages && state.pages.length ? state.pages : [{ vb: state.vb }];
     let pdf, fellBack = false;
-    try { pdf = await makePdfHifi(jsPDF, pages); }
+    let vec = document.querySelector('input[name="fmt"]:checked').value === "vec";
+    try { pdf = vec ? await makePdfVec(jsPDF, pages) : await makePdfHifi(jsPDF, pages); }
     catch (e) {
+      if (vec) {
+        console.error("vector output failed, using image output", e);
+        vec = false;
+        try { pdf = await makePdfHifi(jsPDF, pages); fellBack = false; } catch (e2) { e = e2; pdf = null; }
+      }
+      if (!pdf) {
       console.error("high-fidelity render failed, using vector", e);
       fellBack = true;
       setStatus("making");
       pdf = await makePdfVector(jsPDF, pages);
+      }
     }
     pdf.setProperties({ title: state.name.replace(/\.(dwg|dxf)$/i, ""), creator: "cad2pdf" });
-    return { blob: pdf.output("blob"), fellBack };
+    return { blob: pdf.output("blob"), fellBack, vec };
   }
 
 
@@ -1129,8 +1172,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     setStatus("making");
     try {
       const fname = state.name.replace(/\.(dwg|dxf)$/i, "") + ".pdf";
-      const { blob, fellBack } = await makePdf();
-      const info = { n: fname, s: (blob.size / 1048576).toFixed(1), m: t(fellBack ? "vecFallback" : "hifi") };
+      const { blob, fellBack, vec } = await makePdf();
+      const info = { n: fname, s: (blob.size / 1048576).toFixed(1), m: t(fellBack ? "vecFallback" : vec ? "vec" : "hifi") };
       if (downloads) {
         setStatus("confirm");
         await downloads.save({ filename: fname, data: blob });
