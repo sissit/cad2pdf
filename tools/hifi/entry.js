@@ -3,7 +3,7 @@
 // either the linework or the text, so the page can thicken lines to the plot
 // line weight without smearing text.
 import { AcApDocManager, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE } from '@mlightcad/cad-simple-viewer';
-import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbFileType, AcDbMLeader, AcDbMText, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
+import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbFileType, AcDbMLeader, AcDbMText, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
 import { AcGeBox2d } from '@mlightcad/geometry-engine';
 import { AcDbLibreDwgConverter } from '@mlightcad/libredwg-converter';
 
@@ -95,7 +95,10 @@ function applyPass(db, mode) {
   };
   for (const rec of db.tables.blockTable.newIterator()) {
     for (const x of rec.newIterator()) {
-      if (x instanceof AcDbBlockReference && !(x instanceof AcDbTable)) {
+      if (x instanceof AcDbDimension) {
+        // Dimensions draw from their own block (lines + text), which is filtered like any block.
+        if (!x.visibility) { x.visibility = true; n++; }
+      } else if (x instanceof AcDbBlockReference && !(x instanceof AcDbTable)) {
         // Inserts stay visible in both passes; their contents and attributes are filtered.
         if (!x.visibility) { x.visibility = true; n++; }
         if (typeof x.attributeIterator === 'function') for (const a of x.attributeIterator()) set(a);
@@ -162,7 +165,7 @@ window.CADHIFI = {
       hasText.set(name, false);
       const rec = bt.getAt(name); let r = false;
       if (rec && depth < 8) for (const x of rec.newIterator()) {
-        if (isText(x) || (x.blockName != null && blockHasText(x.blockName, depth + 1))) { r = true; break; }
+        if (isText(x) || x instanceof AcDbDimension || (x.blockName != null && blockHasText(x.blockName, depth + 1))) { r = true; break; }
         if (typeof x.attributeIterator === 'function') for (const _ of x.attributeIterator()) { r = true; break; }
         if (r) break;
       }
@@ -171,7 +174,7 @@ window.CADHIFI = {
     };
     const boxes = [];
     for (const x of bt.modelSpace.newIterator()) {
-      let t = isText(x);
+      let t = isText(x) || x instanceof AcDbDimension;
       if (!t && x.blockName != null) {
         t = blockHasText(x.blockName, 0);
         if (!t && typeof x.attributeIterator === 'function') for (const _ of x.attributeIterator()) { t = true; break; }
