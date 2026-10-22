@@ -3,11 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Convert DWG and DXF drawings to PDF in your browser. Files are never uploaded.">
+<meta name="description" content="免费在线把 AutoCAD DWG / DXF 图纸转成 PDF：按图框分页、彩色或黑白、24×36 等图纸尺寸，矢量输出放大不糊。文件只在浏览器里处理，不上传。Free DWG/DXF to PDF converter that runs in your browser.">
+<link rel="canonical" href="https://5cad2pdf.vercel.app/">
+<meta name="robots" content="index,follow">
+<meta name="theme-color" content="#1d5bb8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d5bb8'/%3E%3Cpath d='M8 9h16v14H8z' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M8 17h16M16 9v14' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://5cad2pdf.vercel.app/">
+<meta property="og:title" content="DWG 转 PDF 在线免费转换 · cad2pdf">
+<meta property="og:description" content="AutoCAD DWG / DXF 图纸在浏览器里直接转 PDF，按图框分页，矢量放大不糊，文件不上传。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"cad2pdf","alternateName":"DWG 转 PDF","url":"https://5cad2pdf.vercel.app/","description":"Free in-browser converter from AutoCAD DWG and DXF drawings to PDF. Pages per drawing frame, color or black and white, vector output. Files are not uploaded.","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","inLanguage":["zh-CN","en"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script>window.CAD2PDF_DWG_BASE = "https://cdn.jsdelivr.net/npm/@mlightcad/libredwg-web@0.8.1/";</script>
-<title>cad2pdf</title>
+<title>DWG 转 PDF 在线免费转换 · DWG/DXF to PDF Converter | cad2pdf</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -109,16 +121,16 @@ button.go:disabled { opacity: .5; cursor: progress; }
 <body>
 <div class="wrap">
   <header>
-    <h1 data-i18n="h1"></h1>
-    <div class="hd-right"><span class="tag" data-i18n="tag"></span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
+    <h1 data-i18n="h1">DWG 图纸转 PDF</h1>
+    <div class="hd-right"><span class="tag" data-i18n="tag">DWG · DXF → PDF · 文件只在本机浏览器里处理，不上传</span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
   </header>
 
   <div class="main">
     <aside class="rail">
       <label class="drop" id="drop">
         <input type="file" id="file" accept=".dwg,.dxf">
-        <strong data-i18n="pick"></strong>
-        <span data-i18n="support"></span>
+        <strong data-i18n="pick">选择或拖入图纸</strong>
+        <span data-i18n="support">支持 .dwg（R13–2018）和 .dxf</span>
       </label>
 
 
