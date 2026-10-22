@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>意见管理 · cad2pdf</title>
+<style>
+:root { --bg:#eef1f4; --panel:#fff; --ink:#18202b; --muted:#5b6776; --rule:#cdd5de; --accent:#1d5bb8; --ok:#1f7a4a; --err:#b42318; }
+@media (prefers-color-scheme: dark) { :root { --bg:#12171e; --panel:#1a212b; --ink:#e4e9ef; --muted:#98a4b3; --rule:#2d3743; --accent:#6b9ff0; --ok:#5fc48e; --err:#f2876f; color-scheme: dark; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 system-ui,"PingFang SC","Microsoft YaHei",sans-serif; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 60px; }
+h1 { font-size: 1.4rem; margin: 0 0 16px; }
+.card { background:var(--panel); border:1px solid var(--rule); border-radius:10px; padding:14px 16px; margin-bottom:12px; }
+.card.done { opacity:.6; }
+.meta { color:var(--muted); font-size:.85rem; display:flex; flex-wrap:wrap; gap:4px 14px; }
+.msg { white-space:pre-wrap; word-break:break-word; margin:8px 0; }
+.set { font-size:.8rem; color:var(--muted); background:color-mix(in srgb, var(--rule) 30%, transparent); border-radius:6px; padding:6px 8px; word-break:break-word; }
+.row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+input[type=password] { font:inherit; padding:9px 10px; border:1px solid var(--rule); border-radius:8px; background:var(--panel); color:var(--ink); width:200px; }
+button { font:inherit; padding:8px 14px; border-radius:8px; border:1px solid var(--rule); background:var(--panel); color:var(--ink); cursor:pointer; }
+button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+button.danger { color:var(--err); }
+.status { margin:10px 0; color:var(--muted); }
+.status.err { color:var(--err); }
+.tabs button[aria-pressed=true] { background:var(--accent); color:#fff; border-color:var(--accent); }
+.actions { margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>意见管理</h1>
+  <form id="login" class="card row">
+    <input type="password" id="pw" placeholder="密码" autocomplete="current-password" required>
+    <button class="primary" type="submit">进入</button>
+  </form>
+  <div id="panel" hidden>
+    <div class="row tabs" style="margin-bottom:12px">
+      <button type="button" data-f="open" aria-pressed="true">未处理</button>
+      <button type="button" data-f="all" aria-pressed="false">全部</button>
+      <button type="button" id="refresh">刷新</button>
+      <button type="button" id="logout">退出</button>
+    </div>
+    <div id="list"></div>
+  </div>
+  <p class="status" id="status" role="status"></p>
+</div>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  let pw = ""; try { pw = sessionStorage.getItem("cad2pdf-admin") || ""; } catch (e) {}
+  let items = [], filter = "open";
+  const say = (t, err) => { $("status").textContent = t; $("status").className = "status" + (err ? " err" : ""); };
+  async function call(action, id) {
+    const r = await fetch("/api/admin", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: pw, action, id }) });
+    const j = await r.json().catch(() => ({}));
+    if (r.status === 401) throw new Error(j.left > 0 ? `密码不对，还可以再试 ${j.left} 次。` : "密码不对。");
+    if (r.status === 429) throw new Error("输错次数太多，已锁定 15 分钟，请稍后再试。");
+    if (!r.ok) throw new Error("出错了，请稍后再试。");
+    return j;
+  }
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function show() {
+    const shown = items.filter(x => filter === "all" || !x.done);
+    const open = items.filter(x => !x.done).length;
+    say(`共 ${items.length} 条，未处理 ${open} 条。`);
+    $("list").innerHTML = shown.length ? shown.map(x => `
+      <div class="card${x.done ? " done" : ""}">
+        <div class="meta"><span>${esc(new Date(x.at).toLocaleString("zh-CN", { hour12: false }))}</span>${x.contact ? `<span>联系方式：${esc(x.contact)}</span>` : ""}${x.lang ? `<span>页面语言：${esc(x.lang)}</span>` : ""}</div>
+        <div class="msg">${esc(x.message)}</div>
+        ${x.settings ? `<div class="set">${Object.entries(x.settings).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join(" · ")}</div>` : ""}
+        ${x.ua ? `<div class="set" style="margin-top:4px">${esc(x.ua)}</div>` : ""}
+        <div class="row actions">
+          <button type="button" data-act="${x.done ? "undone" : "done"}" data-id="${esc(x.id)}">${x.done ? "改回未处理" : "标为已处理"}</button>
+          <button type="button" class="danger" data-act="delete" data-id="${esc(x.id)}">删除</button>
+        </div>
+      </div>`).join("") : `<div class="card">${filter === "open" ? "没有未处理的意见。" : "还没有意见。"}</div>`;
+  }
+  async function load() {
+    say("读取中…");
+    try { items = (await call("list")).items || []; $("login").hidden = true; $("panel").hidden = false; show(); }
+    catch (e) { say(e.message, true); $("login").hidden = false; $("panel").hidden = true; }
+  }
+  $("login").addEventListener("submit", (e) => {
+    e.preventDefault(); pw = $("pw").value;
+    try { sessionStorage.setItem("cad2pdf-admin", pw); } catch (er) {}
+    load();
+  });
+  $("logout").addEventListener("click", () => { pw = ""; try { sessionStorage.removeItem("cad2pdf-admin"); } catch (e) {} items = []; $("list").innerHTML = ""; $("panel").hidden = true; $("login").hidden = false; say(""); });
+  $("refresh").addEventListener("click", load);
+  document.querySelectorAll(".tabs [data-f]").forEach(b => b.addEventListener("click", () => {
+    filter = b.dataset.f; document.querySelectorAll(".tabs [data-f]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); show();
+  }));
+  $("list").addEventListener("click", async (e) => {
+    const b = e.target.closest("button[data-act]"); if (!b) return;
+    if (b.dataset.act === "delete" && !confirm("确定删除这条意见？删除后不能恢复。")) return;
+    b.disabled = true;
+    try { await call(b.dataset.act, b.dataset.id); await load(); } catch (er) { say(er.message, true); b.disabled = false; }
+  });
+  if (pw) load();
+})();
+</script>
+</body>
+</html>

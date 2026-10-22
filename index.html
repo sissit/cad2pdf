@@ -104,6 +104,13 @@ select:focus-visible, button:focus-visible, .seg input:focus-visible + span { ou
 .about details { border-bottom: 1px solid var(--rule); padding: 10px 0; }
 .about summary { cursor: pointer; font-weight: 600; }
 .about details p { margin: 8px 0 2px; color: var(--muted); line-height: 1.6; }
+.fb form { display: grid; gap: 10px; }
+.fb-l { display: grid; gap: 4px; font-size: .9rem; }
+.fb textarea, .fb input[type=text] { font: inherit; padding: 9px 10px; border: 1px solid var(--rule); border-radius: 8px; background: var(--panel); color: var(--ink); width: 100%; box-sizing: border-box; }
+.fb textarea { resize: vertical; min-height: 96px; }
+.fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.fb-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+button.go.fb-send { width: auto; padding-left: 28px; padding-right: 28px; }
 .hint { font-size: .8rem; color: var(--muted); margin: 0; }
 button.go {
   font: inherit; font-family: var(--display); font-weight: 600; font-size: 1.05rem; letter-spacing: .02em;
@@ -224,6 +231,19 @@ button.go:disabled { opacity: .5; cursor: progress; }
     <details><summary data-i18n="q5">不打印的图层会出现在 PDF 里吗？</summary><p data-i18n="a5">默认不会，和 AutoCAD 打印一样。需要的话可以勾选「打印不打印图层」。</p></details>
     <details><summary data-i18n="q6">收费吗？需要注册吗？</summary><p data-i18n="a6">完全免费，不用注册，打开网页就能用，电脑和手机都可以。</p></details>
   </section>
+  <section class="about fb" aria-labelledby="fb-h">
+    <h2 id="fb-h" data-i18n="fbH">意见反馈</h2>
+    <p class="about-lead" data-i18n="fbP">转换效果不对、想要新功能，都可以告诉我们。不用登录，联系方式可以不填。</p>
+    <form id="fb" novalidate>
+      <label class="fb-l"><span data-i18n="fbMsg">你的意见</span>
+        <textarea id="fb-msg" rows="4" maxlength="3000" data-i18n-ph="fbMsgPh" placeholder="比如：哪张图、哪里不对、希望怎样"></textarea></label>
+      <label class="fb-l"><span data-i18n="fbContact">联系方式（可不填）</span>
+        <input id="fb-contact" type="text" maxlength="200" autocomplete="email" data-i18n-ph="fbContactPh" placeholder="邮箱或微信，方便回复你"></label>
+      <input type="text" name="website" id="fb-web" tabindex="-1" autocomplete="off" aria-hidden="true" class="fb-hp">
+      <label class="check"><input type="checkbox" id="fb-set" checked> <span data-i18n="fbSet">附上当前的转换设置（文件名、纸张、输出方式等，不含图纸内容）</span></label>
+      <div class="fb-row"><button class="go fb-send" type="submit" id="fb-send" data-i18n="fbSend">提交</button><span class="hint" id="fb-st" role="status" aria-live="polite"></span></div>
+    </form>
+  </section>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -239,6 +259,19 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
   const STR = {
     zh: {
+      fbH: "意见反馈",
+      fbP: "转换效果不对、想要新功能，都可以告诉我们。不用登录，联系方式可以不填。",
+      fbMsg: "你的意见",
+      fbMsgPh: "比如：哪张图、哪里不对、希望怎样",
+      fbContact: "联系方式（可不填）",
+      fbContactPh: "邮箱或微信，方便回复你",
+      fbSet: "附上当前的转换设置（文件名、纸张、输出方式等，不含图纸内容）",
+      fbSend: "提交",
+      fbSending: "提交中…",
+      fbOk: "已收到，谢谢你的反馈！",
+      fbEmpty: "请先写下你的意见。",
+      fbMany: "提交太频繁了，请过几分钟再试。",
+      fbFail: "提交失败，请稍后再试。",
       aboutH: "常见问题",
       aboutP: "cad2pdf 是免费的在线 DWG 转 PDF 工具：把 AutoCAD DWG / DXF 图纸转成可打印的 PDF，支持 24×36、A1、A3 等纸张，按图框分页，颜色和图纸一致。",
       q0: "怎么把 DWG 转成 PDF？",
@@ -281,6 +314,19 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       sampleFail: "示例图纸没有显示出来，可以直接选择你的图纸。"
     },
     en: {
+      fbH: "Feedback",
+      fbP: "Tell us if a conversion looks wrong or what you would like added. No sign-in needed; contact details are optional.",
+      fbMsg: "Your feedback",
+      fbMsgPh: "e.g. which drawing, what looks wrong, what you expected",
+      fbContact: "Contact (optional)",
+      fbContactPh: "Email or WeChat, so we can reply",
+      fbSet: "Attach the current settings (file name, sheet, output type; not the drawing itself)",
+      fbSend: "Send",
+      fbSending: "Sending…",
+      fbOk: "Received. Thank you!",
+      fbEmpty: "Please write your feedback first.",
+      fbMany: "Too many messages; please try again in a few minutes.",
+      fbFail: "Could not send. Please try again later.",
       aboutH: "FAQ",
       aboutP: "cad2pdf is a free online DWG to PDF converter: it turns AutoCAD DWG and DXF drawings into print-ready PDFs on 24 × 36, A1, A3 and other sheets, one page per drawing frame, with the drawing’s own colors.",
       q0: "How do I convert DWG to PDF?",
@@ -332,6 +378,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   function applyLang() {
     document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
     document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-ph]").forEach(el => el.setAttribute("placeholder", t(el.dataset.i18nPh)));
     document.querySelectorAll("[data-i18n-aria]").forEach(el => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
     document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
     $("ver").textContent = (lang === "zh" ? "版本 " : "Version ") + HIFI_DATE;
@@ -1272,6 +1319,29 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   $("noplot").addEventListener("change", () => { if (state.file) loadFile(state.file); else render(); });
   ["trim", "frames"].forEach(id => $(id).addEventListener("change", () => { if (state.boxes) { applyFrame(); render(); } }));
   document.querySelectorAll('input[name="orient"], input[name="color"]').forEach(r => r.addEventListener("change", render));
+
+  // ---------- feedback ----------
+  $("fb").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const st = $("fb-st"), btn = $("fb-send"), msg = $("fb-msg").value.trim();
+    if (msg.length < 2) { st.textContent = t("fbEmpty"); return; }
+    const val = (q) => { const el = document.querySelector(q); return el ? el.value : ""; };
+    const settings = $("fb-set").checked ? {
+      file: state.isSample ? "" : state.name, sheet: val("#size"), orient: val('input[name="orient"]:checked'),
+      color: val('input[name="color"]:checked'), output: val('input[name="fmt"]:checked'), lw: val("#lw"),
+      frames: String($("frames").checked), noplot: String($("noplot").checked), trim: String($("trim").checked),
+      version: HIFI_DATE, status: $("status").textContent.slice(0, 200), screen: innerWidth + "x" + innerHeight,
+    } : null;
+    btn.disabled = true; st.textContent = t("fbSending");
+    try {
+      const r = await fetch("/api/feedback", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message: msg, contact: $("fb-contact").value.trim(), website: $("fb-web").value, lang, settings }) });
+      if (r.status === 429) st.textContent = t("fbMany");
+      else if (!r.ok) st.textContent = t("fbFail");
+      else { st.textContent = t("fbOk"); $("fb-msg").value = ""; }
+    } catch (er) { st.textContent = t("fbFail"); }
+    finally { btn.disabled = false; }
+  });
 
   // Open with the sample drawing so the sheet is visible right away.
   try {

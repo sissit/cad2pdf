@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /tools/
+Disallow: /admin
+Disallow: /api/
 
 Sitemap: https://5cad2pdf.com/sitemap.xml
