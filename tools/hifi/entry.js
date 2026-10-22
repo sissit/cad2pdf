@@ -3,8 +3,9 @@
 // either the linework or the text, so the page can thicken lines to the plot
 // line weight without smearing text.
 import { AcApDocManager, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE } from '@mlightcad/cad-simple-viewer';
-import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
-import { AcGeBox2d } from '@mlightcad/geometry-engine';
+import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbHatch, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
+import { AcGeArea2d, AcGeBox2d, AcGePoint2d, AcGePolyline2d } from '@mlightcad/geometry-engine';
+import polybool from '@velipso/polybool';
 import { AcDbLibreDwgConverter } from '@mlightcad/libredwg-converter';
 
 const TILE = 2048;
@@ -36,6 +37,72 @@ function setup(opts) {
   };
   return mgr;
 }
+
+// ---- Hatches with several boundary loops ----
+// AutoCAD fills alternately from the outer loop inwards (even-odd), and leaves a "text box"
+// island (a loop drawn around text that cuts across the others) empty. The viewer pairs loops
+// by nesting and hands them to a triangulator that drops shapes whose islands touch the outer
+// edge (logo bands, crescents), so such fills vanished. Here the loops are combined with
+// polygon boolean operations instead: even-odd over the ordinary loops, minus crossing boxes,
+// then regrouped into outer loops with holes.
+const ptIn = (pt, poly) => {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i], b = poly[j];
+    if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c;
+  }
+  return c;
+};
+const boxOf = (pts) => pts.reduce((b, p) => [Math.min(b[0], p[0]), Math.min(b[1], p[1]), Math.max(b[2], p[0]), Math.max(b[3], p[1])], [Infinity, Infinity, -Infinity, -Infinity]);
+const overlaps = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+const boxArea = (b) => (b[2] - b[0]) * (b[3] - b[1]);
+const straddles = (p, q) => {
+  let inside = 0, n = 0; const step = Math.max(1, Math.floor(p.length / 64));
+  for (let k = 0; k < p.length; k += step) { n++; if (ptIn(p[k], q)) inside++; }
+  return inside > 0 && inside < n;
+};
+function evenOddAreas(loops) {
+  const polys = [];
+  let total = 0;
+  for (const loop of loops) {
+    const pts = (loop.tessellate ? loop.tessellate({}) : loop.getPoints(64)).map(p => [p.x, p.y]);
+    if (pts.length < 3) return null;
+    total += pts.length; polys.push(pts);
+  }
+  if (polys.length < 2 || polys.length > 60 || total > 30000) return null;
+  const boxes = polys.map(boxOf);
+  // In each pair of loops that cut across each other, the smaller one is a text box.
+  const box = new Set();
+  for (let i = 0; i < polys.length; i++) for (let j = i + 1; j < polys.length; j++)
+    if (overlaps(boxes[i], boxes[j]) && (straddles(polys[i], polys[j]) || straddles(polys[j], polys[i])))
+      box.add(boxArea(boxes[i]) < boxArea(boxes[j]) ? i : j);
+  const shape = (pts) => ({ regions: [pts], inverted: false });
+  let acc = null;
+  polys.forEach((p, i) => { if (!box.has(i)) acc = acc ? polybool.xor(acc, shape(p)) : shape(p); });
+  if (!acc) return null;
+  box.forEach((i) => { acc = polybool.difference(acc, shape(polys[i])); });
+  const regs = acc.regions.filter(r => r.length >= 3);
+  if (!regs.length) return [];
+  const depth = regs.map((r, i) => regs.reduce((d, o, k) => d + (k !== i && ptIn(r[0], o) ? 1 : 0), 0));
+  const toLoop = (r) => new AcGePolyline2d(r.map(p => new AcGePoint2d(p[0], p[1])), true);
+  const areas = [];
+  regs.forEach((r, i) => {
+    if (depth[i] % 2) return;
+    const area = new AcGeArea2d();
+    area.add(toLoop(r));
+    regs.forEach((h, k) => { if (depth[k] === depth[i] + 1 && ptIn(h[0], r)) area.add(toLoop(h)); });
+    areas.push(area);
+  });
+  return areas;
+}
+const origBuildAreas = AcDbHatch.prototype.buildAreasFromLoops;
+AcDbHatch.prototype.buildAreasFromLoops = function () {
+  if (this._areasFromLoopsCache != null) return this._areasFromLoopsCache;
+  let areas = null;
+  try { areas = this._geo && this._geo.loops && this._geo.loops.length > 1 ? evenOddAreas(this._geo.loops) : null; } catch (err) { areas = null; }
+  if (areas) { this._areasFromLoopsCache = areas; return areas; }
+  return origBuildAreas.call(this);
+};
 
 const frame = () => new Promise((res) => requestAnimationFrame(() => res()));
 
@@ -114,7 +181,9 @@ function leaderDimColors(db) {
 // Text-like entities: drawn unthickened (AutoCAD does not apply plot lineweight to TrueType text).
 // Tables and multileaders go with the text because their text cannot be separated from them.
 const isText = (x) => x instanceof AcDbText || x instanceof AcDbMText || x instanceof AcDbArcAlignedText
-  || x instanceof AcDbTable || x instanceof AcDbMLeader;
+  || x instanceof AcDbTable || x instanceof AcDbMLeader
+  // Solid fills have no plot lineweight; thickening them closes the thin white gaps in logos.
+  || (x instanceof AcDbHatch && x.isSolidFill);
 
 let pass = 'all';
 function applyPass(db, mode) {
