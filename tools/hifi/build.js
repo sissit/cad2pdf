@@ -22,6 +22,12 @@ for (const [from, to] of [
 // Stamp the bundle hash into index.html so browsers always fetch the matching renderer.
 const hash = require("crypto").createHash("sha256").update(fs.readFileSync(path.join(out, "cadhifi.js"))).digest("hex").slice(0, 10);
 const indexPath = path.join(__dirname, "..", "..", "index.html");
-const html = fs.readFileSync(indexPath, "utf8").replace(/const HIFI_VER = "[^"]*";/, `const HIFI_VER = "${hash}";`);
+// Version shown to users: build date and time in Houston.
+const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+  .formatToParts(new Date()).map((x) => [x.type, x.value]));
+const stamp = `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+const html = fs.readFileSync(indexPath, "utf8")
+  .replace(/const HIFI_VER = "[^"]*";/, `const HIFI_VER = "${hash}";`)
+  .replace(/const HIFI_DATE = "[^"]*";/, `const HIFI_DATE = "${stamp}";`);
 fs.writeFileSync(indexPath, html);
-console.log("built", hash, fs.readdirSync(out), fs.readdirSync(path.join(out, "workers")));
+console.log("built", hash, stamp, fs.readdirSync(out), fs.readdirSync(path.join(out, "workers")));

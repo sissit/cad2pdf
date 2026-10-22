@@ -256,7 +256,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll("[data-i18n-aria]").forEach(el => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
     document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
-    $("ver").textContent = (lang === "zh" ? "版本 " : "Version ") + HIFI_VER;
+    $("ver").textContent = (lang === "zh" ? "版本 " : "Version ") + HIFI_DATE;
     if (state.isSample) state.name = t("sampleName");
     if (lastStatus) setStatus(lastStatus.k, lastStatus.kind, lastStatus.v);
     render();
@@ -862,6 +862,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
   const HIFI_VER = "595a0281d4";   // set by tools/hifi/build.js
+  const HIFI_DATE = "2026-10-21 22:16";  // build date, shown as the version; set by tools/hifi/build.js
   const HIFI_BASE = new URL("hifi/", document.baseURI).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
