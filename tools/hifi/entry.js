@@ -207,11 +207,21 @@ function applyPass(db, mode) {
   return n;
 }
 
+// True while the viewer is still converting entities, building glyphs, or has a font-loaded
+// redraw queued. Starting another regen then makes the two runs collide.
+const busy = (v) => v._numOfEntitiesToProcess > 0 || v._pendingGeometryJobs > 0 || !!v._convertDrainPromise
+  || !!v._fontLoadedRedrawTimer || (v._convertQueue && v._convertQueue.length > 0);
 async function settle(view) {
   await frame();
   await view.waitUntilIdle(120000);
   await new Promise((res) => setTimeout(res, 500));   // let any queued auto-fit run first
   await view.waitUntilIdle(120000);
+  // Wait until nothing is pending for a short stretch (late font loads trigger redraws).
+  const t0 = Date.now(); let quiet = 0;
+  while (Date.now() - t0 < 60000 && quiet < 3) {
+    await new Promise((res) => setTimeout(res, 200));
+    if (busy(view)) { quiet = 0; await view.waitUntilIdle(30000); } else quiet++;
+  }
   await frame();
 }
 
@@ -278,14 +288,18 @@ function emitPage(draws, o) {
     const W = obj.matrixWorld.elements, list = [];
     const toPage = (m) => [m[0] * o.s, m[1] * o.s, m[4] * o.s, m[5] * o.s, (m[12] - o.box.x0) * o.s + o.ox, (m[13] - o.box.y0) * o.s + o.oy];
     if (obj.instanceMatrix && obj.count != null) {
-      const I = obj.instanceMatrix.array;
+      const I = obj.instanceMatrix.array, batch = obj.parent || {};
       for (let i = 0; i < obj.count; i++) {
+        // Instances the viewer has hidden or deleted keep a placeholder matrix; leave them out.
+        if (batch._alive && !batch._alive[i]) continue;
+        if (batch._hiddenMatrices && batch._hiddenMatrices.has(i)) continue;
         const k = i * 16;
         for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
           let sum = 0; for (let j = 0; j < 4; j++) sum += W[j * 4 + r] * I[k + c * 4 + j];
           tmpM[c * 4 + r] = sum;
         }
-        list.push(toPage(tmpM));
+        const T = toPage(tmpM);
+        if (Math.abs(T[0] * T[3] - T[1] * T[2]) > 1e-12) list.push(T);
       }
     } else list.push(toPage(W));
     return list;
@@ -301,11 +315,22 @@ function emitPage(draws, o) {
     if (++nOps > 4000) { put('S'); nOps = 0; lx = ly = NaN; }
   };
   const endStroke = () => { if (nOps) put('S'); nOps = 0; lx = ly = NaN; };
-  const rangeOf = (g, group) => {
+  // Index (or vertex) ranges to draw. Merged batches keep deleted and hidden pieces in their
+  // buffers, so only slots the viewer marks active and visible are taken.
+  const rangesOf = (obj, g, group) => {
     const total = g.index ? g.index.count : g.attributes.position.count;
     let start = Math.max(0, g.drawRange.start), end = Math.min(total, start + (isFinite(g.drawRange.count) ? g.drawRange.count : total));
     if (group) { start = Math.max(start, group.start); end = Math.min(end, group.start + group.count); }
-    return [start, end];
+    const info = obj._geometryInfo;
+    if (!Array.isArray(info)) return [[start, end]];
+    const out = [];
+    for (const gi of info) {
+      if (!gi || (gi.flags & 3) !== 3) continue;
+      const a = g.index ? gi.indexStart : gi.vertexStart, n = g.index ? gi.indexCount : gi.vertexCount;
+      const s0 = Math.max(start, a), s1 = Math.min(end, a + n);
+      if (s1 > s0) out.push([s0, s1]);
+    }
+    return out;
   };
   // Splits a line from local p to q (path distance d0..d1) into dashes of `pat` (period L).
   const dashes = (pat, L, d0, d1, emit) => {
@@ -364,8 +389,7 @@ function emitPage(draws, o) {
       let id = key.get(k); if (id == null) { id = xs.length; xs.push(X); ys.push(Y); key.set(k, id); }
       return id;
     };
-    const [s0, s1] = range;
-    for (let i = s0; i + 2 < s1; i += 3) {
+    for (const [s0, s1] of range) for (let i = s0; i + 2 < s1; i += 3) {
       const a = idx ? idx.getX(i) : i, b = idx ? idx.getX(i + 1) : i + 1, c = idx ? idx.getX(i + 2) : i + 2;
       tris.push(vid(a), vid(b), vid(c));
     }
@@ -399,13 +423,14 @@ function emitPage(draws, o) {
       stats.lines++;
     } else if (obj.isLine) {
       const pos = g.attributes.position, idx = g.index, LD = g.attributes.lineDistance;
-      const [s0, s1] = rangeOf(g, d.group);
       const vi = (i) => idx ? idx.getX(i) : i;
       const pairs = [];
-      if (obj.isLineSegments) for (let i = s0; i + 1 < s1; i += 2) pairs.push(vi(i), vi(i + 1));
-      else {
-        for (let i = s0; i + 1 < s1; i++) pairs.push(vi(i), vi(i + 1));
-        if (obj.isLineLoop && s1 - s0 > 2) pairs.push(vi(s1 - 1), vi(s0));
+      for (const [s0, s1] of rangesOf(obj, g, d.group)) {
+        if (obj.isLineSegments) for (let i = s0; i + 1 < s1; i += 2) pairs.push(vi(i), vi(i + 1));
+        else {
+          for (let i = s0; i + 1 < s1; i++) pairs.push(vi(i), vi(i + 1));
+          if (obj.isLineLoop && s1 - s0 > 2) pairs.push(vi(s1 - 1), vi(s0));
+        }
       }
       const U = mt.uniforms;
       const pat = U && U.pattern && LD ? Array.from(U.pattern.value).map(v => v * (U.u_viewportScale ? U.u_viewportScale.value : 1)) : null;
@@ -430,7 +455,7 @@ function emitPage(draws, o) {
       }
       stats.lines++;
     } else if (obj.isMesh) {
-      const range = rangeOf(g, d.group);
+      const range = rangesOf(obj, g, d.group);
       const U = mt.uniforms;
       const patTex = U && U.u_patternData && U.u_patternData.value;
       for (const T of Ts) {
@@ -466,7 +491,7 @@ function hatchLines(g, range, U, mt, T, dotPt) {
   const nd = (mt.defines && mt.defines.MAX_PATTERN_SEGMENT_COUNT) || 0;
   const pos = g.attributes.position, idx = g.index;
   let xa = Infinity, ya = Infinity, xb = -Infinity, yb = -Infinity;
-  for (let i = range[0]; i < range[1]; i++) { const v = idx ? idx.getX(i) : i; const x = pos.getX(v), y = pos.getY(v); if (x < xa) xa = x; if (x > xb) xb = x; if (y < ya) ya = y; if (y > yb) yb = y; }
+  for (const [r0, r1] of range) for (let i = r0; i < r1; i++) { const v = idx ? idx.getX(i) : i; const x = pos.getX(v), y = pos.getY(v); if (x < xa) xa = x; if (x > xb) xb = x; if (y < ya) ya = y; if (y > yb) yb = y; }
   if (!isFinite(xa)) return [];
   const scale = Math.sqrt(Math.abs(T[0] * T[3] - T[1] * T[2]));     // pt per local unit
   const rot = (x, y, a) => [Math.cos(a) * x - Math.sin(a) * y, Math.cos(a) * y + Math.sin(a) * x];
@@ -516,10 +541,26 @@ function hatchLines(g, range, U, mt, T, dotPt) {
 window.CADHIFI = {
   TILE,
   // Vector content for one page; see emitPage for the options.
-  async vectorPage(o) {
-    const draws = await captureDraws(o.box);
-    return emitPage(draws, o);
+  // Linework first with the plot line weight, then text (CAD-font strokes, glyphs, solid fills)
+  // with a fine stroke so small lettering stays open, as in the image output.
+  // pages: array of emitPage options; returns one { chunks, stats } per page.
+  async vectorPages(pages, onProgress) {
+    const out = pages.map(() => ({ chunks: [], stats: { lines: 0, fills: 0, hatches: 0, skipped: 0 } }));
+    let n = 0;
+    for (const [mode, key] of [['lines', 'lineW'], ['text', 'textW']]) {
+      await this.setPass(mode);
+      for (let i = 0; i < pages.length; i++) {
+        const o = pages[i];
+        const r = emitPage(await captureDraws(o.box), Object.assign({}, o, { lineW: o[key] || o.lineW }));
+        out[i].chunks.push(...r.chunks);
+        for (const k of Object.keys(r.stats)) out[i].stats[k] += r.stats[k];
+        if (onProgress) onProgress(++n, pages.length * 2);
+      }
+    }
+    await this.setPass('all');
+    return out;
   },
+
   // Opens the drawing; resolves when geometry and text are ready.
   async open(buf, name, opts) {
     const m = setup(opts);
@@ -538,6 +579,7 @@ window.CADHIFI = {
   // 'all' | 'lines' (everything except text) | 'text' (text only).
   async setPass(mode) {
     if (mode === pass) return;
+    await settle(mgr.curView);                  // never regen while a previous one is still running
     const changed = applyPass(mgr.curDocument.database, mode);
     pass = mode;
     // Block graphics are cached per block definition; drop them so hidden contents really disappear.

@@ -872,8 +872,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
 
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
-  const HIFI_VER = "61c3c4e49e";   // set by tools/hifi/build.js
-  const HIFI_DATE = "2026-10-22 02:28";  // build date, shown as the version; set by tools/hifi/build.js
+  const HIFI_VER = "6eb8000d1f";   // set by tools/hifi/build.js
+  const HIFI_DATE = "2026-10-22 02:52";  // build date, shown as the version; set by tools/hifi/build.js
   const HIFI_BASE = new URL("hifi/", document.baseURI).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
@@ -1093,23 +1093,25 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   async function makePdfVec(jsPDF, pages) {
     setStatus(hifiLib ? "hifiOpen" : "hifiLoad");
     const H = await hifiReady();
-    await H.setPass("all");
     const mono = document.querySelector('input[name="color"]:checked').value === "mono";
     const lineW = parseFloat($("lw").value) / 25.4 * 72;
     const hatchW = Math.min(lineW, 0.18 / 25.4 * 72);
-    let pdf = null;
-    for (let i = 0; i < pages.length; i++) {
-      setStatus("vecProg", "", { n: i + 1, m: pages.length });
-      const vb = pages[i].vb, S = sheetSizePt(vb);
+    const textW = Math.min(lineW, HIFI_TEXT_MM / 25.4 * 72);
+    const sheets = pages.map(pg => {
+      const vb = pg.vb, S = sheetSizePt(vb);
       const m = 36, s = Math.min((S.w - 2 * m) / vb.w, (S.h - 2 * m) / vb.h);
-      const wPt = vb.w * s, hPt = vb.h * s, x = (S.w - wPt) / 2, yTop = (S.h - hPt) / 2;
-      if (!pdf) pdf = newPdf(jsPDF, S); else pdf.addPage([S.w, S.h], S.w >= S.h ? "l" : "p");
+      const wPt = vb.w * s, hPt = vb.h * s, x = (S.w - wPt) / 2, oy = S.h - (S.h - hPt) / 2 - hPt;
       const box = { x0: vb.x, x1: vb.x + vb.w, y0: -(vb.y + vb.h), y1: -vb.y };
-      const oy = S.h - yTop - hPt;
-      const { chunks, stats } = await H.vectorPage({ box, ox: x, oy, s, clip: [x, oy, wPt, hPt], lineW, hatchW, mono });
-      console.log("vector page", i + 1, JSON.stringify(stats));
-      for (const c of chunks) pdf.internal.write(c);
-    }
+      return { S, opt: { box, ox: x, oy, s, clip: [x, oy, wPt, hPt], lineW, hatchW, textW, mono } };
+    });
+    const res = await H.vectorPages(sheets.map(sh => sh.opt), (n, m) => setStatus("hifiProg", "", { p: Math.round(n / m * 100) }));
+    let pdf = null;
+    sheets.forEach((sh, i) => {
+      const { S } = sh;
+      if (!pdf) pdf = newPdf(jsPDF, S); else pdf.addPage([S.w, S.h], S.w >= S.h ? "l" : "p");
+      console.log("vector page", i + 1, JSON.stringify(res[i].stats));
+      for (const c of res[i].chunks) pdf.internal.write(c);
+    });
     return pdf;
   }
 
