@@ -158,8 +158,8 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <div class="field">
         <span class="label" data-i18n="fmt"></span>
         <div class="seg" role="radiogroup" data-i18n-aria="fmt">
-          <label><input type="radio" name="fmt" id="f-img" value="img" checked><span data-i18n="fmtImg"></span></label>
-          <label><input type="radio" name="fmt" id="f-vec" value="vec"><span data-i18n="fmtVec"></span></label>
+          <label><input type="radio" name="fmt" id="f-img" value="img"><span data-i18n="fmtImg"></span></label>
+          <label><input type="radio" name="fmt" id="f-vec" value="vec" checked><span data-i18n="fmtVec"></span></label>
         </div>
         <p class="hint" data-i18n="fmtHint"></p>
       </div>
@@ -208,7 +208,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       pick: "选择或拖入图纸", support: "支持 .dwg（R13–2018）和 .dxf", paper: "纸张", orient: "方向",
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
       noplot: "打印「不打印」图层（AutoCAD 默认不打）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
-      fmt: "输出方式", fmtImg: "图片", fmtVec: "矢量", fmtHint: "矢量：线条和文字放大不糊，文件通常更小。图片：原来的方式，效果已核对过。", vecProg: "正在生成矢量 PDF…第 {n}/{m} 页", vec: "矢量",
+      fmt: "输出方式", fmtImg: "图片", fmtVec: "矢量", fmtHint: "矢量（默认）：线条和文字放大不糊，转得快，文件小。图片：原来的方式；图纸里有插入的照片时请选图片。", vecProg: "正在生成矢量 PDF…第 {n}/{m} 页", vec: "矢量",
       lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
       hifiLoad: "正在加载高保真渲染组件…", hifiOpen: "正在准备高保真渲染（读取图纸和字体）…", hifiPage: "正在渲染第 {n}/{m} 页…（{p}%）", hifiProg: "正在生成 PDF…（{p}%）", hifiLines: "正在渲染线条…（{p}%）", hifiText: "正在渲染文字…（{p}%）", hifi: "高保真", vecFallback: "高保真渲染失败，已自动改用矢量方式，中文可能显示不正常",
       go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
@@ -234,7 +234,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       pick: "Choose or drop a drawing", support: ".dwg (R13–2018) and .dxf", paper: "Sheet size", orient: "Orientation",
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
       noplot: "Include layers set to not plot (AutoCAD leaves them out)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
-      fmt: "Output", fmtImg: "Image", fmtVec: "Vector", fmtHint: "Vector: lines and text stay sharp at any zoom and files are usually smaller. Image: the original, already-checked method.", vecProg: "Creating vector PDF… page {n} of {m}", vec: "vector",
+      fmt: "Output", fmtImg: "Image", fmtVec: "Vector", fmtHint: "Vector (default): lines and text stay sharp at any zoom, faster, smaller files. Image: the original method; choose it if the drawing contains inserted photos.", vecProg: "Creating vector PDF… page {n} of {m}", vec: "vector",
       lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
       hifiLoad: "Loading the high-fidelity renderer…", hifiOpen: "Preparing high-fidelity render (reading drawing and fonts)…", hifiPage: "Rendering page {n} of {m}… ({p}%)", hifiProg: "Creating PDF… ({p}%)", hifiLines: "Rendering linework… ({p}%)", hifiText: "Rendering text… ({p}%)", hifi: "high fidelity", vecFallback: "high-fidelity rendering failed, so vector output was used; Chinese text may not display correctly",
       go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
@@ -873,7 +873,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
   const HIFI_VER = "61c3c4e49e";   // set by tools/hifi/build.js
-  const HIFI_DATE = "2026-10-22 02:18";  // build date, shown as the version; set by tools/hifi/build.js
+  const HIFI_DATE = "2026-10-22 02:28";  // build date, shown as the version; set by tools/hifi/build.js
   const HIFI_BASE = new URL("hifi/", document.baseURI).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
