@@ -1,18 +1,26 @@
 // POST /api/admin — password-protected list / mark done / delete of feedback.
-// Wrong passwords are limited per visitor (5 per 15 minutes) and overall (30 per hour).
-import { json, visitor, recent, mark, list, del, readJson, writeJson, passwordOk } from './_lib.js';
+// Wrong passwords: 5 within 15 minutes lock that visitor for 15 minutes; 10 within 24 hours lock
+// it for 24 hours (a correct password clears the count). More than 30 wrong passwords from everyone in an hour pause logins for an hour.
+import { json, visitor, counts, mark, list, del, readJson, writeJson, passwordOk } from './_lib.js';
+
+const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 
 export async function POST(request) {
   let body;
   try { body = await request.json(); } catch (e) { return json(400, { error: 'bad_request' }); }
   const who = visitor(request);
-  const fails = await recent(`rl/login/${who}/`, 15 * 60 * 1000);
-  const allFails = await recent('rl/loginall/', 60 * 60 * 1000);
-  if (fails >= 5 || allFails >= 30) return json(429, { error: 'locked' });
+  const [f15, f24] = await counts(`rl/login/${who}/`, [15 * MIN, DAY]);
+  const [all] = await counts('rl/loginall/', [HOUR]);
+  if (f24 >= 10) return json(429, { error: 'locked', minutes: 24 * 60 });
+  if (f15 >= 5) return json(429, { error: 'locked', minutes: 15 });
+  if (all >= 30) return json(429, { error: 'locked', minutes: 60 });
   if (!passwordOk(body.password)) {
     await mark(`rl/login/${who}/`); await mark('rl/loginall/');
-    return json(401, { error: 'wrong_password', left: Math.max(0, 4 - fails) });
+    const left = Math.min(5 - (f15 + 1), 10 - (f24 + 1));
+    return json(401, { error: 'wrong_password', left: Math.max(0, left), lockMinutes: f24 + 1 >= 10 ? 24 * 60 : 15 });
   }
+  // A correct password clears this visitor's wrong-password count.
+  if (f24 > 0) { const r = await list({ prefix: `rl/login/${who}/`, limit: 1000 }); if (r.blobs.length) await del(r.blobs.map(b => b.url)).catch(() => {}); }
   const action = body.action || 'list';
   const safeId = typeof body.id === 'string' && /^[0-9]+-[a-z0-9]+$/.test(body.id) ? body.id : null;
   if (action === 'list') {

@@ -12,21 +12,24 @@ export const visitor = (request) => {
   return createHash('sha256').update('cad2pdf:' + ip).digest('hex').slice(0, 16);
 };
 
-// Number of marker blobs under `prefix` written in the last `ms` milliseconds; older ones are removed.
-export async function recent(prefix, ms) {
-  const now = Date.now(), old = [];
-  let n = 0, cursor;
+// Counts marker blobs under `prefix` written within each of `windows` (ms); markers older than
+// `keep` ms (default: the longest window) are removed.
+export async function counts(prefix, windows, keep = Math.max(...windows)) {
+  const now = Date.now(), old = [], n = windows.map(() => 0);
+  let cursor;
   do {
     const r = await list({ prefix, cursor, limit: 1000 });
     for (const b of r.blobs) {
-      const t = Number(b.pathname.split('/').pop().split('-')[0]);
-      if (now - t < ms) n++; else old.push(b.url);
+      const age = now - Number(b.pathname.split('/').pop().split('-')[0]);
+      windows.forEach((w, i) => { if (age < w) n[i]++; });
+      if (age >= keep) old.push(b.url);
     }
     cursor = r.hasMore ? r.cursor : undefined;
   } while (cursor);
   if (old.length) await del(old).catch(() => {});
   return n;
 }
+export const recent = async (prefix, ms) => (await counts(prefix, [ms]))[0];
 export const mark = (prefix) => put(`${prefix}${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, '1', { access: 'private', addRandomSuffix: false });
 
 export async function readJson(pathname) {

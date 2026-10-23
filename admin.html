@@ -60,8 +60,9 @@ button.danger { color:var(--err); }
   async function call(action, id) {
     const r = await fetch("/api/admin", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: pw, action, id }) });
     const j = await r.json().catch(() => ({}));
-    if (r.status === 401) throw new Error(j.left > 0 ? `密码不对，还可以再试 ${j.left} 次。` : "密码不对。");
-    if (r.status === 429) throw new Error("输错次数太多，已锁定 15 分钟，请稍后再试。");
+    const span = (m) => m >= 1440 ? "24 小时" : m >= 60 ? "1 小时" : m + " 分钟";
+    if (r.status === 401) throw new Error(j.left > 0 ? `密码不对，再错 ${j.left} 次将锁定 ${span(j.lockMinutes || 15)}。` : `密码不对，已锁定 ${span(j.lockMinutes || 15)}。`);
+    if (r.status === 429) throw new Error(`输错次数太多，已锁定 ${span(j.minutes || 15)}，请稍后再试。`);
     if (!r.ok) throw new Error("出错了，请稍后再试。");
     return j;
   }
