@@ -111,6 +111,7 @@ select:focus-visible, button:focus-visible, .seg input:focus-visible + span { ou
 .fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .fb-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 button.go.fb-send { width: auto; padding-left: 28px; padding-right: 28px; }
+.foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; border-top: 1px solid var(--rule); padding: 14px 0 6px; color: var(--muted); font-size: .8rem; }
 .hint { font-size: .8rem; color: var(--muted); margin: 0; }
 button.go {
   font: inherit; font-family: var(--display); font-weight: 600; font-size: 1.05rem; letter-spacing: .02em;
@@ -210,7 +211,6 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <p class="status" id="status" role="status" aria-live="polite"></p>
       <p class="hint" data-i18n="hint"></p>
       <p class="hint ver" id="ver"></p>
-      <p class="hint ver" id="visits" hidden></p>
     </aside>
 
     <section class="stage">
@@ -245,6 +245,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <div class="fb-row"><button class="go fb-send" type="submit" id="fb-send" data-i18n="fbSend">提交</button><span class="hint" id="fb-st" role="status" aria-live="polite"></span></div>
     </form>
   </section>
+  <footer class="foot"><span>© 2026 5cad2pdf.com</span><span id="visits" hidden></span></footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1290,16 +1291,30 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 
+  // Usage record for the owner's admin page: settings and outcome only, never the file name or content.
+  function logUse(ok, t0, extra) {
+    try {
+      const pages = state.pages && state.pages.length ? state.pages.length : 1;
+      const ext = state.isSample ? "sample" : (state.name.match(/\.(dwg|dxf)$/i) || [, ""])[1];
+      const body = JSON.stringify(Object.assign({ ok, pages, ext, sec: (performance.now() - t0) / 1000,
+        col: document.querySelector('input[name="color"]:checked').value, sh: $("size").value }, extra));
+      if (navigator.sendBeacon) navigator.sendBeacon("/api/use", body);
+      else fetch("/api/use", { method: "POST", body, keepalive: true }).catch(() => {});
+    } catch (e) {}
+  }
   $("go").addEventListener("click", async () => {
     if (!state.content) return;
     if (!dlReady) { setStatus("wait"); return; }
     if (inClaude && !downloads) { setStatus("noSave", "err"); return; }
     const btn = $("go"); btn.disabled = true;
+    const t0 = performance.now(); let outType = "";
     setStatus("making");
     try {
       const fname = state.name.replace(/\.(dwg|dxf)$/i, "") + ".pdf";
       const { blob, fellBack, vec } = await makePdf();
       const info = { n: fname, s: (blob.size / 1048576).toFixed(1), m: t(fellBack ? "vecFallback" : vec ? "vec" : "hifi") };
+      outType = fellBack ? "fallback" : vec ? "vec" : "img";
+      logUse(1, t0, { out: outType, mb: blob.size / 1048576 });
       if (downloads) {
         setStatus("confirm");
         await downloads.save({ filename: fname, data: blob });
@@ -1316,6 +1331,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       else if (code === "too_large") setStatus("large", "err");
       else if (code) setStatus("noSave", "err");
       else setStatus(e instanceof UserError ? e : "genFail", "err");
+      if (!outType && code !== "declined") logUse(0, t0, { out: document.querySelector('input[name="fmt"]:checked').value, err: code || (e instanceof UserError ? "user" : (e && e.name) || "error") });
     } finally { btn.disabled = false; }
   });
 

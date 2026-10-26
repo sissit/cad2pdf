@@ -32,6 +32,7 @@ button.danger { color:var(--err); }
 .maintabs [role=tab][aria-selected=true] { color:var(--accent); border-bottom-color:var(--accent); }
 .badge { display:inline-block; min-width:18px; margin-left:6px; padding:0 6px; border-radius:9px; background:var(--accent); color:#fff; font-size:.75rem; line-height:18px; text-align:center; }
 .badge:empty { display:none; }
+h3.sub { font-size:.95rem; margin:6px 0 8px; }
 .sub { font-size:1.05rem; margin:4px 0 10px; }
 .muted { color:var(--muted); }
 .kpis { display:flex; flex-wrap:wrap; gap:10px 28px; margin-bottom:12px; }
@@ -123,13 +124,51 @@ button.danger { color:var(--err); }
     return `<div><table><tr><th>${title}</th><th>访客</th></tr>${rows.map(r => `<tr><td>${esc(label(r))}</td><td>${r.visitors}</td></tr>`).join("")}</table></div>`;
   }
   let trDays = 30;
+  // Conversions recorded by /api/use: totals, daily bars and breakdowns.
+  function usageHtml(u) {
+    if (!u || !Array.isArray(u.rows)) return `<h3 class="sub">使用情况</h3><p class="muted">使用数据暂时读不到。</p>`;
+    const rows = u.rows, ok = rows.filter(r => r.ok === "1"), fail = rows.length - ok.length;
+    if (!rows.length) return `<h3 class="sub">使用情况</h3><p class="muted">这段时间还没有转换记录（从 10 月 26 日开始记录）。</p>`;
+    const avg = (k) => ok.length ? (ok.reduce((a, r) => a + Number(r[k] || 0), 0) / ok.length).toFixed(1) : "0";
+    const count = (k, names, src) => { const m = {}; (src || rows).forEach(r => { const v = r[k] || ""; m[v] = (m[v] || 0) + 1; }); return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([v, n]) => ({ v: (names && names[v]) || v || "未知", n })); };
+    const tbl = (title, list) => `<div><table><tr><th>${title}</th><th>次数</th></tr>${list.map(x => `<tr><td>${esc(x.v)}</td><td>${x.n}</td></tr>`).join("")}</table></div>`;
+    const byDay = {}; rows.forEach(r => { byDay[r.day] = (byDay[r.day] || 0) + 1; });
+    const daysList = []; for (let i = u.days - 1; i >= 0; i--) { const dd = new Date(Date.now() - i * 864e5).toISOString().slice(0, 10); daysList.push([dd, byDay[dd] || 0]); }
+    const mx = Math.max(1, ...daysList.map(x => x[1]));
+    const md = (d) => Number(d.slice(5, 7)) + "/" + Number(d.slice(8, 10));
+    return `<h3 class="sub">使用情况</h3>
+      <div class="kpis">
+        <div class="kpi"><b>${rows.length}</b><span>转换次数</span></div>
+        <div class="kpi"><b>${ok.length}</b><span>成功</span></div>
+        <div class="kpi"><b>${fail}</b><span>失败</span></div>
+        <div class="kpi"><b>${avg("p")}</b><span>平均页数</span></div>
+        <div class="kpi"><b>${avg("s")} 秒</b><span>平均用时</span></div>
+        <div class="kpi"><b>${avg("mb")} MB</b><span>平均文件大小</span></div>
+      </div>
+      <div class="muted" style="font-size:.85rem">每日转换次数</div>
+      <div class="bars">${daysList.map(([dd, n]) => `<div style="height:${Math.round(n / mx * 100)}%" data-t="${md(dd)}：${n} 次"></div>`).join("")}</div>
+      <div class="axis"><span>${md(daysList[0][0])}</span><span>${md(daysList[daysList.length - 1][0])}</span></div>
+      <div class="cols" style="margin-bottom:18px">
+        ${tbl("输出方式", count("out", { vec: "矢量", img: "图片", fallback: "矢量失败改图片" }))}
+        ${tbl("文件类型", count("ext", { dwg: "DWG", dxf: "DXF", sample: "示例图" }))}
+        ${tbl("颜色", count("col", { color: "彩色", mono: "黑白" }))}
+        ${tbl("纸张", count("sh"))}
+        ${fail ? tbl("失败原因", count("err", { user: "图纸问题", error: "程序出错", declined: "取消保存" }, rows.filter(r => r.ok !== "1"))) : ""}
+      </div>`;
+  }
   async function loadTraffic() {
     const el = $("tr-body");
     el.className = "muted"; el.textContent = "读取中…";
     try {
-      const d = await call("stats", null, { days: trDays });
-      if (!d.configured) { el.innerHTML = "还没接上流量数据：需要在 Vercel 里加 VERCEL_ANALYTICS_TOKEN。"; return; }
-      if (d.error) { el.textContent = "流量数据暂时读不到（" + d.error + "）。"; return; }
+      const [d, u] = await Promise.all([call("stats", null, { days: trDays }), call("usage", null, { days: trDays }).catch(() => null)]);
+      const rangeBtns = `<div class="row tabs" style="margin-bottom:12px">${[7, 30, 90].map(n => `<button type="button" data-days="${n}" aria-pressed="${n === trDays}">近 ${n} 天</button>`).join("")}</div>`;
+      const useHtml = usageHtml(u);
+      const bind = () => el.querySelectorAll("[data-days]").forEach(b => b.addEventListener("click", () => { trDays = Number(b.dataset.days); loadTraffic(); }));
+      if (!d.configured || d.error) {
+        el.className = "";
+        el.innerHTML = rangeBtns + useHtml + `<h3 class="sub">访问</h3><p class="muted">${!d.configured ? "还没接上访问数据：需要在 Vercel 里加 VERCEL_ANALYTICS_TOKEN。" : "访问数据暂时读不到（" + esc(d.error) + "）。"}</p>`;
+        bind(); return;
+      }
       const days = d.daily || [], max = Math.max(1, ...days.map(x => x.visitors));
       const md = (t) => { const x = new Date(t); return (x.getUTCMonth() + 1) + "/" + x.getUTCDate(); };
       const today = days.length ? days[days.length - 1] : { visitors: 0, pageviews: 0 };
@@ -137,7 +176,8 @@ button.danger { color:var(--err); }
       const name = (v, map) => v === "Others" ? "其他" : (map && map[v]) || v || "未知";
       el.className = "";
       el.innerHTML = `
-        <div class="row tabs" style="margin-bottom:12px">${[7, 30, 90].map(n => `<button type="button" data-days="${n}" aria-pressed="${n === d.days}">近 ${n} 天</button>`).join("")}</div>
+        ${rangeBtns}${useHtml}
+        <h3 class="sub">访问</h3>
         <div class="kpis">
           <div class="kpi"><b>${d.total.visitors}</b><span>上线以来访客</span></div>
           <div class="kpi"><b>${d.period.visitors}</b><span>近 ${d.days} 天访客</span></div>
@@ -156,7 +196,7 @@ button.danger { color:var(--err); }
           ${table("浏览器", d.browser, r => name(r.browserName))}
           ${table("页面", d.pages, r => name(r.requestPath, { "/": "首页", "/admin": "后台" }))}
         </div>`;
-      el.querySelectorAll("[data-days]").forEach(b => b.addEventListener("click", () => { trDays = Number(b.dataset.days); loadTraffic(); }));
+      bind();
     } catch (e) { el.textContent = e.message; }
   }
   async function load() {

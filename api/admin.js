@@ -39,6 +39,23 @@ export async function POST(request) {
       return json(200, { configured: true, days, total, period, daily, country, referrer, device, os, browser, pages });
     } catch (e) { return json(200, { configured: true, error: String(e.message || e) }); }
   }
+  if (action === 'usage') {
+    const days = [7, 30, 90].includes(Number(body.days)) ? Number(body.days) : 30;
+    const from = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
+    const rows = []; let cursor;
+    do {
+      const r = await list({ prefix: 'use/', cursor, limit: 1000 });
+      for (const b of r.blobs) {
+        const [, day, rest] = b.pathname.split('/');
+        if (!day || day < from) continue;
+        const f = { day };
+        for (const kv of rest.split('~').slice(1)) { const [k, v] = kv.split('='); f[k] = v; }
+        rows.push(f);
+      }
+      cursor = r.hasMore ? r.cursor : undefined;
+    } while (cursor);
+    return json(200, { days, rows });
+  }
   const safeId = typeof body.id === 'string' && /^[0-9]+-[a-z0-9]+$/.test(body.id) ? body.id : null;
   if (action === 'list') {
     const items = []; let cursor;
