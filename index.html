@@ -111,7 +111,10 @@ select:focus-visible, button:focus-visible, .seg input:focus-visible + span { ou
 .fb-hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .fb-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 button.go.fb-send { width: auto; padding-left: 28px; padding-right: 28px; }
-.foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; border-top: 1px solid var(--rule); padding: 14px 0 6px; color: var(--muted); font-size: .8rem; }
+.foot { display: flex; justify-content: space-between; align-items: baseline; gap: 4px 24px; border-top: 1px solid var(--rule); padding: 14px 0 8px; color: var(--muted); font-size: .8rem; }
+.foot-r { display: flex; gap: 0 8px; }
+.foot-r > span:not([hidden]) + span:not([hidden])::before { content: "·"; margin-right: 8px; }
+@media (max-width: 600px) { .foot { flex-direction: column; gap: 2px; } }
 .hint { font-size: .8rem; color: var(--muted); margin: 0; }
 button.go {
   font: inherit; font-family: var(--display); font-weight: 600; font-size: 1.05rem; letter-spacing: .02em;
@@ -244,7 +247,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <div class="fb-row"><button class="go fb-send" type="submit" id="fb-send" data-i18n="fbSend">提交</button><span class="hint" id="fb-st" role="status" aria-live="polite"></span></div>
     </form>
   </section>
-  <footer class="foot"><span>© 2026 5cad2pdf.com</span><span id="ver"></span><span id="visits" hidden></span></footer>
+  <footer class="foot"><span>© 2026 5cad2pdf.com</span><span class="foot-r"><span id="ver"></span><span id="visits" hidden></span></span></footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
