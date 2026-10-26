@@ -210,7 +210,6 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <button class="go" id="go" type="button" data-i18n="go"></button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
       <p class="hint" data-i18n="hint"></p>
-      <p class="hint ver" id="ver"></p>
     </aside>
 
     <section class="stage">
@@ -245,7 +244,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <div class="fb-row"><button class="go fb-send" type="submit" id="fb-send" data-i18n="fbSend">提交</button><span class="hint" id="fb-st" role="status" aria-live="polite"></span></div>
     </form>
   </section>
-  <footer class="foot"><span>© 2026 5cad2pdf.com</span><span id="visits" hidden></span></footer>
+  <footer class="foot"><span>© 2026 5cad2pdf.com</span><span id="ver"></span><span id="visits" hidden></span></footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -998,7 +997,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
   const HIFI_VER = "6eb8000d1f";   // set by tools/hifi/build.js
-  const HIFI_DATE = "2026-10-22 02:52";  // build date, shown as the version; set by tools/hifi/build.js
+  const HIFI_DATE = "2026-10-26 15:05";  // build date, shown as the version; set by tools/hifi/build.js
   const HIFI_BASE = new URL("hifi/", document.baseURI).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
