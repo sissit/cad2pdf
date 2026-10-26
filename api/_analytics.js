@@ -9,7 +9,7 @@ export const daysAgo = (n) => new Date(Math.floor(Date.now() / day) * day - n * 
 export async function query(kind, params) {
   const u = new URL(`https://api.vercel.com/v1/query/web-analytics/visits/${kind}`);
   u.searchParams.set('projectId', PROJECT); u.searchParams.set('teamId', TEAM);
-  for (const [k, v] of Object.entries(params)) for (const x of [].concat(v)) u.searchParams.append(k, x);
+  for (const [k, v] of Object.entries(params)) if (v != null) for (const x of [].concat(v)) u.searchParams.append(k, String(x));
   const r = await fetch(u, { headers: { authorization: `Bearer ${String(process.env.VERCEL_ANALYTICS_TOKEN).trim().replace(/^["']|["']$/g, "")}` } });
   if (!r.ok) { const t = (await r.text()).slice(0, 300); console.error('analytics', kind, r.status, t); throw new Error(`analytics ${r.status}: ${t}`); }
   return (await r.json()).data;
