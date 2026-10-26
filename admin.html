@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>意见管理 · cad2pdf</title>
+<title>后台 · cad2pdf</title>
 <style>
 :root { --bg:#eef1f4; --panel:#fff; --ink:#18202b; --muted:#5b6776; --rule:#cdd5de; --accent:#1d5bb8; --ok:#1f7a4a; --err:#b42318; }
 @media (prefers-color-scheme: dark) { :root { --bg:#12171e; --panel:#1a212b; --ink:#e4e9ef; --muted:#98a4b3; --rule:#2d3743; --accent:#6b9ff0; --ok:#5fc48e; --err:#f2876f; color-scheme: dark; } }
@@ -27,6 +27,11 @@ button.danger { color:var(--err); }
 .status.err { color:var(--err); }
 .tabs button[aria-pressed=true] { background:var(--accent); color:#fff; border-color:var(--accent); }
 .actions { margin-top:8px; }
+.maintabs { border-bottom:1px solid var(--rule); margin-bottom:14px; gap:4px; }
+.maintabs [role=tab] { border:0; border-bottom:3px solid transparent; border-radius:0; background:none; font-weight:600; padding:10px 14px; color:var(--muted); }
+.maintabs [role=tab][aria-selected=true] { color:var(--accent); border-bottom-color:var(--accent); }
+.badge { display:inline-block; min-width:18px; margin-left:6px; padding:0 6px; border-radius:9px; background:var(--accent); color:#fff; font-size:.75rem; line-height:18px; text-align:center; }
+.badge:empty { display:none; }
 .sub { font-size:1.05rem; margin:4px 0 10px; }
 .muted { color:var(--muted); }
 .kpis { display:flex; flex-wrap:wrap; gap:10px 28px; margin-bottom:12px; }
@@ -48,7 +53,7 @@ button.danger { color:var(--err); }
 <body>
 <div class="wrap">
   <div class="row" style="justify-content:space-between;margin-bottom:16px">
-    <h1 style="margin:0">意见管理</h1>
+    <h1 style="margin:0">后台</h1>
     <a href="/" class="home" role="button">← 回到首页</a>
   </div>
   <form id="login" class="card row">
@@ -56,18 +61,23 @@ button.danger { color:var(--err); }
     <button class="primary" type="submit">进入</button>
   </form>
   <div id="panel" hidden>
-    <div class="row tabs" style="margin-bottom:12px">
-      <button type="button" data-f="open" aria-pressed="true">未处理</button>
-      <button type="button" data-f="all" aria-pressed="false">全部</button>
+    <div class="row maintabs" role="tablist">
+      <button type="button" role="tab" data-tab="fb" aria-selected="true">意见<span class="badge" id="fb-count"></span></button>
+      <button type="button" role="tab" data-tab="tr" aria-selected="false">流量</button>
+      <span style="flex:1"></span>
       <button type="button" id="refresh">刷新</button>
       <button type="button" id="logout">退出</button>
     </div>
-    <section class="card" id="traffic">
-      <h2 class="sub">流量</h2>
-      <div id="tr-body" class="muted">读取中…</div>
-    </section>
-    <h2 class="sub">意见</h2>
-    <div id="list"></div>
+    <div id="tab-fb" role="tabpanel">
+      <div class="row tabs" style="margin-bottom:12px">
+        <button type="button" data-f="open" aria-pressed="true">未处理</button>
+        <button type="button" data-f="all" aria-pressed="false">全部</button>
+      </div>
+      <div id="list"></div>
+    </div>
+    <div id="tab-tr" role="tabpanel" hidden>
+      <section class="card" id="traffic"><div id="tr-body" class="muted">读取中…</div></section>
+    </div>
   </div>
   <p class="status" id="status" role="status"></p>
 </div>
@@ -88,9 +98,11 @@ button.danger { color:var(--err); }
   }
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   function show() {
+    if (tab !== "fb") { $("fb-count").textContent = items.filter(x => !x.done).length || ""; return; }
     const shown = items.filter(x => filter === "all" || !x.done);
     const open = items.filter(x => !x.done).length;
     say(`共 ${items.length} 条，未处理 ${open} 条。`);
+    $("fb-count").textContent = open ? String(open) : "";
     $("list").innerHTML = shown.length ? shown.map(x => `
       <div class="card${x.done ? " done" : ""}">
         <div class="meta"><span>${esc(new Date(x.at).toLocaleString("zh-CN", { hour12: false }))}</span>${x.contact ? `<span>联系方式：${esc(x.contact)}</span>` : ""}${x.lang ? `<span>页面语言：${esc(x.lang)}</span>` : ""}</div>
@@ -139,7 +151,7 @@ button.danger { color:var(--err); }
   }
   async function load() {
     say("读取中…");
-    try { items = (await call("list")).items || []; $("login").hidden = true; $("panel").hidden = false; show(); loadTraffic(); }
+    try { items = (await call("list")).items || []; $("login").hidden = true; $("panel").hidden = false; show(); }
     catch (e) { say(e.message, true); $("login").hidden = false; $("panel").hidden = true; }
   }
   $("login").addEventListener("submit", (e) => {
@@ -148,7 +160,16 @@ button.danger { color:var(--err); }
     load();
   });
   $("logout").addEventListener("click", () => { pw = ""; try { sessionStorage.removeItem("cad2pdf-admin"); } catch (e) {} items = []; $("list").innerHTML = ""; $("panel").hidden = true; $("login").hidden = false; say(""); });
-  $("refresh").addEventListener("click", load);
+  let tab = "fb", trLoaded = false;
+  function setTab(t) {
+    tab = t;
+    document.querySelectorAll(".maintabs [role=tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === t)));
+    $("tab-fb").hidden = t !== "fb"; $("tab-tr").hidden = t !== "tr";
+    if (t === "tr") { say(""); if (!trLoaded) { trLoaded = true; loadTraffic(); } }
+    else show();
+  }
+  document.querySelectorAll(".maintabs [role=tab]").forEach(b => b.addEventListener("click", () => setTab(b.dataset.tab)));
+  $("refresh").addEventListener("click", () => { if (tab === "tr") loadTraffic(); else load(); });
   document.querySelectorAll(".tabs [data-f]").forEach(b => b.addEventListener("click", () => {
     filter = b.dataset.f; document.querySelectorAll(".tabs [data-f]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); show();
   }));
