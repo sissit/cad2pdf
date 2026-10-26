@@ -26,16 +26,17 @@ export async function POST(request) {
   if (action === 'stats') {
     if (!hasToken()) return json(200, { configured: false });
     try {
-      const until = tomorrow(), since30 = daysAgo(29);
-      const [total, month, daily, country, referrer, device] = await Promise.all([
+      const days = [7, 30, 90].includes(Number(body.days)) ? Number(body.days) : 30;
+      const until = tomorrow(), since = daysAgo(days - 1);
+      const agg = (by, limit) => query('aggregate', { since, until, by, limit });
+      const [total, period, daily, country, referrer, device, os, browser, pages] = await Promise.all([
         query('count', { since: LAUNCH, until }),
-        query('count', { since: since30, until }),
-        query('aggregate', { since: since30, until, by: 'day' }),
-        query('aggregate', { since: since30, until, by: 'country', limit: 8 }),
-        query('aggregate', { since: since30, until, by: 'referrerHostname', limit: 8 }),
-        query('aggregate', { since: since30, until, by: 'deviceType', limit: 5 }),
+        query('count', { since, until }),
+        agg('day'),
+        agg('country', 10), agg('referrerHostname', 10), agg('deviceType', 5),
+        agg('osName', 8), agg('browserName', 8), agg('requestPath', 10),
       ]);
-      return json(200, { configured: true, total, month, daily, country, referrer, device });
+      return json(200, { configured: true, days, total, period, daily, country, referrer, device, os, browser, pages });
     } catch (e) { return json(200, { configured: true, error: String(e.message || e) }); }
   }
   const safeId = typeof body.id === 'string' && /^[0-9]+-[a-z0-9]+$/.test(body.id) ? body.id : null;
