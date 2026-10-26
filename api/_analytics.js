@@ -11,6 +11,6 @@ export async function query(kind, params) {
   u.searchParams.set('projectId', PROJECT); u.searchParams.set('teamId', TEAM);
   for (const [k, v] of Object.entries(params)) for (const x of [].concat(v)) u.searchParams.append(k, x);
   const r = await fetch(u, { headers: { authorization: `Bearer ${process.env.VERCEL_ANALYTICS_TOKEN}` } });
-  if (!r.ok) throw new Error(`analytics ${r.status}`);
+  if (!r.ok) { const t = (await r.text()).slice(0, 300); console.error('analytics', kind, r.status, t); throw new Error(`analytics ${r.status}: ${t}`); }
   return (await r.json()).data;
 }
