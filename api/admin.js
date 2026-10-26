@@ -2,6 +2,7 @@
 // Wrong passwords: 5 within 15 minutes lock that visitor for 15 minutes; 10 within 24 hours lock
 // it for 24 hours (a correct password clears the count). More than 30 wrong passwords from everyone in an hour pause logins for an hour.
 import { json, visitor, counts, mark, list, del, readJson, writeJson, passwordOk } from './_lib.js';
+import { hasToken, query, LAUNCH, tomorrow, daysAgo } from './_analytics.js';
 
 const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR;
 
@@ -22,6 +23,21 @@ export async function POST(request) {
   // A correct password clears this visitor's wrong-password count.
   if (f24 > 0) { const r = await list({ prefix: `rl/login/${who}/`, limit: 1000 }); if (r.blobs.length) await del(r.blobs.map(b => b.url)).catch(() => {}); }
   const action = body.action || 'list';
+  if (action === 'stats') {
+    if (!hasToken()) return json(200, { configured: false });
+    try {
+      const until = tomorrow(), since30 = daysAgo(29);
+      const [total, month, daily, country, referrer, device] = await Promise.all([
+        query('count', { since: LAUNCH, until }),
+        query('count', { since: since30, until }),
+        query('aggregate', { since: since30, until, by: 'day' }),
+        query('aggregate', { since: since30, until, by: 'country', limit: 8 }),
+        query('aggregate', { since: since30, until, by: 'referrerHostname', limit: 8 }),
+        query('aggregate', { since: since30, until, by: 'deviceType', limit: 5 }),
+      ]);
+      return json(200, { configured: true, total, month, daily, country, referrer, device });
+    } catch (e) { return json(200, { configured: true, error: String(e.message || e) }); }
+  }
   const safeId = typeof body.id === 'string' && /^[0-9]+-[a-z0-9]+$/.test(body.id) ? body.id : null;
   if (action === 'list') {
     const items = []; let cursor;

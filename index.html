@@ -210,6 +210,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <p class="status" id="status" role="status" aria-live="polite"></p>
       <p class="hint" data-i18n="hint"></p>
       <p class="hint ver" id="ver"></p>
+      <p class="hint ver" id="visits" hidden></p>
     </aside>
 
     <section class="stage">
@@ -259,6 +260,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
   const STR = {
     zh: {
+      visits: "累计访客 {n} 人 · 近 7 天 {w} 人",
       fbH: "意见反馈",
       fbP: "转换效果不对、想要新功能，都可以告诉我。不用登录，联系方式可以不填。",
       fbMsg: "你的意见",
@@ -314,6 +316,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       sampleFail: "示例图纸没有显示出来，可以直接选择你的图纸。"
     },
     en: {
+      visits: "{n} visitors so far · {w} in the last 7 days",
       fbH: "Feedback",
       fbP: "Tell me if a conversion looks wrong or what you would like added. No sign-in needed; contact details are optional.",
       fbMsg: "Your feedback",
@@ -375,6 +378,12 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   const t = (k, v) => { let s = (STR[lang] && STR[lang][k]) || STR.zh[k] || k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
   const fail = (k) => { throw new UserError(t(k)); };
   let lastStatus = null;
+  let visits = null;
+  function showVisits() {
+    if (!visits) return;
+    $("visits").textContent = t("visits", { n: visits.visitors.toLocaleString(), w: visits.week.toLocaleString() });
+    $("visits").hidden = false;
+  }
   function applyLang() {
     document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
     document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
@@ -382,6 +391,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     document.querySelectorAll("[data-i18n-aria]").forEach(el => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
     document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
     $("ver").textContent = (lang === "zh" ? "版本 " : "Version ") + HIFI_DATE;
+    showVisits();
     if (state.isSample) state.name = t("sampleName");
     if (lastStatus) setStatus(lastStatus.k, lastStatus.kind, lastStatus.v);
     render();
@@ -1319,6 +1329,11 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   $("noplot").addEventListener("change", () => { if (state.file) loadFile(state.file); else render(); });
   ["trim", "frames"].forEach(id => $(id).addEventListener("change", () => { if (state.boxes) { applyFrame(); render(); } }));
   document.querySelectorAll('input[name="orient"], input[name="color"]').forEach(r => r.addEventListener("change", render));
+
+  // ---------- visitor count (Vercel Web Analytics, cached by /api/stats) ----------
+  fetch("/api/stats").then(r => r.ok ? r.json() : null).then(d => {
+    if (d && typeof d.visitors === "number") { visits = d; showVisits(); }
+  }).catch(() => {});
 
   // ---------- feedback ----------
   $("fb").addEventListener("submit", async (e) => {

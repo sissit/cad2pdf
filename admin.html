@@ -9,6 +9,7 @@
 :root { --bg:#eef1f4; --panel:#fff; --ink:#18202b; --muted:#5b6776; --rule:#cdd5de; --accent:#1d5bb8; --ok:#1f7a4a; --err:#b42318; }
 @media (prefers-color-scheme: dark) { :root { --bg:#12171e; --panel:#1a212b; --ink:#e4e9ef; --muted:#98a4b3; --rule:#2d3743; --accent:#6b9ff0; --ok:#5fc48e; --err:#f2876f; color-scheme: dark; } }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.55 system-ui,"PingFang SC","Microsoft YaHei",sans-serif; }
 .wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 60px; }
 h1 { font-size: 1.4rem; margin: 0 0 16px; }
@@ -26,6 +27,20 @@ button.danger { color:var(--err); }
 .status.err { color:var(--err); }
 .tabs button[aria-pressed=true] { background:var(--accent); color:#fff; border-color:var(--accent); }
 .actions { margin-top:8px; }
+.sub { font-size:1.05rem; margin:4px 0 10px; }
+.muted { color:var(--muted); }
+.kpis { display:flex; flex-wrap:wrap; gap:10px 28px; margin-bottom:12px; }
+.kpi b { display:block; font-size:1.5rem; line-height:1.2; }
+.kpi span { color:var(--muted); font-size:.85rem; }
+.bars { display:flex; align-items:flex-end; gap:3px; height:110px; margin:6px 0 2px; }
+.bars div { flex:1; background:var(--accent); border-radius:3px 3px 0 0; min-height:2px; position:relative; }
+.bars div:hover::after { content:attr(data-t); position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:var(--ink); color:var(--panel); font-size:.75rem; padding:2px 6px; border-radius:4px; white-space:nowrap; margin-bottom:4px; }
+.axis { display:flex; justify-content:space-between; color:var(--muted); font-size:.75rem; }
+.cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-top:14px; }
+.cols table { width:100%; border-collapse:collapse; font-size:.88rem; }
+.cols th { text-align:left; color:var(--muted); font-weight:500; padding:2px 0; }
+.cols td { padding:3px 0; border-top:1px solid var(--rule); }
+.cols td:last-child, .cols th:last-child { text-align:right; }
 .home { display:inline-block; text-decoration:none; font-weight:500; padding:8px 14px; border-radius:8px; border:1px solid var(--accent); color:var(--accent); background:var(--panel); }
 .home:hover { background:var(--accent); color:#fff; }
 </style>
@@ -47,6 +62,11 @@ button.danger { color:var(--err); }
       <button type="button" id="refresh">刷新</button>
       <button type="button" id="logout">退出</button>
     </div>
+    <section class="card" id="traffic">
+      <h2 class="sub">流量</h2>
+      <div id="tr-body" class="muted">读取中…</div>
+    </section>
+    <h2 class="sub">意见</h2>
     <div id="list"></div>
   </div>
   <p class="status" id="status" role="status"></p>
@@ -83,9 +103,43 @@ button.danger { color:var(--err); }
         </div>
       </div>`).join("") : `<div class="card">${filter === "open" ? "没有未处理的意见。" : "还没有意见。"}</div>`;
   }
+  // ---------- traffic ----------
+  const region = (() => { try { return new Intl.DisplayNames(["zh-CN"], { type: "region" }); } catch (e) { return null; } })();
+  const devName = { desktop: "电脑", mobile: "手机", tablet: "平板" };
+  function table(title, rows, label) {
+    if (!rows || !rows.length) return "";
+    return `<div><table><tr><th>${title}</th><th>访客</th></tr>${rows.map(r => `<tr><td>${esc(label(r))}</td><td>${r.visitors}</td></tr>`).join("")}</table></div>`;
+  }
+  async function loadTraffic() {
+    const el = $("tr-body");
+    try {
+      const d = await call("stats");
+      if (!d.configured) { el.innerHTML = "还没接上流量数据：需要在 Vercel 里加 VERCEL_ANALYTICS_TOKEN。"; return; }
+      if (d.error) { el.textContent = "流量数据暂时读不到（" + d.error + "）。"; return; }
+      const days = d.daily || [], max = Math.max(1, ...days.map(x => x.visitors));
+      const md = (t) => { const x = new Date(t); return (x.getUTCMonth() + 1) + "/" + x.getUTCDate(); };
+      const today = days.length ? days[days.length - 1] : { visitors: 0, pageviews: 0 };
+      el.className = "";
+      el.innerHTML = `
+        <div class="kpis">
+          <div class="kpi"><b>${d.total.visitors}</b><span>累计访客</span></div>
+          <div class="kpi"><b>${d.total.pageviews}</b><span>累计浏览</span></div>
+          <div class="kpi"><b>${d.month.visitors}</b><span>近 30 天访客</span></div>
+          <div class="kpi"><b>${today.visitors}</b><span>今天访客（UTC）</span></div>
+        </div>
+        <div class="muted" style="font-size:.85rem">近 30 天每日访客</div>
+        <div class="bars">${days.map(x => `<div style="height:${Math.round(x.visitors / max * 100)}%" data-t="${md(x.timestamp)}：${x.visitors} 人 / ${x.pageviews} 次"></div>`).join("")}</div>
+        <div class="axis"><span>${days.length ? md(days[0].timestamp) : ""}</span><span>${days.length ? md(days[days.length - 1].timestamp) : ""}</span></div>
+        <div class="cols">
+          ${table("国家/地区", d.country, r => r.country === "Others" ? "其他" : (region && r.country ? region.of(r.country) : r.country) || "未知")}
+          ${table("来源", d.referrer, r => r.referrerHostname === "Others" ? "其他" : r.referrerHostname || "直接访问")}
+          ${table("设备", d.device, r => r.deviceType === "Others" ? "其他" : devName[r.deviceType] || r.deviceType || "未知")}
+        </div>`;
+    } catch (e) { el.textContent = e.message; }
+  }
   async function load() {
     say("读取中…");
-    try { items = (await call("list")).items || []; $("login").hidden = true; $("panel").hidden = false; show(); }
+    try { items = (await call("list")).items || []; $("login").hidden = true; $("panel").hidden = false; show(); loadTraffic(); }
     catch (e) { say(e.message, true); $("login").hidden = false; $("panel").hidden = true; }
   }
   $("login").addEventListener("submit", (e) => {
