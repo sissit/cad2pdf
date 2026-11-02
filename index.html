@@ -900,7 +900,10 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
         const d = Math.hypot(Math.max(f.x0 - g.x1, 0, g.x0 - f.x1), Math.max(f.y0 - g.y1, 0, g.y0 - f.y1)) / Math.max(W(f), H(f));
         if (d < bestD) { bestD = d; best = i; }
       });
-      if (best >= 0 && bestD < 0.1 && size < 1.2 * maxSide) {
+      if (best >= 0 && bestD === 0 && size > 0.8 * maxSide) {
+        // Starts on a sheet but runs far past its frame (a long line of text): print what lies
+        // inside the frame, as AutoCAD does, rather than widening the page.
+      } else if (best >= 0 && bestD < 0.1 && size < 0.8 * maxSide) {
         const f = pagesBox[best];
         f.x0 = Math.min(f.x0, g.x0); f.y0 = Math.min(f.y0, g.y0); f.x1 = Math.max(f.x1, g.x1); f.y1 = Math.max(f.y1, g.y1);
       } else if (size >= minSide * 0.3 && size <= maxSide * 1.5) pagesBox.push(g);   // a drawing with no frame of its own
