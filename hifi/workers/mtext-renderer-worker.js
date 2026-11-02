@@ -35119,6 +35119,8 @@ class fh {
         );
       } else if (o.type === K.SPACE)
         this.processBlank(i, r);
+      else if (o.type === K.TABULATOR)
+        this.processTab(i, r);
       else if (o.type === K.PERCENT_SYMBOL)
         this.processPercentSymbol(
           o.data,
@@ -35465,6 +35467,12 @@ class fh {
    * @param meshCharBoxes Mesh char-box accumulator.
    * @param lineCharBoxes Line char-box accumulator.
    */
+  processTab(t, e) {
+    const step = 4 * this.defaultFontSize, x = this._hOffset;
+    const stop = x < -1e-9 ? 0 : (Math.floor(x / step + 1e-9) + 1) * step;
+    this.processBlank(t, e);
+    if (this._hOffset < stop) this._hOffset = stop;
+  }
   processBlank(t, e) {
     if (this._options.collectCharBoxes !== !1) {
       const n = this._hOffset, i = this.flowDirection == le.BOTTOM_TO_TOP ? this._vOffset : this._vOffset - this.currentLayoutFontSize, r = new Tt(

@@ -3,7 +3,7 @@
 // either the linework or the text, so the page can thicken lines to the plot
 // line weight without smearing text.
 import { AcApDocManager, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE, collectTextStyleFontNames } from '@mlightcad/cad-simple-viewer';
-import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbHatch, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
+import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbHatch, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbPolyline, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
 import { AcGeArea2d, AcGeBox2d, AcGePoint2d, AcGePolyline2d } from '@mlightcad/geometry-engine';
 import polybool from '@velipso/polybool';
 import { AcDbLibreDwgConverter } from '@mlightcad/libredwg-converter';
@@ -135,6 +135,30 @@ function inheritLayer0(db) {
     if (!rec) continue;
     for (const e of rec.newIterator()) if (e.layer === '0') { e.layer = L; moved++; }
   }
+  // Attributes on layer 0 belong to their INSERT's layer too. The viewer otherwise draws them in
+  // the INSERT layer's color even when they carry their own (wire counts came out green, not black).
+  const fixAttrs = (record, depth) => {
+    if (!record || depth > 8) return;
+    for (const e of record.newIterator()) {
+      if (typeof e.attributeIterator !== 'function') continue;
+      // Text style the reader could not resolve: take the one its definition (ATTDEF) uses.
+      let defs = null;
+      for (const a of e.attributeIterator()) {
+        if (a.layer === '0' && e.layer !== '0') { a.layer = e.layer; moved++; }
+        if (!a.styleName && e.blockName != null) {
+          if (!defs) {
+            defs = new Map();
+            const r = e.blockTableRecord || bt.getAt(e.blockName);
+            if (r) for (const d of r.newIterator()) if (d.tag != null && d.styleName && d.constructor !== e.constructor) defs.set(d.tag, d.styleName);
+          }
+          const st = defs.get(a.tag);
+          if (st) { try { a.styleName = st; moved++; } catch (err) { /* read-only: keep the default */ } }
+        }
+      }
+    }
+  };
+  fixAttrs(bt.modelSpace, 0);
+  for (const rec of bt.newIterator()) if (rec !== bt.modelSpace) fixAttrs(rec, 1);
   return moved;
 }
 
@@ -146,6 +170,126 @@ async function renderOnce(view) {
     // Safety net: if no render happens within 3 s, resolve with the canvas as is.
     setTimeout(() => { if (hook === resolve) { hook = null; resolve(view.renderer.domElement); } }, 3000);
   });
+}
+
+// Wide polylines (a width set) are drawn as filled bands, and the viewer ignores their line type,
+// so dashed wide wires came out solid. Cut each one into its dashes, as AutoCAD plots it.
+function dashWidePolylines(db) {
+  const bt = db.tables.blockTable, ltt = db.tables.linetypeTable, lyt = db.tables.layerTable;
+  const ltscale = db.ltscale > 0 ? db.ltscale : 1;
+  const dashesOf = new Map();
+  const dashes = (name) => {
+    if (!name || /^(bylayer|byblock|continuous)$/i.test(name)) return null;
+    if (dashesOf.has(name)) return dashesOf.get(name);
+    let r = null;
+    try {
+      const rec = ltt.getAt(name), pat = rec && rec.linetype && rec.linetype.pattern;
+      if (pat && pat.length >= 2) {
+        const el = pat.map(e => e.elementLength);
+        if (el.some(v => v < 0) && el.some(v => v > 0)) r = el;
+      }
+    } catch (e) { /* unknown line type: leave the polyline alone */ }
+    dashesOf.set(name, r);
+    return r;
+  };
+  let n = 0;
+  for (const rec of bt.newIterator()) {
+    const add = [], drop = [];
+    for (const p of rec.newIterator()) {
+      if (!(p instanceof AcDbPolyline) || !p._geo) continue;
+      const V = p._geo.vertices;
+      if (!V || V.length < 2) continue;
+      if (!V.some(v => (v.startWidth || 0) > 0 || (v.endWidth || 0) > 0)) continue;
+      let lt = p.lineType;
+      if (!lt || /^bylayer$/i.test(lt)) { const L = lyt.getAt(p.layer); lt = L && L.linetype; }
+      const el = dashes(lt);
+      if (!el) continue;
+      const k = ltscale * (p.linetypeScale > 0 ? p.linetypeScale : 1);
+      const segs = [];
+      const cnt = p.closed ? V.length : V.length - 1;
+      for (let i = 0; i < cnt; i++) segs.push([V[i], V[(i + 1) % V.length]]);
+      const pieces = [];
+      for (const [a, b] of segs) {
+        // Points along this segment (an arc when it has a bulge), with distance and width.
+        const w0 = Math.max(0, a.startWidth || 0), w1 = Math.max(0, a.endWidth || 0);
+        const pts = [];
+        if (a.bulge) {
+          const dx = b.x - a.x, dy = b.y - a.y, f = (1 - a.bulge * a.bulge) / (4 * a.bulge);
+          const cx = (a.x + b.x) / 2 - dy * f, cy = (a.y + b.y) / 2 + dx * f;
+          const r = Math.hypot(a.x - cx, a.y - cy), a0 = Math.atan2(a.y - cy, a.x - cx), sw = 4 * Math.atan(a.bulge);
+          const m = Math.max(4, Math.ceil(Math.abs(sw) / (Math.PI / 32)));
+          for (let i = 0; i <= m; i++) pts.push({ x: cx + r * Math.cos(a0 + sw * i / m), y: cy + r * Math.sin(a0 + sw * i / m) });
+        } else pts.push({ x: a.x, y: a.y }, { x: b.x, y: b.y });
+        const cum = [0];
+        for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+        const len = cum[cum.length - 1];
+        const at = (s) => {
+          let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+          const t = cum[i] > cum[i - 1] ? (s - cum[i - 1]) / (cum[i] - cum[i - 1]) : 0;
+          return { x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t, y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t, w: w0 + (w1 - w0) * (len > 0 ? s / len : 0) };
+        };
+        const run = (s0, s1) => {               // the path from s0 to s1, corners included
+          const r = [at(s0)];
+          for (let i = 1; i < cum.length - 1; i++) if (cum[i] > s0 && cum[i] < s1) r.push(at(cum[i]));
+          r.push(at(s1));
+          return r;
+        };
+        const total = el.reduce((t, v) => t + Math.abs(v), 0) * k;
+        if (!(len > 0) || total <= 0 || len < total) { pieces.push(run(0, len)); continue; }  // too short: solid
+        // The pattern restarts at each vertex (AutoCAD's default for polylines).
+        let d = 0, j = 0;
+        while (d < len) {
+          const e = Math.min(len, d + Math.max(Math.abs(el[j]) * k, len * 1e-6));
+          if (el[j] >= 0) pieces.push(run(d, e));
+          d = e; j = (j + 1) % el.length;
+        }
+      }
+      for (const pc of pieces) {
+        const q = new AcDbPolyline();
+        pc.forEach((v, i) => { const nx = pc[i + 1] || v; q.addVertexAt(i, new AcGePoint2d(v.x, v.y), 0, v.w, nx.w); });
+        q.layer = p.layer; q.color = p.color; q.lineWeight = p.lineWeight; q.lineType = 'Continuous';
+        if (p.elevation) q.elevation = p.elevation;
+        if (p.normal) q.normal = p.normal;
+        add.push(q);
+      }
+      drop.push(p.objectId);
+      n++;
+    }
+    if (add.length) { rec.appendEntity(add); rec.removeEntity(drop); }
+  }
+  return n;
+}
+
+// MTEXT written as one block of {\H0.5x; ...} (smaller lettering than the entity height): the
+// viewer spaces lines and indents by the entity height, so such notes came out with double line
+// gaps and ran past their frame. Make the scaled height the entity height instead.
+function flattenMTextHeight(db) {
+  let n = 0;
+  for (const rec of db.tables.blockTable.newIterator()) for (const x of rec.newIterator()) {
+    if (!(x instanceof AcDbMText)) continue;
+    const c = x.contents;
+    if (typeof c !== 'string' || c.indexOf('\\H') < 0) continue;
+    const m = c.match(/^((?:\\p[^;]*;)?)\{\\H([0-9.]+)x;([\s\S]*)\}$/);
+    if (!m || /\\H/.test(m[3])) continue;
+    const f = parseFloat(m[2]);
+    if (!(f > 0.05 && f < 20) || !(x.height > 0)) continue;
+    // Paragraph indents count in entity heights: keep them the same width on paper.
+    const para = m[1].replace(/([ilr])(-?[0-9.]+)/g, (all, k, v) => k + (parseFloat(v) / f).toFixed(5).replace(/\.?0+$/, ''));
+    try { x.height = x.height * f; x.contents = para + '{' + m[3] + '}'; n++; } catch (e) { /* leave as is */ }
+  }
+  return n;
+}
+
+// Common Latin TrueType faces we don't ship (Swiss 721, Helvetica, Calibri...): draw them with
+// Arial, a sans face, rather than the default Song-style fallback.
+const LATIN_TTF = /^(swis(s|721)\w*|arial(bd|bi|i|n|nb|nbi|ni)|ariblk|helv\w*|calibri\w*|segoeui\w*|frank\w*|trebuc\w*|tahomabd)(\.ttf)?$/i;
+function mapLatinFonts(db) {
+  let n = 0;
+  for (const rec of db.tables.textStyleTable.newIterator()) {
+    const f = String(rec.fileName || '').replace(/^.*[\\/]/, '');
+    if (LATIN_TTF.test(f)) { try { rec.fileName = 'arial.ttf'; n++; } catch (e) { /* keep */ } }
+  }
+  return n;
 }
 
 // AutoCAD draws a LEADER in its dimension style's dimension-line color (DIMCLRD) when that is
@@ -590,7 +734,7 @@ window.CADHIFI = {
     view.backgroundColor = 0xffffff;          // paper: ACI 7 draws black
     await view.waitUntilIdle(120000);
     const db = m.curDocument.database;
-    const fixed = inheritLayer0(db) + leaderDimColors(db);
+    const fixed = inheritLayer0(db) + leaderDimColors(db) + dashWidePolylines(db) + flattenMTextHeight(db) + mapLatinFonts(db);
     if (fixed > 0) { AcDbRenderingCache.instance.clear(); m.regen(); await settle(view); }
     await frame(); await frame();
     return true;
