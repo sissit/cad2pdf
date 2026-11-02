@@ -2,7 +2,7 @@
 // (hidden) and renders any WCS box into a TILE x TILE canvas. setPass() shows
 // either the linework or the text, so the page can thicken lines to the plot
 // line weight without smearing text.
-import { AcApDocManager, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE } from '@mlightcad/cad-simple-viewer';
+import { AcApDocManager, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE, collectTextStyleFontNames } from '@mlightcad/cad-simple-viewer';
 import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbHatch, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
 import { AcGeArea2d, AcGeBox2d, AcGePoint2d, AcGePolyline2d } from '@mlightcad/geometry-engine';
 import polybool from '@velipso/polybool';
@@ -547,11 +547,30 @@ window.CADHIFI = {
   async vectorPages(pages, onProgress) {
     const out = pages.map(() => ({ chunks: [], stats: { lines: 0, fills: 0, hatches: 0, skipped: 0 } }));
     let n = 0;
+    // Fetch every font the text styles name before text is rebuilt: text built while a font is
+    // still downloading can stay empty, which left the first pages without any lettering.
+    try { await mgr.loadFonts(collectTextStyleFontNames(mgr.curDocument.database)); } catch (e) { /* drawn with fallbacks */ }
+    // Size of what a capture drew; used to tell when late-arriving text has finished appearing.
+    const size = (d) => d.reduce((t, x) => {
+      const g = x.geometry; const c = g.index ? g.index.count : (g.attributes && g.attributes.position ? g.attributes.position.count : 0);
+      return t + c * (x.object && x.object.count != null ? x.object.count : 1);
+    }, 0);
     for (const [mode, key] of [['lines', 'lineW'], ['text', 'textW']]) {
       await this.setPass(mode);
       for (let i = 0; i < pages.length; i++) {
         const o = pages[i];
-        const r = emitPage(await captureDraws(o.box), Object.assign({}, o, { lineW: o[key] || o.lineW }));
+        let draws = await captureDraws(o.box);
+        if (mode === 'text') {
+          // Capture again after the viewer goes quiet; repeat until two captures agree.
+          for (let k = 0; k < 4; k++) {
+            await settle(mgr.curView);
+            const again = await captureDraws(o.box);
+            const same = size(again) === size(draws);
+            draws = again;
+            if (same) break;
+          }
+        }
+        const r = emitPage(draws, Object.assign({}, o, { lineW: o[key] || o.lineW }));
         out[i].chunks.push(...r.chunks);
         for (const k of Object.keys(r.stats)) out[i].stats[k] += r.stats[k];
         if (onProgress) onProgress(++n, pages.length * 2);

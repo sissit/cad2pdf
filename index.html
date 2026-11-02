@@ -484,6 +484,15 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   // ---------- one renderer for both formats ----------
   // model = { entities, blocks: { name: { entities, position } }, layers: { name: { color, visible } } }
   // Entities use dxf-parser field names; DWG entities are normalized to the same shape first.
+  // A representative point of a block's contents (cached), used to keep SVG transforms small.
+  function blockAnchor(blk) {
+    if (blk.__anchor !== undefined) return blk.__anchor;
+    let a = null;
+    const pt = (e) => e && (e.startPoint || e.center || e.position || e.insertionPoint || (e.vertices && e.vertices[0]) || (e.controlPoints && e.controlPoints[0]));
+    for (const e of blk.entities || []) { const q = pt(e); if (q && isFinite(q.x) && isFinite(q.y)) { a = { x: q.x, y: q.y }; break; } }
+    blk.__anchor = a;
+    return a;
+  }
   function renderModel(model) {
     const layerTbl = model.layers || {};
     const used = new Map();
@@ -575,7 +584,13 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
             const pos = e.position || { x: 0, y: 0 };
             const sx = e.xScale || 1, sy = e.yScale || 1, r = e.rotation || 0;
             const inner = blk.entities.map(x => ent(x, col, depth + 1)).join("");
-            const tf = `translate(${pos.x} ${pos.y}) rotate(${r}) scale(${sx} ${sy}) translate(${-bp.x} ${-bp.y})`;
+            // Browsers clamp very large SVG translations (about ±33.5 million), so a block whose
+            // contents sit millions of units from its base point would be drawn in the wrong place.
+            // Pivot on a point inside the block instead, which keeps every translation small.
+            const c = blockAnchor(blk) || bp;
+            const vx = sx * (c.x - bp.x), vy = sy * (c.y - bp.y), ra = r * Math.PI / 180;
+            const ox = pos.x + vx * Math.cos(ra) - vy * Math.sin(ra), oy = pos.y + vx * Math.sin(ra) + vy * Math.cos(ra);
+            const tf = `translate(${ox} ${oy}) rotate(${r}) scale(${sx} ${sy}) translate(${-c.x} ${-c.y})`;
             const cols = Math.max(1, e.columnCount || 1), rows = Math.max(1, e.rowCount || 1);
             const k = Math.sqrt(Math.abs(sx * sy)) || 1;
             if (cols === 1 && rows === 1) out = `<g transform="${tf}" data-k="${k}">${inner}</g>`;
@@ -847,7 +862,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     // Notes and labels just outside a frame belong to that sheet: grow its page to include them.
     // Anything far from every frame is left off and counted.
     const pagesBox = frames.map(f => ({ x0: f.x0, y0: f.y0, x1: f.x1, y1: f.y1 }));
-    let outside = 0;
+    const minSide = Math.min(...frames.map(f => Math.min(W(f), H(f))));
+    const rest = [];
     boxes.forEach((b, k) => {
       const [x, y] = centers[k];
       if (frames.some(f => inside(f, x, y))) return;
@@ -863,8 +879,33 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       if (best >= 0 && bestD < 0.25 && small) {
         const g = pagesBox[best];
         g.x0 = Math.min(g.x0, b.x0); g.y0 = Math.min(g.y0, b.y0); g.x1 = Math.max(g.x1, b.x1); g.y1 = Math.max(g.y1, b.y1);
-      } else outside++;
+      } else rest.push(b);
     });
+    // A sizeable drawing with no frame of its own (a base plan placed beside the sheets) gets its
+    // own page; stray specks stay off and are counted.
+    const groups = [];
+    for (const b of rest) {
+      const near = (g) => Math.hypot(Math.max(g.x0 - b.x1, 0, b.x0 - g.x1), Math.max(g.y0 - b.y1, 0, b.y0 - g.y1)) < minSide * 0.1;
+      let g = groups.find(near);
+      if (!g) { groups.push(g = { x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1, n: 0 }); }
+      g.x0 = Math.min(g.x0, b.x0); g.y0 = Math.min(g.y0, b.y0); g.x1 = Math.max(g.x1, b.x1); g.y1 = Math.max(g.y1, b.y1); g.n++;
+    }
+    let outside = 0;
+    const maxSide = Math.max(...frames.map(f => Math.max(W(f), H(f))));
+    for (const g of groups) {
+      const size = Math.max(g.x1 - g.x0, g.y1 - g.y0);
+      // Notes beside a frame (however long) belong to that sheet.
+      let best = -1, bestD = Infinity;
+      pagesBox.slice(0, frames.length).forEach((f, i) => {
+        const d = Math.hypot(Math.max(f.x0 - g.x1, 0, g.x0 - f.x1), Math.max(f.y0 - g.y1, 0, g.y0 - f.y1)) / Math.max(W(f), H(f));
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      if (best >= 0 && bestD < 0.1 && size < 1.2 * maxSide) {
+        const f = pagesBox[best];
+        f.x0 = Math.min(f.x0, g.x0); f.y0 = Math.min(f.y0, g.y0); f.x1 = Math.max(f.x1, g.x1); f.y1 = Math.max(f.y1, g.y1);
+      } else if (size >= minSide * 0.3 && size <= maxSide * 1.5) pagesBox.push(g);   // a drawing with no frame of its own
+      else outside += g.n;                                                           // specks, or scattered strays
+    }
     return pagesBox.map((g, i) => ({ vb: { x: g.x0, y: g.y0, w: g.x1 - g.x0, h: g.y1 - g.y0 }, outside: i === 0 ? outside : 0 }));
   }
   function applyFrame() {
@@ -999,8 +1040,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
 
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
-  const HIFI_VER = "6eb8000d1f";   // set by tools/hifi/build.js
-  const HIFI_DATE = "2026-10-26 15:05";  // build date, shown as the version; set by tools/hifi/build.js
+  const HIFI_VER = "70b4be4d60";   // set by tools/hifi/build.js
+  const HIFI_DATE = "2026-11-02 11:22";  // build date, shown as the version; set by tools/hifi/build.js
   const HIFI_BASE = new URL("hifi/", document.baseURI).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
