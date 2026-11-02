@@ -16,6 +16,9 @@ export async function POST(request) {
     ok: b.ok ? 1 : 0, out: tok(b.out, 8), ext: tok(b.ext, 6), col: tok(b.col, 6), sh: tok(b.sh, 12),
     p: num(b.pages, 999), s: num(b.sec, 9999), mb: num(b.mb, 999), err: tok(b.err, 16),
   };
+  // Font names the drawing needed but the site lacks (names only, as base64url so any script is safe in a path).
+  const fonts = (Array.isArray(b.mf) ? b.mf : []).map(x => String(x).replace(/[\u0000-\u001f|]/g, '').trim().slice(0, 32)).filter(Boolean).slice(0, 6);
+  if (fonts.length) f.mf = Buffer.from(fonts.join('|'), 'utf8').toString('base64url').slice(0, 400);
   const meta = Object.entries(f).map(([k, v]) => `${k}=${v}`).join('~');
   await put(`use/${day}/${who}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}~${meta}`, '', { access: 'private', addRandomSuffix: false });
   return new Response(null, { status: 204 });

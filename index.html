@@ -1060,8 +1060,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
 
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
-  const HIFI_VER = "ab3d1d0ce0";   // set by tools/hifi/build.js
-  const HIFI_DATE = "2026-11-02 12:28";  // build date, shown as the version; set by tools/hifi/build.js
+  const HIFI_VER = "9182e6466e";   // set by tools/hifi/build.js
+  const HIFI_DATE = "2026-11-02 12:40";  // build date, shown as the version; set by tools/hifi/build.js
   const HIFI_BASE = new URL("hifi/", document.baseURI).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
@@ -1361,8 +1361,10 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     try {
       const pages = state.pages && state.pages.length ? state.pages.length : 1;
       const ext = state.isSample ? "sample" : (state.name.match(/\.(dwg|dxf)$/i) || [, ""])[1];
+      let mf = [];
+      try { if (window.CADHIFI && CADHIFI.ready) mf = CADHIFI.missingFonts(); } catch (e) {}
       const body = JSON.stringify(Object.assign({ ok, pages, ext, sec: (performance.now() - t0) / 1000,
-        col: document.querySelector('input[name="color"]:checked').value, sh: $("size").value }, extra));
+        col: document.querySelector('input[name="color"]:checked').value, sh: $("size").value, mf }, extra));
       if (navigator.sendBeacon) navigator.sendBeacon("/api/use", body);
       else fetch("/api/use", { method: "POST", body, keepalive: true }).catch(() => {});
     } catch (e) {}

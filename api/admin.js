@@ -50,6 +50,7 @@ export async function POST(request) {
         if (!day || day < from) continue;
         const f = { day };
         for (const kv of rest.split('~').slice(1)) { const [k, v] = kv.split('='); f[k] = v; }
+        if (f.mf) { try { f.mf = Buffer.from(f.mf, 'base64url').toString('utf8').split('|').filter(Boolean); } catch (e) { delete f.mf; } }
         rows.push(f);
       }
       cursor = r.hasMore ? r.cursor : undefined;

@@ -3,21 +3,30 @@
 const fs = require("fs"), path = require("path");
 const nm = path.join(__dirname, "node_modules");
 const out = path.join(__dirname, "..", "..", "hifi");
-// Extra font shipped with the site: Arimo Bold (SIL OFL, metric-compatible with Arial Bold),
-// drawn for bold Latin TrueType styles such as Swiss 721 Extra Bold. It is added to the font
-// catalog both the page and the text worker read.
-const BOLD_NAMES = ["arimo-bold", "arialbd", "arialbi", "arialnb", "ariblk", "swissb", "swisseb", "swissbi", "swisscb", "swissbo", "swissek", "swissebi", "swis721 bt bold", "swis721 blkex bt", "calibrib", "segoeuib", "trebucbd", "tahomabd", "verdanab", "helveticab", "helvetica-bold"];
+// Extra fonts shipped with the site (all SIL OFL, metric-compatible with the faces they stand in
+// for), added to the font catalog the page and the text worker read. Names are the font file
+// names drawings ask for, without extension.
+const EXTRA_FONTS = [
+  ["arimo-bold.woff", ["arimo-bold", "arialbd", "arialbi", "arialnb", "ariblk", "swissb", "swisseb", "swissbi", "swisscb", "swissbo", "swissek", "swissebi", "calibrib", "segoeuib", "trebucbd", "tahomabd", "verdanab", "helveticab", "helvetica-bold"]],
+  ["tinos.woff", ["tinos", "times", "times new roman", "timesnewroman", "tnr", "dutch", "dutch801", "serif", "georgia", "cambria", "garamond", "book antiqua", "bookos", "pala", "palatino", "century", "schlbk"]],
+  ["tinos-bold.woff", ["tinos-bold", "timesbd", "dutchb", "dutcheb", "georgiab", "cambriab", "palab", "bookosb", "centuryb", "schlbkb"]],
+  ["tinos-italic.woff", ["tinos-italic", "timesi", "dutchi", "georgiai", "cambriai", "palai", "bookosi", "schlbki"]],
+  ["tinos-bolditalic.woff", ["tinos-bolditalic", "timesbi", "dutchbi", "georgiaz", "cambriaz", "palabi", "bookosbi", "schlbkbi"]],
+  ["cousine.woff", ["cousine", "cour", "courier", "courier new", "couriernew", "consola", "consolas", "lucon", "monos"]],
+  ["cousine-bold.woff", ["cousine-bold", "courbd", "consolab"]],
+];
+const catalogRe = /(\w+)\.forEach\(\((\w+)\) => \{\n\s*\2\.url = (\w+) \+ \2\.file;\n\s*\}\)/;
+function addCatalogFonts(src, what) {
+  if (!catalogRe.test(src)) throw new Error(what + ": font catalog patch no longer applies");
+  const list = JSON.stringify(EXTRA_FONTS.map(([file, name]) => ({ file, name, type: "mesh" })));
+  return src.replace(catalogRe, (all, arr) => `${all}, ${arr}.push(...(typeof location !== "undefined" && location.origin && location.origin !== "null" ? ${list}.map((f) => Object.assign(f, { url: location.origin + "/fonts/" + f.file })) : []))`);
+}
 // MTEXT parser: text such as "NOTE:\\P" was taken for a Windows path ("E:\\P...") and printed
 // with its codes showing. Only treat "X:\\" as a drive when the letter does not end a word.
 function fixDrivePath(src, what) {
   const from = "(?<![0-9A-Fa-f+])[A-Za-z]:", to = "(?<![0-9A-Za-z+])[A-Za-z]:";
   if (!src.includes(from)) throw new Error(what + ": drive-path patch no longer applies");
   return src.split(from).join(to);
-}
-const catalogRe = /(\w+)\.forEach\(\((\w+)\) => \{\n\s*\2\.url = (\w+) \+ \2\.file;\n\s*\}\)/;
-function addCatalogFonts(src, what) {
-  if (!catalogRe.test(src)) throw new Error(what + ": font catalog patch no longer applies");
-  return src.replace(catalogRe, (all, list) => `${all}, ${list}.push(...(typeof location !== "undefined" && location.origin && location.origin !== "null" ? [{ file: "arimo-bold.woff", name: ${JSON.stringify(BOLD_NAMES)}, type: "mesh", url: location.origin + "/fonts/arimo-bold.woff" }] : []))`);
 }
 
 fs.mkdirSync(path.join(out, "workers"), { recursive: true });

@@ -295,10 +295,20 @@ function mapLatinFonts(db) {
   let n = 0;
   for (const rec of db.tables.textStyleTable.newIterator()) {
     const f = String(rec.fileName || '').replace(/^.*[\\/]/, '');
-    if (LATIN_TTF.test(f) && !LATIN_BOLD.test(f)) { try { rec.fileName = 'arial.ttf'; n++; } catch (e) { /* keep */ } }
+    let to = null;
+    if (LATIN_TTF.test(f) && !LATIN_BOLD.test(f)) to = 'arial.ttf';
+    else {
+      // Chinese face names (often with a leading "@" or "-" for vertical text) for faces we have.
+      const k = f.replace(/^[@-]+/, '').replace(/\.(ttf|ttc|otf)$/i, '').replace(/[_\s-]?(gb2312|gbk)$/i, '');
+      to = CJK_FACES[k] || CJK_FACES[k.toLowerCase()] || null;
+    }
+    if (to && to !== f) { try { rec.fileName = to; n++; } catch (e) { /* keep */ } }
   }
   return n;
 }
+const CJK_FACES = { '宋体': 'simsun', '新宋体': 'simsun', 'simsun': 'simsun', 'nsimsun': 'simsun', '黑体': 'simhei', 'simhei': 'simhei',
+  '楷体': 'simkai', 'simkai': 'simkai', 'kaiti': 'simkai', '仿宋': 'simfang', 'simfang': 'simfang', 'fangsong': 'simfang',
+  '微软雅黑': 'msyh', 'microsoft yahei': 'msyh', 'msyh': 'msyh' };
 
 // AutoCAD draws a LEADER in its dimension style's dimension-line color (DIMCLRD) when that is
 // set; the viewer uses the entity color instead, so leaders came out black instead of green.
@@ -828,6 +838,13 @@ window.CADHIFI = {
     const db = mgr.curDocument.database;
     const a = db.extmin, b = db.extmax;
     return { x0: a.x, y0: a.y, x1: b.x, y1: b.y };
+  },
+  // Fonts the drawing asked for that the viewer had to replace (names only), for usage stats.
+  missingFonts() {
+    try {
+      const m = mgr && mgr.curView && mgr.curView.missedData && mgr.curView.missedData.fonts;
+      return m ? Object.keys(m).filter(Boolean).slice(0, 8) : [];
+    } catch (e) { return []; }
   },
   get _mgr() { return mgr; },
   get ready() { return !!mgr; }

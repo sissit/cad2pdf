@@ -153,6 +153,9 @@ h3.sub { font-size:.95rem; margin:6px 0 8px; }
         ${tbl("文件类型", count("ext", { dwg: "DWG", dxf: "DXF", sample: "示例图" }))}
         ${tbl("颜色", count("col", { color: "彩色", mono: "黑白" }))}
         ${tbl("纸张", count("sh"))}
+        ${(() => { const m = {}; rows.forEach(r => (Array.isArray(r.mf) ? r.mf : []).forEach(f => { m[f] = (m[f] || 0) + 1; }));
+          const l = Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, 15).map(([v, n]) => ({ v, n }));
+          return l.length ? tbl("缺少的字体（被替代）", l) : ""; })()}
         ${fail ? tbl("失败原因", count("err", { user: "图纸问题", error: "程序出错", declined: "取消保存" }, rows.filter(r => r.ok !== "1"))) : ""}
       </div>`;
   }
