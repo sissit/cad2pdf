@@ -372,7 +372,7 @@ class yu {
     const n = {};
     if (t.underline !== e.underline && (n.underline = e.underline), t.overline !== e.overline && (n.overline = e.overline), t.strikeThrough !== e.strikeThrough && (n.strikeThrough = e.strikeThrough), t.color.aci !== e.color.aci && (n.aci = e.color.aci), t.color.rgbValue !== e.color.rgbValue && (n.rgb = e.color.rgb), t.align !== e.align && (n.align = e.align), JSON.stringify(t.fontFace) !== JSON.stringify(e.fontFace) && (n.fontFace = e.fontFace), (t.capHeight.value !== e.capHeight.value || t.capHeight.isRelative !== e.capHeight.isRelative) && (n.capHeight = e.capHeight), (t.widthFactor.value !== e.widthFactor.value || t.widthFactor.isRelative !== e.widthFactor.isRelative) && (n.widthFactor = e.widthFactor), (t.charTrackingFactor.value !== e.charTrackingFactor.value || t.charTrackingFactor.isRelative !== e.charTrackingFactor.isRelative) && (n.charTrackingFactor = e.charTrackingFactor), t.oblique !== e.oblique && (n.oblique = e.oblique), JSON.stringify(t.paragraph) !== JSON.stringify(e.paragraph)) {
       const i = {};
-      t.paragraph.indent !== e.paragraph.indent && (i.indent = e.paragraph.indent), t.paragraph.align !== e.paragraph.align && (i.align = e.paragraph.align), t.paragraph.left !== e.paragraph.left && (i.left = e.paragraph.left), t.paragraph.right !== e.paragraph.right && (i.right = e.paragraph.right), JSON.stringify(t.paragraph.tabs) !== JSON.stringify(e.paragraph.tabs) && (i.tabs = e.paragraph.tabs), Object.keys(i).length > 0 && (n.paragraph = i);
+      t.paragraph.indent !== e.paragraph.indent && (i.indent = e.paragraph.indent), t.paragraph.align !== e.paragraph.align && (i.align = e.paragraph.align), t.paragraph.left !== e.paragraph.left && (i.left = e.paragraph.left), t.paragraph.right !== e.paragraph.right && (i.right = e.paragraph.right), JSON.stringify(t.paragraph.tabs) !== JSON.stringify(e.paragraph.tabs) && (i.tabs = e.paragraph.tabs), (t.paragraph.before || 0) !== (e.paragraph.before || 0) && (i.before = e.paragraph.before || 0), (t.paragraph.after || 0) !== (e.paragraph.after || 0) && (i.after = e.paragraph.after || 0), Object.keys(i).length > 0 && (n.paragraph = i);
     }
     return n;
   }
@@ -558,7 +558,7 @@ class yu {
    */
   parseParagraphProperties(t) {
     const e = new ji(this.extractExpression());
-    let n = t.paragraph.indent, i = t.paragraph.left, r = t.paragraph.right, a = t.paragraph.align, o = [];
+    let n = t.paragraph.indent, i = t.paragraph.left, r = t.paragraph.right, a = t.paragraph.align, o = [], sb = t.paragraph.before || 0, sa = t.paragraph.after || 0;
     const c = () => {
       const h = e.tail.match(/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/);
       if (h) {
@@ -581,6 +581,12 @@ class yu {
           r = c();
           break;
         case "x":
+          break;
+        case "b":
+          sb = c();
+          break;
+        case "a":
+          sa = c();
           break;
         case "q": {
           const l = e.get();
@@ -608,7 +614,9 @@ class yu {
       left: i,
       right: r,
       align: a,
-      tabs: o
+      tabs: o,
+      before: sb,
+      after: sa
     };
   }
   /**
@@ -34891,6 +34899,7 @@ class fh {
    * @param paragraph Paragraph change data.
    */
   applyParagraphChange(t) {
+    t && typeof t.before == "number" && (this._spaceBefore = t.before * this.defaultFontSize), t && typeof t.after == "number" && (this._spaceAfter = t.after * this.defaultFontSize);
     t && ("align" in t && (this._currentHorizontalAlignment = t.align), typeof t.indent == "number" && (this._currentIndent = t.indent * this.defaultFontSize, this._hOffset += this._currentIndent), typeof t.left == "number" && (this._currentLeftMargin = t.left * this.defaultFontSize), typeof t.right == "number" && (this._currentRightMargin = t.right * this.defaultFontSize));
   }
   /**
@@ -34914,6 +34923,8 @@ class fh {
       i,
       r
     ), this.advanceToNextLine(!1), this._hOffset = this._currentIndent;
+    const gap = (this._spaceAfter || 0) + (this._spaceBefore || 0);
+    gap > 0 && (this.flowDirection == le.BOTTOM_TO_TOP ? this._vOffset += gap : this._vOffset -= gap, this._totalHeight += gap);
   }
   /**
    * Renders one SHX shape glyph for AutoCAD SHAPE entities.

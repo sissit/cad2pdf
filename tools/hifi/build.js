@@ -15,6 +15,30 @@ const EXTRA_FONTS = [
   ["cousine.woff", ["cousine", "cour", "courier", "courier new", "couriernew", "consola", "consolas", "lucon", "monos"]],
   ["cousine-bold.woff", ["cousine-bold", "courbd", "consolab"]],
 ];
+// MTEXT paragraph spacing (\pb = space before, \pa = space after, in text heights): the worker
+// ignored it, so numbered notes ran together. Parse it, pass it through as a paragraph change,
+// and add the space when a new paragraph starts.
+function addParagraphSpacing(w) {
+  const edits = [
+    ['    let n = t.paragraph.indent, i = t.paragraph.left, r = t.paragraph.right, a = t.paragraph.align, o = [];',
+     '    let n = t.paragraph.indent, i = t.paragraph.left, r = t.paragraph.right, a = t.paragraph.align, o = [], sb = t.paragraph.before || 0, sa = t.paragraph.after || 0;'],
+    ['        case "x":\n          break;\n        case "q": {',
+     '        case "x":\n          break;\n        case "b":\n          sb = c();\n          break;\n        case "a":\n          sa = c();\n          break;\n        case "q": {'],
+    ['      align: a,\n      tabs: o\n    };',
+     '      align: a,\n      tabs: o,\n      before: sb,\n      after: sa\n    };'],
+    ['JSON.stringify(t.paragraph.tabs) !== JSON.stringify(e.paragraph.tabs) && (i.tabs = e.paragraph.tabs)',
+     'JSON.stringify(t.paragraph.tabs) !== JSON.stringify(e.paragraph.tabs) && (i.tabs = e.paragraph.tabs), (t.paragraph.before || 0) !== (e.paragraph.before || 0) && (i.before = e.paragraph.before || 0), (t.paragraph.after || 0) !== (e.paragraph.after || 0) && (i.after = e.paragraph.after || 0)'],
+    ['  applyParagraphChange(t) {\n    t && (',
+     '  applyParagraphChange(t) {\n    t && typeof t.before == "number" && (this._spaceBefore = t.before * this.defaultFontSize), t && typeof t.after == "number" && (this._spaceAfter = t.after * this.defaultFontSize);\n    t && ('],
+    ['    ), this.advanceToNextLine(!1), this._hOffset = this._currentIndent;',
+     '    ), this.advanceToNextLine(!1), this._hOffset = this._currentIndent;\n    const gap = (this._spaceAfter || 0) + (this._spaceBefore || 0);\n    gap > 0 && (this.flowDirection == le.BOTTOM_TO_TOP ? this._vOffset += gap : this._vOffset -= gap, this._totalHeight += gap);'],
+  ];
+  for (const [from, to] of edits) {
+    if (w.split(from).length !== 2) throw new Error("mtext worker: paragraph spacing patch no longer applies at: " + from.slice(0, 60));
+    w = w.replace(from, to);
+  }
+  return w;
+}
 const catalogRe = /(\w+)\.forEach\(\((\w+)\) => \{\n\s*\2\.url = (\w+) \+ \2\.file;\n\s*\}\)/;
 function addCatalogFonts(src, what) {
   if (!catalogRe.test(src)) throw new Error(what + ": font catalog patch no longer applies");
@@ -66,6 +90,7 @@ for (const [from, to] of [
   w = w.replace("  processBlank(t, e) {", "  processTab(t, e) {\n    const step = 4 * this.defaultFontSize, x = this._hOffset;\n    const stop = x < -1e-9 ? 0 : (Math.floor(x / step + 1e-9) + 1) * step;\n    this.processBlank(t, e);\n    if (this._hOffset < stop) this._hOffset = stop;\n  }\n  processBlank(t, e) {");
   w = addCatalogFonts(w, "mtext worker");
   w = fixDrivePath(w, "mtext worker");
+  w = addParagraphSpacing(w);
   fs.writeFileSync(wp, w);
 }
 // Stamp the bundle hash into index.html so browsers always fetch the matching renderer.

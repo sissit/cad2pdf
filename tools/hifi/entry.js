@@ -280,7 +280,7 @@ function flattenMTextHeight(db) {
     const f = parseFloat(m[2]);
     if (!(f > 0.05 && f < 20) || !(x.height > 0)) continue;
     // Paragraph indents count in entity heights: keep them the same width on paper.
-    const para = m[1].replace(/([ilr])(-?[0-9.]+)/g, (all, k, v) => k + (parseFloat(v) / f).toFixed(5).replace(/\.?0+$/, ''));
+    const para = m[1].replace(/([ilrba])(-?[0-9.]+)/g, (all, k, v) => k + (parseFloat(v) / f).toFixed(5).replace(/\.?0+$/, ''));
     try { x.height = x.height * f; x.contents = para + '{' + m[3] + '}'; n++; } catch (e) { /* leave as is */ }
   }
   return n;
@@ -418,7 +418,6 @@ async function captureDraws(box) {
   return draws;
 }
 
-const TEXT_SEG_TO_HEIGHT = 20;  // CAD-font strokes are short pieces: the median is about 1/20 of the letter height or more
 const num = (v) => { const r = Math.round(v * 100) / 100; return (r === 0 ? 0 : r).toString(); };
 const rgbOp = (hex, op) => `${num(((hex >> 16) & 255) / 255)} ${num(((hex >> 8) & 255) / 255)} ${num((hex & 255) / 255)} ${op}`;
 
@@ -613,8 +612,10 @@ function emitPage(draws, o) {
           lens.push(Math.hypot(X1 - X0, Y1 - Y0));
         }
         lens.sort((p, q) => p - q);
-        const med = lens.length ? lens[lens.length >> 1] : 0;
-        const size = Math.min(x1 - x0, y1 - y0, med * TEXT_SEG_TO_HEIGHT);
+        // Letter height: CAD fonts draw upright strokes (I, L, E...) as single full-height segments,
+        // so the longer segments give the height even when the entity spans several lines.
+        const p90 = lens.length ? lens[Math.floor(lens.length * 0.9)] : 0;
+        const size = Math.min(x1 - x0, y1 - y0, p90 * 1.1);
         return Math.max(o.lineW, Math.min(o.textMaxW, size * 0.08));
       };
       for (const T of Ts) {
