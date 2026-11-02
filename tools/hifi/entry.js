@@ -164,6 +164,12 @@ function inheritLayer0(db) {
 
 
 async function renderOnce(view) {
+  // The viewer paints a small X/Y axes icon in the corner of every frame; in the image output
+  // it showed up as an "L" at each tile corner. Switch it off.
+  try {
+    const lv = view.activeLayoutView, g = lv && lv._axesGizmo;
+    if (g && !g.__off) { g.update = () => {}; g.__off = true; }
+  } catch (e) { /* no gizmo */ }
   return new Promise((resolve) => {
     hook = resolve;
     view.isDirty = true;
