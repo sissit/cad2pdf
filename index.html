@@ -561,7 +561,10 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
           const raw = cleanMText(e.text);
           if (!raw.trim()) return "";
           if (/[^\x00-\xFF]/.test(raw)) cjk = true;
-          const h = e.textHeight || e.height || 2.5;
+          let h = e.textHeight || e.height || 2.5;
+          // A whole MTEXT written as {\H0.5x; ...} is drawn at that fraction of its height.
+          const hm = e.type === "MTEXT" && typeof e.text === "string" && e.text.match(/^(?:\\p[^;]*;)?\{\\H([0-9.]+)x;/);
+          if (hm && parseFloat(hm[1]) > 0) h *= parseFloat(hm[1]);
           const p = e.type === "MTEXT" ? e.position : (e.endPoint && (e.halign || e.valign) ? e.endPoint : e.startPoint);
           if (!p) return "";
           let rot = e.rotation || 0;
@@ -569,7 +572,21 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
           const anchor = e.type === "MTEXT"
             ? ["start", "middle", "end"][((e.attachmentPoint || 1) - 1) % 3]
             : ["start", "middle", "end", "start", "middle", "start"][e.halign || 0];
-          const lines = raw.split("\n");
+          let lines = raw.split("\n");
+          // MTEXT wraps at its box width; without this a long note ran far past its sheet in the
+          // preview and threw off page detection.
+          if (e.type === "MTEXT" && e.width > h) {
+            const per = Math.max(4, Math.floor(e.width / (h * 0.62)));
+            lines = lines.flatMap(ln => {
+              const out = []; let cur = "";
+              for (const w of ln.split(" ")) {
+                if (cur && (cur + " " + w).length > per) { out.push(cur); cur = w; } else cur = cur ? cur + " " + w : w;
+                while (cur.length > per) { out.push(cur.slice(0, per)); cur = cur.slice(per); }
+              }
+              out.push(cur);
+              return out;
+            });
+          }
           const topAligned = (e.type === "MTEXT" && (e.attachmentPoint || 1) <= 3) || (e.type !== "MTEXT" && e.valign === 3);
           const midV = (e.type !== "MTEXT" && (e.valign === 2 || e.halign === 4)) || (e.type === "MTEXT" && (e.attachmentPoint || 1) >= 4 && e.attachmentPoint <= 6);
           const y0 = topAligned ? h : midV ? h * 0.35 - (lines.length - 1) * h * 0.83 : -(lines.length - 1) * h * 1.66;
@@ -688,7 +705,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
         if (e.flags & 1) return null;   // invisible attribute
         return { ...base, type: "TEXT", text: t.text, startPoint: t.startPoint, endPoint: t.endPoint, textHeight: t.textHeight, rotation: deg(t.rotation), halign: t.halign, valign: t.valign };
       }
-      case "MTEXT": return { ...base, text: e.text, position: e.insertionPoint, textHeight: e.textHeight, attachmentPoint: e.attachmentPoint, directionVector: e.direction, rotation: deg(e.rotation) };
+      case "MTEXT": return { ...base, text: e.text, position: e.insertionPoint, textHeight: e.textHeight, width: e.rectWidth, attachmentPoint: e.attachmentPoint, directionVector: e.direction, rotation: deg(e.rotation) };
       case "INSERT": return { ...base, name: e.name, position: e.insertionPoint, xScale: e.xScale, yScale: e.yScale, rotation: deg(e.rotation),
         columnCount: e.columnCount, rowCount: e.rowCount, columnSpacing: e.columnSpacing, rowSpacing: e.rowSpacing,
         attribs: (e.attribs || []).map(normDwg).filter(Boolean) };
@@ -900,9 +917,9 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
         const d = Math.hypot(Math.max(f.x0 - g.x1, 0, g.x0 - f.x1), Math.max(f.y0 - g.y1, 0, g.y0 - f.y1)) / Math.max(W(f), H(f));
         if (d < bestD) { bestD = d; best = i; }
       });
-      if (best >= 0 && bestD === 0 && size > 0.8 * maxSide) {
-        // Starts on a sheet but runs far past its frame (a long line of text): print what lies
-        // inside the frame, as AutoCAD does, rather than widening the page.
+      if (best >= 0 && bestD === 0) {
+        // Starts on a sheet and runs past its frame: print what lies inside the frame, as
+        // AutoCAD does, rather than widening the page.
       } else if (best >= 0 && bestD < 0.1 && size < 0.8 * maxSide) {
         const f = pagesBox[best];
         f.x0 = Math.min(f.x0, g.x0); f.y0 = Math.min(f.y0, g.y0); f.x1 = Math.max(f.x1, g.x1); f.y1 = Math.max(f.y1, g.y1);
@@ -1043,8 +1060,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
 
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
-  const HIFI_VER = "ac1630025b";   // set by tools/hifi/build.js
-  const HIFI_DATE = "2026-11-02 11:39";  // build date, shown as the version; set by tools/hifi/build.js
+  const HIFI_VER = "88586764b9";   // set by tools/hifi/build.js
+  const HIFI_DATE = "2026-11-02 11:58";  // build date, shown as the version; set by tools/hifi/build.js
   const HIFI_BASE = new URL("hifi/", document.baseURI).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
@@ -1268,12 +1285,14 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     const lineW = parseFloat($("lw").value) / 25.4 * 72;
     const hatchW = Math.min(lineW, 0.18 / 25.4 * 72);
     const textW = Math.min(lineW, HIFI_TEXT_MM / 25.4 * 72);
+    // Larger CAD-font lettering is plotted up to the pen width (capped at 0.25 mm), as AutoCAD does.
+    const textMaxW = Math.max(textW, Math.min(lineW, 0.25 / 25.4 * 72));
     const sheets = pages.map(pg => {
       const vb = pg.vb, S = sheetSizePt(vb);
       const m = 36, s = Math.min((S.w - 2 * m) / vb.w, (S.h - 2 * m) / vb.h);
       const wPt = vb.w * s, hPt = vb.h * s, x = (S.w - wPt) / 2, oy = S.h - (S.h - hPt) / 2 - hPt;
       const box = { x0: vb.x, x1: vb.x + vb.w, y0: -(vb.y + vb.h), y1: -vb.y };
-      return { S, opt: { box, ox: x, oy, s, clip: [x, oy, wPt, hPt], lineW, hatchW, textW, mono } };
+      return { S, opt: { box, ox: x, oy, s, clip: [x, oy, wPt, hPt], lineW, hatchW, textW, textMaxW, mono } };
     });
     const res = await H.vectorPages(sheets.map(sh => sh.opt), (n, m) => setStatus("hifiProg", "", { p: Math.round(n / m * 100) }));
     let pdf = null;

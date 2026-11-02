@@ -34077,7 +34077,7 @@ class mx {
     }
     return this._baseUrl !== t ? this.getAvailableFonts() : (i.forEach((r) => {
       r.url = t + r.file;
-    }), this._avaiableFonts = i, this.buildFontMap(), this._avaiableFonts);
+    }), i.push(...(typeof location !== "undefined" && location.origin && location.origin !== "null" ? [{ file: "arimo-bold.woff", name: ["arimo-bold","arialbd","arialbi","arialnb","ariblk","swissb","swisseb","swissbi","swisscb","swissbo","swissek","swissebi","swis721 bt bold","swis721 blkex bt","calibrib","segoeuib","trebucbd","tahomabd","verdanab","helveticab","helvetica-bold"], type: "mesh", url: location.origin + "/fonts/arimo-bold.woff" }] : [])), this._avaiableFonts = i, this.buildFontMap(), this._avaiableFonts);
   }
   /**
    * Build one font map. The key is font name. The value is font info.

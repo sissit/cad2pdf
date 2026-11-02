@@ -289,11 +289,13 @@ function flattenMTextHeight(db) {
 // Common Latin TrueType faces we don't ship (Swiss 721, Helvetica, Calibri...): draw them with
 // Arial, a sans face, rather than the default Song-style fallback.
 const LATIN_TTF = /^(swis(s|721)\w*|arial(bd|bi|i|n|nb|nbi|ni)|ariblk|helv\w*|calibri\w*|segoeui\w*|frank\w*|trebuc\w*|tahomabd)(\.ttf)?$/i;
+// Bold faces are left alone: the site ships Arimo Bold under these names (see build.js).
+const LATIN_BOLD = /^(arialbd|arialbi|arialnb|ariblk|swissb|swisseb|swissbi|swisscb|swissbo|swissek|swissebi|calibrib|segoeuib|trebucbd|tahomabd)(\.ttf)?$/i;
 function mapLatinFonts(db) {
   let n = 0;
   for (const rec of db.tables.textStyleTable.newIterator()) {
     const f = String(rec.fileName || '').replace(/^.*[\\/]/, '');
-    if (LATIN_TTF.test(f)) { try { rec.fileName = 'arial.ttf'; n++; } catch (e) { /* keep */ } }
+    if (LATIN_TTF.test(f) && !LATIN_BOLD.test(f)) { try { rec.fileName = 'arial.ttf'; n++; } catch (e) { /* keep */ } }
   }
   return n;
 }
@@ -406,6 +408,7 @@ async function captureDraws(box) {
   return draws;
 }
 
+const TEXT_SEG_TO_HEIGHT = 20;  // CAD-font strokes are short pieces: the median is about 1/20 of the letter height or more
 const num = (v) => { const r = Math.round(v * 100) / 100; return (r === 0 ? 0 : r).toString(); };
 const rgbOp = (hex, op) => `${num(((hex >> 16) & 255) / 255)} ${num(((hex >> 8) & 255) / 255)} ${num((hex & 255) / 255)} ${op}`;
 
@@ -574,21 +577,41 @@ function emitPage(draws, o) {
     } else if (obj.isLine) {
       const pos = g.attributes.position, idx = g.index, LD = g.attributes.lineDistance;
       const vi = (i) => idx ? idx.getX(i) : i;
-      const pairs = [];
+      // One list of segments per entity (batch slot), so text can be weighted by its size.
+      const parts = [];
       for (const [s0, s1] of rangesOf(obj, g, d.group)) {
+        const pairs = [];
         if (obj.isLineSegments) for (let i = s0; i + 1 < s1; i += 2) pairs.push(vi(i), vi(i + 1));
         else {
           for (let i = s0; i + 1 < s1; i++) pairs.push(vi(i), vi(i + 1));
           if (obj.isLineLoop && s1 - s0 > 2) pairs.push(vi(s1 - 1), vi(s0));
         }
+        if (pairs.length) parts.push(pairs);
       }
       const U = mt.uniforms;
       const pat = U && U.pattern && LD ? Array.from(U.pattern.value).map(v => v * (U.u_viewportScale ? U.u_viewportScale.value : 1)) : null;
       const L = pat ? U.patternLength.value * (U.u_viewportScale ? U.u_viewportScale.value : 1) : 0;
+      // Text pass: CAD-font strokes are plotted with the pen width (as AutoCAD does), but never
+      // heavier than about a twelfth of the lettering height, so small text stays open.
+      const textWidth = (list, T) => {
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; const lens = [];
+        for (let k = 0; k < list.length; k += 2) {
+          const a = list[k], b = list[k + 1];
+          const ax = pos.getX(a), ay = pos.getY(a), bx = pos.getX(b), by = pos.getY(b);
+          const X0 = T[0] * ax + T[2] * ay + T[4], Y0 = T[1] * ax + T[3] * ay + T[5], X1 = T[0] * bx + T[2] * by + T[4], Y1 = T[1] * bx + T[3] * by + T[5];
+          x0 = Math.min(x0, X0, X1); x1 = Math.max(x1, X0, X1); y0 = Math.min(y0, Y0, Y1); y1 = Math.max(y1, Y0, Y1);
+          lens.push(Math.hypot(X1 - X0, Y1 - Y0));
+        }
+        lens.sort((p, q) => p - q);
+        const med = lens.length ? lens[lens.length >> 1] : 0;
+        const size = Math.min(x1 - x0, y1 - y0, med * TEXT_SEG_TO_HEIGHT);
+        return Math.max(o.lineW, Math.min(o.textMaxW, size * 0.08));
+      };
       for (const T of Ts) {
-        setStroke(col, o.lineW);
         const dashed = pat && L * scaleOf(T) >= 1.0;   // as the viewer: tiny patterns print solid
         setCap(dashed ? 0 : 1);
+        for (const pairs of (o.textMaxW ? parts : [[].concat(...parts)])) {
+        setStroke(col, o.textMaxW ? textWidth(pairs, T) : o.lineW);
         for (let k = 0; k < pairs.length; k += 2) {
           const a = pairs[k], b = pairs[k + 1];
           const x0 = pos.getX(a), y0 = pos.getY(a), x1 = pos.getX(b), y1 = pos.getY(b);
@@ -602,6 +625,7 @@ function emitPage(draws, o) {
           dashes(pat, L, d0, d1, (u0, u1) => { if (u1 === u0) u1 = Math.min(1, u0 + dotU); seg(X0 + (X1 - X0) * u0, Y0 + (Y1 - Y0) * u0, X0 + (X1 - X0) * u1, Y0 + (Y1 - Y0) * u1); });
         }
         endStroke();
+        }
       }
       stats.lines++;
     } else if (obj.isMesh) {
@@ -720,7 +744,7 @@ window.CADHIFI = {
             if (same) break;
           }
         }
-        const r = emitPage(draws, Object.assign({}, o, { lineW: o[key] || o.lineW }));
+        const r = emitPage(draws, Object.assign({}, o, { lineW: o[key] || o.lineW, textMaxW: mode === 'text' ? o.textMaxW : 0 }));
         out[i].chunks.push(...r.chunks);
         for (const k of Object.keys(r.stats)) out[i].stats[k] += r.stats[k];
         if (onProgress) onProgress(++n, pages.length * 2);

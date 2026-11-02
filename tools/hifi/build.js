@@ -3,12 +3,29 @@
 const fs = require("fs"), path = require("path");
 const nm = path.join(__dirname, "node_modules");
 const out = path.join(__dirname, "..", "..", "hifi");
+// Extra font shipped with the site: Arimo Bold (SIL OFL, metric-compatible with Arial Bold),
+// drawn for bold Latin TrueType styles such as Swiss 721 Extra Bold. It is added to the font
+// catalog both the page and the text worker read.
+const BOLD_NAMES = ["arimo-bold", "arialbd", "arialbi", "arialnb", "ariblk", "swissb", "swisseb", "swissbi", "swisscb", "swissbo", "swissek", "swissebi", "swis721 bt bold", "swis721 blkex bt", "calibrib", "segoeuib", "trebucbd", "tahomabd", "verdanab", "helveticab", "helvetica-bold"];
+const catalogRe = /(\w+)\.forEach\(\((\w+)\) => \{\n\s*\2\.url = (\w+) \+ \2\.file;\n\s*\}\)/;
+function addCatalogFonts(src, what) {
+  if (!catalogRe.test(src)) throw new Error(what + ": font catalog patch no longer applies");
+  return src.replace(catalogRe, (all, list) => `${all}, ${list}.push(...(typeof location !== "undefined" && location.origin && location.origin !== "null" ? [{ file: "arimo-bold.woff", name: ${JSON.stringify(BOLD_NAMES)}, type: "mesh", url: location.origin + "/fonts/arimo-bold.woff" }] : []))`);
+}
+
 fs.mkdirSync(path.join(out, "workers"), { recursive: true });
-require("esbuild").buildSync({
+(async () => {
+await require("esbuild").build({
   entryPoints: [path.join(__dirname, "entry.js")],
   bundle: true, format: "iife", minify: true, legalComments: "eof",
   outfile: path.join(out, "cadhifi.js"),
   define: { "process.env.NODE_ENV": '"production"' },
+  plugins: [{
+    name: "font-catalog",
+    setup(build) {
+      build.onLoad({ filter: /mtext-renderer[\\/]dist[\\/]index\.js$/ }, (args) => ({ contents: addCatalogFonts(fs.readFileSync(args.path, "utf8"), "mtext-renderer"), loader: "js" }));
+    },
+  }],
   alias: {
     "three/examples/jsm/libs/stats.module": path.join(nm, "three/examples/jsm/libs/stats.module.js"),
     "three/examples/jsm/controls/OrbitControls": path.join(nm, "three/examples/jsm/controls/OrbitControls.js"),
@@ -30,6 +47,7 @@ for (const [from, to] of [
   if (!m || !/processBlank\(t, e\) \{/.test(w)) throw new Error("mtext worker: tab patch no longer applies");
   w = w.replace(call, (all, K, sp, a, b) => `${all}\n${sp.slice(2)}else if (o.type === ${K}.TABULATOR)\n${sp}this.processTab(${a}, ${b});`);
   w = w.replace("  processBlank(t, e) {", "  processTab(t, e) {\n    const step = 4 * this.defaultFontSize, x = this._hOffset;\n    const stop = x < -1e-9 ? 0 : (Math.floor(x / step + 1e-9) + 1) * step;\n    this.processBlank(t, e);\n    if (this._hOffset < stop) this._hOffset = stop;\n  }\n  processBlank(t, e) {");
+  w = addCatalogFonts(w, "mtext worker");
   fs.writeFileSync(wp, w);
 }
 // Stamp the bundle hash into index.html so browsers always fetch the matching renderer.
@@ -44,3 +62,4 @@ const html = fs.readFileSync(indexPath, "utf8")
   .replace(/const HIFI_DATE = "[^"]*";/, `const HIFI_DATE = "${stamp}";`);
 fs.writeFileSync(indexPath, html);
 console.log("built", hash, stamp, fs.readdirSync(out), fs.readdirSync(path.join(out, "workers")));
+})().catch((e) => { console.error(e); process.exit(1); });
