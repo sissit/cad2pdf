@@ -91,7 +91,7 @@ function qa(s) {
 function du(s) {
   if (!s.includes("\\"))
     return s;
-  const t = new RegExp("(?<![0-9A-Fa-f+])[A-Za-z]:\\\\(?![MmUu]\\+)[^{}]*", "g"), e = /\\\\(?![UuMm]\+)[^\\{}]+(?:\\[^{}\\]*)*/g;
+  const t = new RegExp("(?<![0-9A-Za-z+])[A-Za-z]:\\\\(?![MmUu]\\+)[^{}]*", "g"), e = /\\\\(?![UuMm]\+)[^\\{}]+(?:\\[^{}\\]*)*/g;
   let n = s.replace(t, (i) => qa(i));
   return n = n.replace(e, (i) => qa(i)), n;
 }

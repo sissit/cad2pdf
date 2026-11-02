@@ -7,6 +7,13 @@ const out = path.join(__dirname, "..", "..", "hifi");
 // drawn for bold Latin TrueType styles such as Swiss 721 Extra Bold. It is added to the font
 // catalog both the page and the text worker read.
 const BOLD_NAMES = ["arimo-bold", "arialbd", "arialbi", "arialnb", "ariblk", "swissb", "swisseb", "swissbi", "swisscb", "swissbo", "swissek", "swissebi", "swis721 bt bold", "swis721 blkex bt", "calibrib", "segoeuib", "trebucbd", "tahomabd", "verdanab", "helveticab", "helvetica-bold"];
+// MTEXT parser: text such as "NOTE:\\P" was taken for a Windows path ("E:\\P...") and printed
+// with its codes showing. Only treat "X:\\" as a drive when the letter does not end a word.
+function fixDrivePath(src, what) {
+  const from = "(?<![0-9A-Fa-f+])[A-Za-z]:", to = "(?<![0-9A-Za-z+])[A-Za-z]:";
+  if (!src.includes(from)) throw new Error(what + ": drive-path patch no longer applies");
+  return src.split(from).join(to);
+}
 const catalogRe = /(\w+)\.forEach\(\((\w+)\) => \{\n\s*\2\.url = (\w+) \+ \2\.file;\n\s*\}\)/;
 function addCatalogFonts(src, what) {
   if (!catalogRe.test(src)) throw new Error(what + ": font catalog patch no longer applies");
@@ -23,6 +30,7 @@ await require("esbuild").build({
   plugins: [{
     name: "font-catalog",
     setup(build) {
+      build.onLoad({ filter: /mtext-parser[\\/]dist[\\/]parser\.js$/ }, (args) => ({ contents: fixDrivePath(fs.readFileSync(args.path, "utf8"), "mtext-parser"), loader: "js" }));
       build.onLoad({ filter: /mtext-renderer[\\/]dist[\\/]index\.js$/ }, (args) => ({ contents: addCatalogFonts(fs.readFileSync(args.path, "utf8"), "mtext-renderer"), loader: "js" }));
     },
   }],
@@ -48,6 +56,7 @@ for (const [from, to] of [
   w = w.replace(call, (all, K, sp, a, b) => `${all}\n${sp.slice(2)}else if (o.type === ${K}.TABULATOR)\n${sp}this.processTab(${a}, ${b});`);
   w = w.replace("  processBlank(t, e) {", "  processTab(t, e) {\n    const step = 4 * this.defaultFontSize, x = this._hOffset;\n    const stop = x < -1e-9 ? 0 : (Math.floor(x / step + 1e-9) + 1) * step;\n    this.processBlank(t, e);\n    if (this._hOffset < stop) this._hOffset = stop;\n  }\n  processBlank(t, e) {");
   w = addCatalogFonts(w, "mtext worker");
+  w = fixDrivePath(w, "mtext worker");
   fs.writeFileSync(wp, w);
 }
 // Stamp the bundle hash into index.html so browsers always fetch the matching renderer.
