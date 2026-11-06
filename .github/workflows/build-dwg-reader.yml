@@ -20,6 +20,12 @@ on:
 permissions:
   contents: write
 
+# The LibreDWG checkout is built outside this repository: the site's package.json says
+# "type": "module", and Node would then read configure's compiled test programs as ES modules
+# and fail them ("cannot run C compiled programs").
+env:
+  LW: ${{ github.workspace }}/../lw
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -53,18 +59,18 @@ jobs:
 
       - name: Web bindings with newer LibreDWG merged in
         run: |
-          git clone https://github.com/mlightcad/libredwg-web.git lw
-          cd lw
+          git clone https://github.com/mlightcad/libredwg-web.git "$LW"
+          cd "$LW"
           git checkout "${{ inputs.web_commit }}"
           git submodule update --init --depth 1 jsmn
           git remote add upstream https://github.com/LibreDWG/libredwg.git
           git fetch upstream "${{ inputs.upstream_commit }}"
           git -c user.email=ci@localhost -c user.name=ci merge --no-edit FETCH_HEAD || true
-          python3 ../tools/dwg/merge-upstream.py
+          python3 "$GITHUB_WORKSPACE/tools/dwg/merge-upstream.py"
 
       - name: Build the WebAssembly reader
-        working-directory: lw
         run: |
+          cd "$LW"
           # Everything goes to build.log too; on failure its last lines (and configure's log) are
           # posted as an annotation, which shows on the run's summary page without opening logs.
           report() {
@@ -91,7 +97,7 @@ jobs:
         env:
           DWG_READER_NOTE: "libredwg-web@${{ inputs.web_commit }} + LibreDWG@${{ inputs.upstream_commit }}"
         run: |
-          node tools/dwg/build.cjs lw/bindings/javascript dwg-next --with-wasm
+          node tools/dwg/build.cjs "$LW/bindings/javascript" dwg-next --with-wasm
           ls -la dwg-next dwg-next/*
 
       - name: Commit
