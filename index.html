@@ -23,7 +23,7 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"cad2pdf","alternateName":"DWG 转 PDF","url":"https://5cad2pdf.com/","description":"Free in-browser converter from AutoCAD DWG and DXF drawings to PDF. Pages per drawing frame, color or black and white, vector output. Files are not uploaded.","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","inLanguage":["zh-CN","en"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
-<script>window.CAD2PDF_DWG_BASE = "https://cdn.jsdelivr.net/npm/@mlightcad/libredwg-web@0.8.1/";</script>
+<script>window.CAD2PDF_DWG_WASM = "https://cdn.jsdelivr.net/npm/@mlightcad/libredwg-web@0.8.1/wasm/";</script>
 <title>DWG 转 PDF 在线免费转换 · DWG/DXF to PDF Converter | cad2pdf</title>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "怎么把 DWG 转成 PDF？", "acceptedAnswer": {"@type": "Answer", "text": "点「选择或拖入图纸」，选好 .dwg 或 .dxf 文件，看一眼右边的预览，选纸张大小、方向和彩色或黑白，再点「生成 PDF」。PDF 会直接下载到你的电脑或手机。"}}, {"@type": "Question", "name": "支持哪些 AutoCAD 版本？", "acceptedAnswer": {"@type": "Answer", "text": "支持 AutoCAD R13 到最新版（包括 2019–2026）画的 DWG 文件，以及 DXF 文件。AutoCAD 2018 以后各版本用的都是同一种「2018 格式」DWG，直接上传就能转，不用另存。"}}, {"@type": "Question", "name": "图纸会上传到服务器吗？", "acceptedAnswer": {"@type": "Answer", "text": "不会。图纸只在你自己的浏览器里读取和转换，不经过任何服务器，适合有保密要求的图纸。"}}, {"@type": "Question", "name": "一个文件里有多个图框怎么办？", "acceptedAnswer": {"@type": "Answer", "text": "默认按图框分页：每个图框生成一页，和在 AutoCAD 里逐个打印图框一样。也可以取消勾选，把整张图放在一页。"}}, {"@type": "Question", "name": "「矢量」和「图片」输出有什么区别？", "acceptedAnswer": {"@type": "Answer", "text": "矢量（默认）把线条和文字原样写进 PDF，放大多少倍都清楚，文件小、转得快。图片是把图纸渲染成高分辨率图像，图纸里插入了照片时请选图片。"}}, {"@type": "Question", "name": "不打印的图层会出现在 PDF 里吗？", "acceptedAnswer": {"@type": "Answer", "text": "默认不会，和 AutoCAD 打印一样。需要的话可以勾选「打印不打印图层」。"}}, {"@type": "Question", "name": "收费吗？需要注册吗？", "acceptedAnswer": {"@type": "Answer", "text": "完全免费，不用注册，打开网页就能用，电脑和手机都可以。"}}]}</script>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -311,6 +311,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       loaded: "已读入 {n}，确认预览没问题后点「生成 PDF」。",
       dwgFail: "DWG 读取失败。可以在 AutoCAD 里另存为 DXF 再试。", dxfFail: "DXF 读取失败，文件可能已损坏。",
       dwgUnreadable: "这个 DWG 文件读不出来，可能是版本太新或文件损坏。可以在 AutoCAD 里另存为 2018 或更早的 DWG / DXF 再试。",
+      dwgCrash: "这个 DWG 读到一半出错了（网站用的开源读取程序处理不了这个文件的内部结构）。请在 AutoCAD 里先用 RECOVER 修复，再另存为 DXF 或 AutoCAD 2018 DWG 后重试；没有 AutoCAD 也可以用免费的 ODA File Converter 转成 DXF。",
       convFail: "图纸内容转换失败。", empty: "图纸里没有找到可以画出来的图形（模型空间是空的）。",
       noDxfLib: "DXF 读取组件没有加载，请检查网络后刷新页面。", noPdfLib: "PDF 组件没有加载，请检查网络后刷新页面。",
       noVec: "矢量组件没有加载，请改用「高清图像」。", tooBig: "图纸太大，浏览器内存不够。可以换小一号纸张再试。",
@@ -367,6 +368,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       loaded: "Loaded {n}. Check the preview, then click Create PDF.",
       dwgFail: "Couldn't read this DWG. Try saving it as DXF in AutoCAD.", dxfFail: "Couldn't read this DXF. The file may be damaged.",
       dwgUnreadable: "Couldn't read this DWG. It may be too new or damaged. Save it as DWG 2018 or earlier, or as DXF, and try again.",
+      dwgCrash: "Reading this DWG failed partway (the open-source reader can't handle something inside this file). In AutoCAD, run RECOVER, then save as DXF or AutoCAD 2018 DWG and try again. Without AutoCAD, the free ODA File Converter can turn it into DXF.",
       convFail: "Couldn't convert the drawing.", empty: "No drawable objects found (model space is empty).",
       noDxfLib: "The DXF reader didn't load. Check your connection and reload.", noPdfLib: "The PDF library didn't load. Check your connection and reload.",
       noVec: "The vector exporter didn't load. Switch Output to High-res image.", tooBig: "The sheet is too large for this browser's memory. Try a smaller size.",
@@ -382,7 +384,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   try { const s = localStorage.getItem("cad2pdf-lang"); if (s === "en" || s === "zh") lang = s; else if (!/^zh/i.test(navigator.language || "")) lang = "en"; } catch (e) {}
   class UserError extends Error {}
   const t = (k, v) => { let s = (STR[lang] && STR[lang][k]) || STR.zh[k] || k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
-  const fail = (k) => { throw new UserError(t(k)); };
+  const fail = (k) => { const e = new UserError(t(k)); e.key = k; throw e; };
   let lastStatus = null;
   let visits = null;
   function showVisits() {
@@ -679,11 +681,14 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
   // ---------- DWG via LibreDWG (WebAssembly) ----------
   let dwgLib = null;
+  const DWG_JS = new URL("dwg/dist/libredwg-web.js", document.baseURI).href;
+  const DWG_WASM = window.CAD2PDF_DWG_WASM || new URL("dwg/wasm/", document.baseURI).href;
   async function loadDwgLib() {
     if (dwgLib) return dwgLib;
-    const base = window.CAD2PDF_DWG_BASE || new URL("dwg/", document.baseURI).href;
-    const mod = await import(base + "dist/libredwg-web.js");
-    try { dwgLib = await mod.LibreDwg.create(base + "wasm/"); }
+    // The reader's JavaScript is our copy in /dwg (memory capped, see tools/dwg/build.cjs); its
+    // WebAssembly binary comes from the CDN.
+    const mod = await import(DWG_JS);
+    try { dwgLib = await mod.LibreDwg.create(DWG_WASM); }
     catch (e) { dwgLib = await mod.LibreDwg.create(); }
     dwgLib.__types = mod.Dwg_File_Type;
     return dwgLib;
@@ -750,12 +755,46 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       default: return null;
     }
   }
+  // Read the DWG in a worker of its own. Some files send the reader into a runaway loop that
+  // eats all its memory and then fails; in a worker that ends the worker, not the whole page,
+  // and we can say what went wrong.
+  function readDwgInWorker(buf) {
+    const src = `import * as m from ${JSON.stringify(DWG_JS)};
+      onmessage = async (ev) => {
+        try {
+          let lib;
+          try { lib = await m.LibreDwg.create(${JSON.stringify(DWG_WASM)}); } catch (e) { lib = await m.LibreDwg.create(); }
+          const p = lib.dwg_read_data(ev.data, m.Dwg_File_Type.DWG);
+          if (p == null) { postMessage({ err: "unreadable" }); return; }
+          let db; try { db = lib.convert(p); } finally { try { lib.dwg_free(p); } catch (e) {} }
+          postMessage({ db });
+        } catch (e) { postMessage({ err: "crash", msg: String(e && e.message || e) }); }
+      };`;
+    const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
+    return new Promise((resolve, reject) => {
+      let w;
+      try { w = new Worker(url, { type: "module" }); } catch (e) { URL.revokeObjectURL(url); reject(e); return; }
+      const done = () => { w.terminate(); URL.revokeObjectURL(url); };
+      w.onmessage = (ev) => { done(); resolve(ev.data); };
+      w.onerror = (ev) => { ev.preventDefault(); done(); resolve({ err: "crash", msg: ev.message || "worker error" }); };
+      w.postMessage(buf, [buf]);
+    });
+  }
   async function dwgToSvg(buf) {
-    const lib = await loadDwgLib();
-    const ptr = lib.dwg_read_data(buf, lib.__types.DWG);
-    if (ptr == null) fail("dwgUnreadable");
-    let db;
-    try { db = lib.convert(ptr); } finally { try { lib.dwg_free(ptr); } catch (e) {} }
+    let db = null;
+    if (typeof Worker === "function") {
+      let r = null;
+      try { r = await readDwgInWorker(buf.slice(0)); } catch (e) { r = null; }   // no module workers: read here instead
+      if (r && r.err === "unreadable") fail("dwgUnreadable");
+      if (r && r.err) { console.error("DWG reader:", r.msg); fail("dwgCrash"); }
+      if (r) db = r.db;
+    }
+    if (!db) {
+      const lib = await loadDwgLib();
+      const ptr = lib.dwg_read_data(buf, lib.__types.DWG);
+      if (ptr == null) fail("dwgUnreadable");
+      try { db = lib.convert(ptr); } finally { try { lib.dwg_free(ptr); } catch (e) {} }
+    }
     const layers = {};
     for (const l of (db.tables && db.tables.LAYER && db.tables.LAYER.entries) || []) {
       if (!l || l.name == null) continue;
@@ -1133,6 +1172,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     const ext = (file.name.split(".").pop() || "").toLowerCase();
     if (ext !== "dwg" && ext !== "dxf") { setStatus("onlyExt", "err"); return; }
     setStatus(""); showBusy(t(ext === "dwg" ? "readingDwg" : "readingDxf"));
+    const t0 = performance.now();
     if (!state.content) { $("sheet").style.minHeight = "240px"; }
     try {
       let r;
@@ -1154,6 +1194,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       console.error(e);
       showBusy("");
       setStatus(e instanceof UserError ? e : (ext === "dwg" ? "dwgFail" : "dxfFail"), "err");
+      // Files that cannot be opened count in the usage stats too (outcome only, no file name).
+      logUse(0, t0, { ext, out: "load", mb: file.size / 1048576, mf: [], err: (e && e.key) || (ext + "fail") });
     }
   }
 
