@@ -498,6 +498,26 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     const layerTbl = model.layers || {};
     const used = new Map();
     let count = 0, cjk = false;
+    // Blocks placed many times (a title block on every sheet, a fan detail) are written once as a
+    // shared definition and referenced with <use>; copying them out each time made a large drawing
+    // run the browser out of memory.
+    const uses = new Map();
+    const tally = (list) => { for (const e of list || []) if (e && e.type === "INSERT") uses.set(e.name, (uses.get(e.name) || 0) + Math.max(1, (e.columnCount || 1) * (e.rowCount || 1))); };
+    tally(model.entities);
+    for (const n in model.blocks || {}) tally(model.blocks[n].entities);
+    const defs = new Map(); let defsSvg = "";
+    const shared = (blk, name, col, make) => {
+      if ((uses.get(name) || 0) < 2 || (blk.entities || []).length < 40) return null;
+      const key = name + "|" + col;
+      let d = defs.get(key);
+      if (!d) {
+        const c0 = count;
+        d = { id: "cb" + defs.size, n: 0 };
+        defsSvg += `<g id="${d.id}">${make()}</g>`;
+        d.n = count - c0; defs.set(key, d);
+      } else count += d.n;                    // the object count still counts every copy
+      return `<use href="#${d.id}"/>`;
+    };
     const layerColor = (name) => { const L = layerTbl[name]; return L && L.color != null ? L.color : 0xFFFFFF; };
     const colorOf = (e, inherit) => {
       if (e.colorIndex === 0) return inherit != null ? inherit : layerColor(e.layer);   // BYBLOCK
@@ -601,7 +621,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
             const bp = blk.position || { x: 0, y: 0 };
             const pos = e.position || { x: 0, y: 0 };
             const sx = e.xScale || 1, sy = e.yScale || 1, r = e.rotation || 0;
-            const inner = blk.entities.map(x => ent(x, col, depth + 1)).join("");
+            const make = () => blk.entities.map(x => ent(x, col, depth + 1)).join("");
+            const inner = shared(blk, e.name, col, make) || make();
             // Browsers clamp very large SVG translations (about ±33.5 million), so a block whose
             // contents sit millions of units from its base point would be drawn in the wrong place.
             // Pivot on a point inside the block instead, which keeps every translation small.
@@ -622,7 +643,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       }
     }
     const body = (model.entities || []).map(e => ent(e, null, 0)).join("");
-    return { content: `<g transform="scale(1 -1)">${body}</g>`, layers: [...used.entries()], hasCJK: cjk, count };
+    return { content: (defsSvg ? `<defs>${defsSvg}</defs>` : "") + `<g transform="scale(1 -1)">${body}</g>`, layers: [...used.entries()], hasCJK: cjk, count };
   }
 
   function dxfToSvg(text) {
@@ -764,7 +785,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     try {
       const root = hidden.firstChild;
       const inv = root.getCTM().inverse();
-      const flip = root.firstElementChild;              // the scale(1 -1) group
+      const flip = root.querySelector(":scope > g");    // the scale(1 -1) group (after any <defs>)
       const add = (el, list) => {
         let bb; try { bb = el.getBBox(); } catch (e) { return; }
         if (!bb || !isFinite(bb.width) || !isFinite(bb.height) || (bb.width === 0 && bb.height === 0 && el.tagName !== "text")) return;
@@ -988,14 +1009,80 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     clipG.appendChild(top);
     return { svg, S };
   }
+  // Preview: the drawing is turned into one SVG image (colours mapped to paper once) and every
+  // page shows its part of that image. Copying the whole drawing into each page's preview made a
+  // large file with many sheets run the browser out of memory.
+  function previewSource(pages) {
+    const mono = document.querySelector('input[name="color"]:checked').value === "mono";
+    const lwPt = lwFixedMm() / 25.4 * 72;
+    const key = [state.content && state.content.length, state.name, mono, lwPt, JSON.stringify(pages.map(p => p.vb))].join("|");
+    if (state.pv && state.pv.key === key) return state.pv;
+    if (state.pv) URL.revokeObjectURL(state.pv.url);
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    const scales = [];
+    for (const pg of pages) {
+      const v = pg.vb; x0 = Math.min(x0, v.x); y0 = Math.min(y0, v.y); x1 = Math.max(x1, v.x + v.w); y1 = Math.max(y1, v.y + v.h);
+      const S = sheetSizePt(v); scales.push(Math.min((S.w - 72) / v.w, (S.h - 72) / v.h));
+    }
+    const pad = Math.max(x1 - x0, y1 - y0) * 0.02;
+    const U = { x: x0 - pad, y: y0 - pad, w: x1 - x0 + 2 * pad, h: y1 - y0 + 2 * pad };
+    scales.sort((a, b) => a - b);
+    const lwUnits = lwPt / scales[scales.length >> 1];
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("xmlns", NS);
+    svg.setAttribute("viewBox", `${U.x} ${U.y} ${U.w} ${U.h}`);
+    const W = 2000; svg.setAttribute("width", W); svg.setAttribute("height", Math.max(1, Math.round(W * U.h / U.w)));
+    svg.innerHTML = `<g stroke-width="${lwUnits}" stroke-linecap="round" stroke-linejoin="round" font-family="Arial, Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif">${state.content}</g>`;
+    const opts = { mono, darken: false };
+    for (const el of svg.querySelectorAll("*")) {
+      el.removeAttribute("stroke-width");
+      el.removeAttribute("vector-effect");
+      for (const a of ["stroke", "fill"]) {
+        const v = el.getAttribute(a);
+        if (!v || v === "none") continue;
+        const rgb = parseColor(v);
+        if (rgb) el.setAttribute(a, paperColor(rgb, opts));
+      }
+    }
+    const top = svg.firstElementChild;
+    top.setAttribute("stroke-width", lwUnits);
+    (function walk(node, k) {
+      for (const ch of node.children) {
+        let kk = k;
+        if (ch.tagName === "g" && ch.hasAttribute("data-k")) {
+          kk = k * (parseFloat(ch.getAttribute("data-k")) || 1);
+          ch.setAttribute("stroke-width", lwUnits / kk);
+        }
+        if (ch.children.length) walk(ch, kk);
+      }
+    })(top, 1);
+    const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml" }));
+    state.pv = { key, url, U };
+    return state.pv;
+  }
+  function previewSheet(vb, idx, src) {
+    const S = sheetSizePt(vb), m = 36;
+    const s = Math.min((S.w - 2 * m) / vb.w, (S.h - 2 * m) / vb.h);
+    const ox = (S.w - vb.w * s) / 2 - vb.x * s, oy = (S.h - vb.h * s) / 2 - vb.y * s;
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("xmlns", NS);
+    svg.setAttribute("viewBox", `0 0 ${S.w} ${S.h}`);
+    const U = src.U;
+    svg.innerHTML = `<clipPath id="sheet-clip-${idx}"><rect x="${m / 2}" y="${m / 2}" width="${S.w - m}" height="${S.h - m}"/></clipPath>` +
+      `<rect x="0" y="0" width="${S.w}" height="${S.h}" fill="#ffffff" stroke="none"/>` +
+      `<g clip-path="url(#sheet-clip-${idx})"><g transform="translate(${ox} ${oy}) scale(${s})">` +
+      `<image href="${src.url}" x="${U.x}" y="${U.y}" width="${U.w}" height="${U.h}" preserveAspectRatio="none"/></g></g>`;
+    return { svg, S };
+  }
   function render() {
     if (!state.content) return;
     const wrap = $("sheet");
     wrap.innerHTML = "";
     const pages = state.pages && state.pages.length ? state.pages : [{ vb: state.vb }];
+    const src = previewSource(pages);
     let S;
     pages.forEach((pg, i) => {
-      const built = buildSheet(pg.vb, i);
+      const built = previewSheet(pg.vb, i, src);
       if (i === 0) S = built.S;
       if (pages.length > 1) { const cap = document.createElement("div"); cap.className = "pagecap"; cap.textContent = t("pageN", { n: i + 1 }); wrap.appendChild(cap); }
       const box = document.createElement("div");
