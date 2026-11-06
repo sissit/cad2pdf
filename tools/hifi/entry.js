@@ -2,7 +2,7 @@
 // (hidden) and renders any WCS box into a TILE x TILE canvas. setPass() shows
 // either the linework or the text, so the page can thicken lines to the plot
 // line weight without smearing text.
-import { AcApDocManager, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE, collectTextStyleFontNames } from '@mlightcad/cad-simple-viewer';
+import { AcApDocManager, AcApFontUtil, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE, collectTextStyleFontNames } from '@mlightcad/cad-simple-viewer';
 import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbHatch, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbPolyline, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
 import { AcGeArea2d, AcGeBox2d, AcGePoint2d, AcGePolyline2d } from '@mlightcad/geometry-engine';
 import polybool from '@velipso/polybool';
@@ -301,6 +301,18 @@ function mapLatinFonts(db) {
       // Chinese face names (often with a leading "@" or "-" for vertical text) for faces we have.
       const k = f.replace(/^[@-]+/, '').replace(/\.(ttf|ttc|otf)$/i, '').replace(/[_\s-]?(gb2312|gbk)$/i, '');
       to = CJK_FACES[k] || CJK_FACES[k.toLowerCase()] || null;
+    }
+    if (!to && f) {
+      // A font we don't have at all. AutoCAD swaps a missing SHX font for simplex (its FONTALT
+      // default); do the same, rather than the Song-style TrueType fallback, which turned plain
+      // survey lettering into a serif face. An unknown Latin TrueType face gets Arial.
+      const base = f.replace(/\.(shx|ttf|ttc|otf)$/i, '');
+      let known = true;
+      try { known = !!AcApFontUtil.findFontInfoByName(base); } catch (e) { /* catalog not ready: leave it */ }
+      if (!known) {
+        if (/\.shx$/i.test(f) || !/\./.test(f)) to = 'simplex.shx';
+        else if (/\.(ttf|otf)$/i.test(f) && /^[\x20-\x7e]+$/.test(f)) to = 'arial.ttf';
+      }
     }
     if (to && to !== f) { try { rec.fileName = to; n++; } catch (e) { /* keep */ } }
   }
