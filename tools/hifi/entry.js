@@ -759,6 +759,11 @@ function emitPage(draws, o) {
           const big = Math.max(x1 - x0, y1 - y0);
           return Math.min(o.lineW, Math.max(MIN_PEN, big * 0.1));
         }
+        // A part that is only a straight rule is an underline/overline/strike-through drawn under
+        // TrueType lettering (whose letters are filled shapes, not strokes). Its bounding box is flat,
+        // which used to give it the finest pen; weight it like a heading rule instead.
+        const thin = Math.min(x1 - x0, y1 - y0), long = Math.max(x1 - x0, y1 - y0);
+        if (long > 0 && thin < long * 0.02) return Math.max(Math.min(o.lineW, o.textMaxW), Math.min(o.textMaxW, long * 0.012));
         const size = Math.min(x1 - x0, y1 - y0, p90 * 1.1);
         // Tiny lettering gets a pen finer than the usual text minimum, so it stays readable.
         return Math.max(Math.min(o.lineW, MIN_PEN + size * 0.06), Math.min(o.textMaxW, size * 0.08));
