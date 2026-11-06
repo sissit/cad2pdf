@@ -4,19 +4,32 @@
 // line weight without smearing text.
 import { AcApDocManager, AcApFontUtil, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE, collectTextStyleFontNames } from '@mlightcad/cad-simple-viewer';
 import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbHatch, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbPolyline, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
-import { AcGeArea2d, AcGeBox2d, AcGePoint2d, AcGePolyline2d } from '@mlightcad/geometry-engine';
+import { AcGeArea2d, AcGeBox2d, AcGePoint2d, AcGePoint3d, AcGePolyline2d } from '@mlightcad/geometry-engine';
 import polybool from '@velipso/polybool';
 import { AcDbLibreDwgConverter } from '@mlightcad/libredwg-converter';
 
 const TILE = 2048;
 let mgr = null, host = null, hook = null;
 
+// A DWG the usual reader could not open but the page's backup reader could (see dwgToSvg in
+// index.html) arrives here already parsed; use that instead of parsing it again with the reader
+// that fails on it.
+let preParsed = null;
+function preParsedConverter(conv) {
+  const parse = conv.parse.bind(conv);
+  conv.parse = async (data, timeout) => {
+    const p = preParsed;
+    if (p && data && data.byteLength === p.len) { preParsed = null; return p.ex; }
+    return parse(data, timeout);
+  };
+  return conv;
+}
 function setup(opts) {
   if (mgr) return mgr;
   const base = opts.assetBase;
   const dwgParser = base + 'workers/' + LIBREDWG_PARSER_WORKER_FILE;
   AcDbDatabaseConverterManager.instance.register(AcDbFileType.DWG,
-    new AcDbLibreDwgConverter({ convertByEntityType: false, useWorker: true, parserWorkerUrl: dwgParser }));
+    preParsedConverter(new AcDbLibreDwgConverter({ convertByEntityType: false, useWorker: true, parserWorkerUrl: dwgParser })));
   host = document.createElement('div');
   // Off-screen but laid out, so WebGL keeps a real drawing surface.
   host.style.cssText = `position:fixed;left:-${TILE + 100}px;top:0;width:${TILE}px;height:${TILE}px;overflow:hidden;pointer-events:none;`;
@@ -262,6 +275,47 @@ function dashWidePolylines(db) {
       n++;
     }
     if (add.length) { rec.appendEntity(add); rec.removeEntity(drop); }
+  }
+  return n;
+}
+
+// Text and blocks set at a height (elevation) above the drawing plane fell outside the plotted
+// view and went missing (a "NOTES:" heading at z = 266). A plan is plotted flat: put them on z = 0.
+function flattenElevation(db) {
+  let n = 0;
+  const flat = (p) => p && p.z && isFinite(p.z) ? { x: p.x, y: p.y, z: 0 } : null;
+  for (const rec of db.tables.blockTable.newIterator()) for (const x of rec.newIterator()) {
+    try {
+      if (x instanceof AcDbMText) { const q = flat(x.location); if (q) { x.location = q; n++; } }
+      else if ('position' in x && (x instanceof AcDbText || typeof x.attributeIterator === 'function')) {
+        const q = flat(x.position); if (q) { x.position = new AcGePoint3d(q.x, q.y, 0); n++; }
+      }
+    } catch (e) { /* leave it */ }
+  }
+  return n;
+}
+
+// MTEXT paragraph codes come in two forms. "\pxi-2,l2,t4;" (extended) counts indents and tabs in
+// text heights; the older "\pi-52.9,l52.9,t22.6;" counts them in drawing units. The text worker
+// only knows the first, so old-form notes had their text pushed far to the right. Rewrite the old
+// form as the extended one.
+function paragraphUnits(db) {
+  let n = 0;
+  for (const rec of db.tables.blockTable.newIterator()) for (const x of rec.newIterator()) {
+    if (!(x instanceof AcDbMText)) continue;
+    const c = x.contents, h = x.height;
+    if (typeof c !== 'string' || !(h > 0) || !/\\p(?!x)[^;]*\d/.test(c)) continue;
+    const fix = c.replace(/\\p(?!x)([^;\\{}]*);/g, (all, body) => {
+      if (!/\d/.test(body)) return all;
+      const out = body.split(',').map(tok => {
+        const m = tok.match(/^([a-z]*)(-?\d*\.?\d+)$/i);
+        if (!m) return tok;
+        const v = parseFloat(m[2]) / h;
+        return m[1] + (Math.round(v * 1e5) / 1e5);
+      }).join(',');
+      return '\\px' + out + ';';
+    });
+    if (fix !== c) { try { x.contents = fix; n++; } catch (e) { /* leave */ } }
   }
   return n;
 }
@@ -817,6 +871,7 @@ window.CADHIFI = {
 
   // Opens the drawing; resolves when geometry and text are ready.
   async open(buf, name, opts) {
+    preParsed = opts && opts.preParsed && buf && opts.preParsed.len === buf.byteLength ? opts.preParsed : null;
     const m = setup(opts);
     const ok = await m.openDocument(name, buf, { readOnly: true, drawNoPlotLayers: !!opts.drawNoPlotLayers });
     if (!ok) throw new Error('open failed');
@@ -825,7 +880,7 @@ window.CADHIFI = {
     view.backgroundColor = 0xffffff;          // paper: ACI 7 draws black
     await view.waitUntilIdle(120000);
     const db = m.curDocument.database;
-    const fixed = inheritLayer0(db) + leaderDimColors(db) + dashWidePolylines(db) + flattenMTextHeight(db) + mapLatinFonts(db);
+    const fixed = inheritLayer0(db) + leaderDimColors(db) + dashWidePolylines(db) + flattenElevation(db) + paragraphUnits(db) + flattenMTextHeight(db) + mapLatinFonts(db);
     if (fixed > 0) { AcDbRenderingCache.instance.clear(); m.regen(); await settle(view); }
     await frame(); await frame();
     return true;

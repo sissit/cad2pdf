@@ -311,6 +311,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       loaded: "已读入 {n}，确认预览没问题后点「生成 PDF」。",
       dwgFail: "DWG 读取失败。可以在 AutoCAD 里另存为 DXF 再试。", dxfFail: "DXF 读取失败，文件可能已损坏。",
       dwgUnreadable: "这个 DWG 文件读不出来，可能是版本太新或文件损坏。可以在 AutoCAD 里另存为 2018 或更早的 DWG / DXF 再试。",
+      tryingBackup: "常规读取失败，正在用备用读取程序再试（第一次需下载约 11 MB）…",
       dwgCrash: "这个 DWG 读到一半出错了（网站用的开源读取程序处理不了这个文件的内部结构）。请在 AutoCAD 里先用 RECOVER 修复，再另存为 DXF 或 AutoCAD 2018 DWG 后重试；没有 AutoCAD 也可以用免费的 ODA File Converter 转成 DXF。",
       convFail: "图纸内容转换失败。", empty: "图纸里没有找到可以画出来的图形（模型空间是空的）。",
       noDxfLib: "DXF 读取组件没有加载，请检查网络后刷新页面。", noPdfLib: "PDF 组件没有加载，请检查网络后刷新页面。",
@@ -368,6 +369,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       loaded: "Loaded {n}. Check the preview, then click Create PDF.",
       dwgFail: "Couldn't read this DWG. Try saving it as DXF in AutoCAD.", dxfFail: "Couldn't read this DXF. The file may be damaged.",
       dwgUnreadable: "Couldn't read this DWG. It may be too new or damaged. Save it as DWG 2018 or earlier, or as DXF, and try again.",
+      tryingBackup: "The usual reader failed; trying the backup reader (about 11 MB the first time)…",
       dwgCrash: "Reading this DWG failed partway (the open-source reader can't handle something inside this file). In AutoCAD, run RECOVER, then save as DXF or AutoCAD 2018 DWG and try again. Without AutoCAD, the free ODA File Converter can turn it into DXF.",
       convFail: "Couldn't convert the drawing.", empty: "No drawable objects found (model space is empty).",
       noDxfLib: "The DXF reader didn't load. Check your connection and reload.", noPdfLib: "The PDF library didn't load. Check your connection and reload.",
@@ -758,16 +760,17 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   // Read the DWG in a worker of its own. Some files send the reader into a runaway loop that
   // eats all its memory and then fails; in a worker that ends the worker, not the whole page,
   // and we can say what went wrong.
-  function readDwgInWorker(buf) {
-    const src = `import * as m from ${JSON.stringify(DWG_JS)};
+  function readDwgInWorker(buf, js, wasm, forViewer) {
+    const src = `import * as m from ${JSON.stringify(js)};
       onmessage = async (ev) => {
         try {
           let lib;
-          try { lib = await m.LibreDwg.create(${JSON.stringify(DWG_WASM)}); } catch (e) { lib = await m.LibreDwg.create(); }
+          try { lib = await m.LibreDwg.create(${JSON.stringify(wasm)}); } catch (e) { lib = await m.LibreDwg.create(); }
           const p = lib.dwg_read_data(ev.data, m.Dwg_File_Type.DWG);
           if (p == null) { postMessage({ err: "unreadable" }); return; }
-          let db; try { db = lib.convert(p); } finally { try { lib.dwg_free(p); } catch (e) {} }
-          postMessage({ db });
+          let db, ex;
+          try { db = lib.convert(p); if (${forViewer ? "true" : "false"}) ex = lib.convertEx(p); } finally { try { lib.dwg_free(p); } catch (e) {} }
+          postMessage({ db, ex });
         } catch (e) { postMessage({ err: "crash", msg: String(e && e.message || e) }); }
       };`;
     const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
@@ -780,11 +783,33 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       w.postMessage(buf, [buf]);
     });
   }
+  // Backup reader: newer LibreDWG, built by .github/workflows/build-dwg-reader.yml into /dwg-next.
+  // Tried only when the usual reader fails on a file.
+  const DWG_NEXT = new URL("dwg-next/", document.baseURI).href;
+  let dwgNextOk = null;
+  async function dwgNextAvailable() {
+    if (dwgNextOk === null) {
+      try { dwgNextOk = (await fetch(DWG_NEXT + "VERSION", { cache: "no-store" })).ok; } catch (e) { dwgNextOk = false; }
+    }
+    return dwgNextOk;
+  }
   async function dwgToSvg(buf) {
     let db = null;
+    state.preParsed = null;
     if (typeof Worker === "function") {
       let r = null;
-      try { r = await readDwgInWorker(buf.slice(0)); } catch (e) { r = null; }   // no module workers: read here instead
+      try { r = await readDwgInWorker(buf.slice(0), DWG_JS, DWG_WASM, false); } catch (e) { r = null; }   // no module workers: read here instead
+      if (r && r.err && await dwgNextAvailable()) {
+        console.warn("DWG reader:", r.msg || r.err, "- trying the backup reader");
+        showBusy(t("tryingBackup"));
+        let r2 = null;
+        try { r2 = await readDwgInWorker(buf.slice(0), DWG_NEXT + "dist/libredwg-web.js", DWG_NEXT + "wasm/", true); } catch (e) { r2 = null; }
+        if (r2 && !r2.err && r2.db) {
+          r = r2;
+          // The renderer would read the file again with the reader that fails on it; hand it this result.
+          if (r2.ex) state.preParsed = { len: buf.byteLength, ex: r2.ex };
+        }
+      }
       if (r && r.err === "unreadable") fail("dwgUnreadable");
       if (r && r.err) { console.error("DWG reader:", r.msg); fail("dwgCrash"); }
       if (r) db = r.db;
@@ -1201,8 +1226,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
 
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
-  const HIFI_VER = "c430a8438a";   // set by tools/hifi/build.js
-  const HIFI_DATE = "2026-11-06 00:08";  // build date, shown as the version; set by tools/hifi/build.js
+  const HIFI_VER = "03506ecdff";   // set by tools/hifi/build.js
+  const HIFI_DATE = "2026-11-06 12:05";  // build date, shown as the version; set by tools/hifi/build.js
   const HIFI_BASE = new URL("hifi/", document.baseURI).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
@@ -1223,7 +1248,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     const key = state.file || state.name, noplot = $("noplot").checked;
     if (hifiDoc && hifiDoc.key === key && hifiDoc.noplot === noplot) return hifiDoc.ready.then(() => H);
     const file = state.file || new File([window.SAMPLE_DXF], "sample.dxf");
-    const ready = file.arrayBuffer().then(buf => H.open(buf, file.name, { assetBase: HIFI_BASE, fontBase: HIFI_FONTS, drawNoPlotLayers: noplot }));
+    const pre = state.preParsed;
+    const ready = file.arrayBuffer().then(buf => H.open(buf, file.name, { assetBase: HIFI_BASE, fontBase: HIFI_FONTS, drawNoPlotLayers: noplot, preParsed: pre }));
     hifiDoc = { key, noplot, ready };
     ready.catch(() => { if (hifiDoc && hifiDoc.key === key) hifiDoc = null; });
     await ready;

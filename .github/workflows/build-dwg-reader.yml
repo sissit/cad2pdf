@@ -1,0 +1,81 @@
+# Builds the backup DWG reader (/dwg-next) that the site tries when its usual reader cannot
+# open a file. It is mlightcad/libredwg-web (LibreDWG compiled to WebAssembly) with newer
+# LibreDWG merged in. Run it by hand: Actions → "Build backup DWG reader" → Run workflow.
+# It commits the result to dwg-next/ on main, and Vercel deploys it like any other change.
+name: Build backup DWG reader
+
+on:
+  workflow_dispatch:
+    inputs:
+      web_commit:
+        description: "mlightcad/libredwg-web commit (the web bindings)"
+        default: "1e8972121130198dee363478b47f89b944842276"   # v0.8.4
+      upstream_commit:
+        description: "LibreDWG/libredwg commit to merge in"
+        default: "c184dd0d3f612de98feb36a5e74eb28c8078e349"   # 2026-11-06
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y autoconf automake libtool texinfo perl python3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: latest
+
+      - name: Web bindings with newer LibreDWG merged in
+        run: |
+          git clone https://github.com/mlightcad/libredwg-web.git lw
+          cd lw
+          git checkout "${{ inputs.web_commit }}"
+          git submodule update --init --depth 1 jsmn
+          git remote add upstream https://github.com/LibreDWG/libredwg.git
+          git fetch upstream "${{ inputs.upstream_commit }}"
+          git -c user.email=ci@localhost -c user.name=ci merge --no-edit FETCH_HEAD || true
+          python3 ../tools/dwg/merge-upstream.py
+
+      - name: Build the WebAssembly reader
+        working-directory: lw
+        run: |
+          sh ./autogen.sh
+          cd bindings/javascript
+          pnpm install --frozen-lockfile
+          pnpm build:prepare
+          pnpm build:obj
+          pnpm build:wasm
+          pnpm copy
+          pnpm build
+
+      - name: Copy into the site (memory capped)
+        env:
+          DWG_READER_NOTE: "libredwg-web@${{ inputs.web_commit }} + LibreDWG@${{ inputs.upstream_commit }}"
+        run: |
+          node tools/dwg/build.cjs lw/bindings/javascript dwg-next --with-wasm
+          ls -la dwg-next dwg-next/*
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add dwg-next
+          git diff --cached --quiet && { echo "nothing changed"; exit 0; }
+          git commit -m "Backup DWG reader: libredwg-web ${{ inputs.web_commit }} + LibreDWG ${{ inputs.upstream_commit }}"
+          git push
