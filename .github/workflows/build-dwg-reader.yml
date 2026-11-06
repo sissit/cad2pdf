@@ -65,14 +65,27 @@ jobs:
       - name: Build the WebAssembly reader
         working-directory: lw
         run: |
-          sh ./autogen.sh
-          cd bindings/javascript
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
-          pnpm build:prepare || { echo "::group::config.log"; tail -n 120 ../../build-wasm/config.log; echo "::endgroup::"; exit 1; }
-          pnpm build:obj
-          pnpm build:wasm
-          pnpm copy
-          pnpm build
+          # Everything goes to build.log too; on failure its last lines (and configure's log) are
+          # posted as an annotation, which shows on the run's summary page without opening logs.
+          report() {
+            { echo "== last lines of the build =="; tail -n 40 "$GITHUB_WORKSPACE/build.log";
+              if [ -f build-wasm/config.log ]; then echo "== config.log =="; grep -n -B2 -A12 "error" build-wasm/config.log | tail -n 40; fi; } > /tmp/why.txt
+            msg=$(sed -e 's/%/%25/g' /tmp/why.txt | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Build failed::${msg}"
+          }
+          trap 'rc=$?; [ $rc -ne 0 ] && report; exit $rc' EXIT
+          set -o pipefail
+          {
+            set -ex
+            sh ./autogen.sh
+            cd bindings/javascript
+            pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+            pnpm build:prepare
+            pnpm build:obj
+            pnpm build:wasm
+            pnpm copy
+            pnpm build
+          } 2>&1 | tee "$GITHUB_WORKSPACE/build.log"
 
       - name: Copy into the site (memory capped)
         env:
