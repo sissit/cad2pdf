@@ -430,6 +430,7 @@ async function captureDraws(box) {
   return draws;
 }
 
+const MIN_PEN = 0.03 / 25.4 * 72;   // finest pen: 0.03 mm, about a hairline on paper
 const num = (v) => { const r = Math.round(v * 100) / 100; return (r === 0 ? 0 : r).toString(); };
 const rgbOp = (hex, op) => `${num(((hex >> 16) & 255) / 255)} ${num(((hex >> 8) & 255) / 255)} ${num((hex & 255) / 255)} ${op}`;
 
@@ -637,14 +638,21 @@ function emitPage(draws, o) {
         // Letter height: CAD fonts draw upright strokes (I, L, E...) as single full-height segments,
         // so the longer segments give the height even when the entity spans several lines.
         const p90 = lens.length ? lens[Math.floor(lens.length * 0.9)] : 0;
+        if (!o.textMaxW) {
+          // Line work: a pen never wider than about a tenth of the object, so tiny symbols
+          // (survey dots, small circles) keep their shape instead of printing as blobs.
+          const big = Math.max(x1 - x0, y1 - y0);
+          return Math.min(o.lineW, Math.max(MIN_PEN, big * 0.1));
+        }
         const size = Math.min(x1 - x0, y1 - y0, p90 * 1.1);
-        return Math.max(o.lineW, Math.min(o.textMaxW, size * 0.08));
+        // Tiny lettering gets a pen finer than the usual text minimum, so it stays readable.
+        return Math.max(Math.min(o.lineW, MIN_PEN + size * 0.06), Math.min(o.textMaxW, size * 0.08));
       };
       for (const T of Ts) {
         const dashed = pat && L * scaleOf(T) >= 1.0;   // as the viewer: tiny patterns print solid
         setCap(dashed ? 0 : 1);
-        for (const pairs of (o.textMaxW ? parts : [[].concat(...parts)])) {
-        setStroke(col, o.textMaxW ? textWidth(pairs, T) : o.lineW);
+        for (const pairs of parts) {
+        setStroke(col, textWidth(pairs, T));
         for (let k = 0; k < pairs.length; k += 2) {
           const a = pairs[k], b = pairs[k + 1];
           const x0 = pos.getX(a), y0 = pos.getY(a), x1 = pos.getX(b), y1 = pos.getY(b);
