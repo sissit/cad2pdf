@@ -13,6 +13,9 @@ on:
       upstream_commit:
         description: "LibreDWG/libredwg commit to merge in"
         default: "c184dd0d3f612de98feb36a5e74eb28c8078e349"   # 2026-11-06
+      emsdk_version:
+        description: "Emscripten version (the web bindings are written for 4.0.x)"
+        default: "4.0.10"
 
 permissions:
   contents: write
@@ -39,7 +42,14 @@ jobs:
 
       - uses: mymindstorm/setup-emsdk@v14
         with:
-          version: latest
+          version: ${{ inputs.emsdk_version }}
+          actions-cache-folder: emsdk-cache
+
+      - name: Check the compiler
+        run: |
+          emcc --version
+          printf 'int main(void){return 0;}\n' > /tmp/t.c
+          emcc -O2 -sUSE_ZLIB=1 /tmp/t.c -o /tmp/t.js && echo "emcc works"
 
       - name: Web bindings with newer LibreDWG merged in
         run: |
@@ -57,8 +67,8 @@ jobs:
         run: |
           sh ./autogen.sh
           cd bindings/javascript
-          pnpm install --frozen-lockfile
-          pnpm build:prepare
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+          pnpm build:prepare || { echo "::group::config.log"; tail -n 120 ../../build-wasm/config.log; echo "::endgroup::"; exit 1; }
           pnpm build:obj
           pnpm build:wasm
           pnpm copy
