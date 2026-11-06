@@ -3,10 +3,37 @@
 // either the linework or the text, so the page can thicken lines to the plot
 // line weight without smearing text.
 import { AcApDocManager, AcApFontUtil, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE, collectTextStyleFontNames } from '@mlightcad/cad-simple-viewer';
-import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbHatch, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbPolyline, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
+import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbEntity, AcDbHatch, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbPolyline, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
 import { AcGeArea2d, AcGeBox2d, AcGePoint2d, AcGePoint3d, AcGePolyline2d } from '@mlightcad/geometry-engine';
 import polybool from '@velipso/polybool';
 import { AcDbLibreDwgConverter } from '@mlightcad/libredwg-converter';
+
+// An entity read from a file with no linetype, linetype scale, lineweight or colour of its own is
+// ByLayer (scale 1) - that is what a missing group code means. The viewer filled such gaps from the
+// drawing's "current" settings for new objects instead ($CELTYPE, $CELTSCALE, $CELWEIGHT,
+// $CECOLOR), so a drawing saved with the current linetype set to DASH drew every wall, table and
+// frame dashed (and a CELTSCALE of 0.1 shrank the dashes to dots).
+{
+  const P = AcDbEntity && AcDbEntity.prototype, orig = P && P.resolveEffectiveProperties;
+  if (orig && !orig.__cad2pdf) {
+    P.resolveEffectiveProperties = function () {
+      try {
+        if (this._lineType == null) this.lineType = 'ByLayer';
+        if (this._linetypeScale == null) this._linetypeScale = 1;
+        if (this._lineWeight == null) this._lineWeight = -1;      // ByLayer
+        if (this._color == null) this._colorIsByLayerDefault = true;
+      } catch (e) { /* leave it to the viewer */ }
+      return orig.apply(this, arguments);
+    };
+    P.resolveEffectiveProperties.__cad2pdf = true;
+  }
+  // Same for TEXT: a missing vertical alignment (group 73) means baseline, not middle.
+  const T = AcDbText && AcDbText.prototype, din = T && T.dxfInFields;
+  if (din && !din.__cad2pdf) {
+    T.dxfInFields = function () { try { if (this.constructor === AcDbText) this._verticalModel = 0; } catch (e) { /* */ } return din.apply(this, arguments); };
+    T.dxfInFields.__cad2pdf = true;
+  }
+}
 
 const TILE = 2048;
 let mgr = null, host = null, hook = null;
@@ -123,6 +150,20 @@ const frame = () => new Promise((res) => requestAnimationFrame(() => res()));
 // The viewer applies this only when layer 0 is ACI 7, so drawings whose layer 0 is another
 // color (often 8, grey) show fixtures and equipment grey. Apply the rule in the database:
 // every block inserted on exactly one layer gets its layer-0 contents moved to that layer.
+// A block inserted on a frozen layer is hidden as a whole, whatever layers its contents are on.
+// The viewer only hid the contents that were themselves on frozen layers, so legend symbols kept
+// on a frozen layer in a title block showed up on the sheet.
+function hideFrozenInserts(db) {
+  const layers = db.tables.layerTable, frozen = new Set();
+  for (const L of layers.newIterator()) { try { if (L.isFrozen) frozen.add(L.name); } catch (e) { /* */ } }
+  if (!frozen.size) return 0;
+  let n = 0;
+  for (const rec of db.tables.blockTable.newIterator()) for (const e of rec.newIterator()) {
+    if (e.blockName != null && frozen.has(e.layer)) { try { e.visibility = false; e.__hidden = true; n++; } catch (x) { /* */ } }
+  }
+  return n;
+}
+
 function inheritLayer0(db) {
   const bt = db.tables.blockTable;
   const layersOf = new Map();
@@ -289,8 +330,26 @@ function flattenElevation(db) {
       if (x instanceof AcDbMText) { const q = flat(x.location); if (q) { x.location = q; n++; } }
       else if ('position' in x && (x instanceof AcDbText || typeof x.attributeIterator === 'function')) {
         const q = flat(x.position); if (q) { x.position = new AcGePoint3d(q.x, q.y, 0); n++; }
+        // Left/baseline text is placed by its insertion point; the alignment point is ignored.
+        // Files often carry a stale one (0,0,elevation), which put such text at the drawing origin.
+        if (x instanceof AcDbText && x.hasAlignmentPoint && !x.horizontalMode && !x.verticalMode) { x.hasAlignmentPoint = false; n++; }
+        else if (x instanceof AcDbText && x.hasAlignmentPoint) { const a = flat(x.alignmentPoint); if (a) { x.alignmentPoint = new AcGePoint3d(a.x, a.y, 0); n++; } }
       }
     } catch (e) { /* leave it */ }
+  }
+  return n;
+}
+
+// "\\" in MTEXT is a literal backslash. The text worker takes "\\" followed by text for the start of
+// a network path and escapes every later backslash, so the rest of the note (its \P, \H, \p codes)
+// came out as raw text. Write the literal backslash as a full-width one (U+FF3C), which looks the same.
+function literalBackslashes(db) {
+  let n = 0;
+  for (const rec of db.tables.blockTable.newIterator()) for (const x of rec.newIterator()) {
+    if (!(x instanceof AcDbMText)) continue;
+    const c = x.contents;
+    if (typeof c !== 'string' || c.indexOf('\\\\') < 0) continue;
+    try { x.contents = c.replace(/\\\\/g, '\\U+FF3C'); n++; } catch (e) { /* leave */ }
   }
   return n;
 }
@@ -417,11 +476,13 @@ let pass = 'all';
 function applyPass(db, mode) {
   let n = 0;
   const set = (x) => {
+    if (x.__hidden) return;
     const want = mode === 'all' || (isText(x) === (mode === 'text'));
     if (x.visibility !== want) { x.visibility = want; n++; }
   };
   for (const rec of db.tables.blockTable.newIterator()) {
     for (const x of rec.newIterator()) {
+      if (x.__hidden) continue;                   // hidden in the drawing itself: stays hidden
       if (x instanceof AcDbDimension) {
         // Dimensions draw from their own block (lines + text), which is filtered like any block.
         if (!x.visibility) { x.visibility = true; n++; }
@@ -880,7 +941,8 @@ window.CADHIFI = {
     view.backgroundColor = 0xffffff;          // paper: ACI 7 draws black
     await view.waitUntilIdle(120000);
     const db = m.curDocument.database;
-    const fixed = inheritLayer0(db) + leaderDimColors(db) + dashWidePolylines(db) + flattenElevation(db) + paragraphUnits(db) + flattenMTextHeight(db) + mapLatinFonts(db);
+    for (const rec of db.tables.blockTable.newIterator()) for (const x of rec.newIterator()) if (x.visibility === false) x.__hidden = true;
+    const fixed = hideFrozenInserts(db) + inheritLayer0(db) + leaderDimColors(db) + dashWidePolylines(db) + flattenElevation(db) + literalBackslashes(db) + paragraphUnits(db) + flattenMTextHeight(db) + mapLatinFonts(db);
     if (fixed > 0) { AcDbRenderingCache.instance.clear(); m.regen(); await settle(view); }
     await frame(); await frame();
     return true;

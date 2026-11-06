@@ -9,7 +9,7 @@ const out = path.join(__dirname, "..", "..", "hifi");
 const EXTRA_FONTS = [
   ["arimo-bold.woff", ["arimo-bold", "arialbd", "arialbi", "arialnb", "ariblk", "swissb", "swisseb", "swissbi", "swisscb", "swissbo", "swissek", "swissebi", "calibrib", "segoeuib", "trebucbd", "tahomabd", "verdanab", "helveticab", "helvetica-bold"]],
   ["tinos.woff", ["tinos", "times", "times new roman", "timesnewroman", "tnr", "dutch", "dutch801", "serif", "georgia", "cambria", "garamond", "book antiqua", "bookos", "pala", "palatino", "century", "schlbk"]],
-  ["tinos-bold.woff", ["tinos-bold", "timesbd", "dutchb", "dutcheb", "georgiab", "cambriab", "palab", "bookosb", "centuryb", "schlbkb"]],
+  ["tinos-bold.woff", ["tinos-bold", "timesbd", "imprisha", "imprint", "imprint mt shadow", "dutchb", "dutcheb", "georgiab", "cambriab", "palab", "bookosb", "centuryb", "schlbkb"]],
   ["tinos-italic.woff", ["tinos-italic", "timesi", "dutchi", "georgiai", "cambriai", "palai", "bookosi", "schlbki"]],
   ["tinos-bolditalic.woff", ["tinos-bolditalic", "timesbi", "dutchbi", "georgiaz", "cambriaz", "palabi", "bookosbi", "schlbkbi"]],
   ["cousine.woff", ["cousine", "cour", "courier", "courier new", "couriernew", "consola", "consolas", "lucon", "monos"]],
