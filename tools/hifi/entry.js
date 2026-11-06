@@ -468,9 +468,17 @@ function emitPage(draws, o) {
   };
   const outside = (x0, y0, x1, y1) => (x0 < cx0 - pad && x1 < cx0 - pad) || (x0 > cx1 + pad && x1 > cx1 + pad) || (y0 < cy0 - pad && y1 < cy0 - pad) || (y0 > cy1 + pad && y1 > cy1 + pad);
   // Polyline writer that joins segments sharing endpoints.
-  let lx = NaN, ly = NaN, nOps = 0;
+  let lx = NaN, ly = NaN, nOps = 0, inkOn = false;
+  const CELL = o.measure && o.measure.cell || 6, grid = o.measure ? new Map() : null;
   const seg = (x0, y0, x1, y1) => {
     if (outside(x0, y0, x1, y1)) return;
+    if (inkOn && grid) {                                    // line length per small cell, for automatic pen width
+      const len = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.ceil(len / (CELL / 2)));
+      for (let k = 0; k < n; k++) {
+        const t = (k + 0.5) / n, gx = Math.floor((x0 + (x1 - x0) * t - cx0) / CELL), gy = Math.floor((y0 + (y1 - y0) * t - cy0) / CELL);
+        const key = gx * 100000 + gy; grid.set(key, (grid.get(key) || 0) + len / n);
+      }
+    }
     if (!(Math.abs(x0 - lx) <= 0.01 && Math.abs(y0 - ly) <= 0.01)) put(`${num(x0)} ${num(y0)} m`);
     put(`${num(x1)} ${num(y1)} l`);
     lx = x1; ly = y1;
@@ -572,6 +580,7 @@ function emitPage(draws, o) {
     if (obj.isLineSegments2 || obj.type === 'LineSegments2' || g.attributes.instanceStart) {
       const A = g.attributes.instanceStart, B = g.attributes.instanceEnd;
       const n = Math.min(A.count, g.instanceCount != null && isFinite(g.instanceCount) ? g.instanceCount : A.count);
+      inkOn = true;
       for (const T of Ts) {
         const w = mt.worldUnits ? Math.max(o.lineW, mt.linewidth * scaleOf(T)) : o.lineW;
         setCap(1);
@@ -584,6 +593,7 @@ function emitPage(draws, o) {
       }
       stats.lines++;
     } else if (obj.isLine) {
+      inkOn = true;
       const pos = g.attributes.position, idx = g.index, LD = g.attributes.lineDistance;
       const vi = (i) => idx ? idx.getX(i) : i;
       // One list of segments per entity (batch slot), so text can be weighted by its size.
@@ -640,6 +650,7 @@ function emitPage(draws, o) {
       }
       stats.lines++;
     } else if (obj.isMesh) {
+      inkOn = false;
       const range = rangesOf(obj, g, d.group);
       const U = mt.uniforms;
       const patTex = U && U.u_patternData && U.u_patternData.value;
@@ -664,6 +675,12 @@ function emitPage(draws, o) {
   }
   put('Q');
   chunks.push(buf.join('\n'));
+  if (grid) {
+    // Busy parts decide: the 95th percentile of line length per cell area among cells with any lines.
+    // With 2 mm cells this is about 1 / (spacing of neighbouring lines) where the drawing is tightest.
+    const v = [...grid.values()].sort((a, b) => a - b);
+    stats.ink = v.length ? v[Math.floor(v.length * 0.95)] / (CELL * CELL) : 0;
+  }
   return { chunks, stats };
 }
 
@@ -729,6 +746,19 @@ window.CADHIFI = {
   // Linework first with the plot line weight, then text (CAD-font strokes, glyphs, solid fills)
   // with a fine stroke so small lettering stays open, as in the image output.
   // pages: array of emitPage options; returns one { chunks, stats } per page.
+  // How much line work each page carries where it is busiest: line length (pt) per pt² of paper.
+  // Used to pick a pen width automatically: dense site plans need fine pens to stay legible.
+  async inkDensity(pages, onProgress) {
+    await this.setPass('lines');
+    const res = [];
+    for (let i = 0; i < pages.length; i++) {
+      const o = pages[i];
+      const r = emitPage(await captureDraws(o.box), Object.assign({}, o, { lineW: 1, hatchW: 1, textMaxW: 0, measure: { cell: 6 } }));
+      res.push(r.stats.ink);
+      if (onProgress) onProgress(i + 1, pages.length);
+    }
+    return res;
+  },
   async vectorPages(pages, onProgress) {
     const out = pages.map(() => ({ chunks: [], stats: { lines: 0, fills: 0, hatches: 0, skipped: 0 } }));
     let n = 0;

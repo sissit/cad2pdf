@@ -202,9 +202,10 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <div class="field">
         <span class="label" id="lbl-lw" data-i18n="lw"></span>
         <select id="lw" aria-labelledby="lbl-lw">
+          <option value="auto" selected data-i18n="lwAuto"></option>
           <option value="0.13" data-i18n="lw13"></option>
           <option value="0.25" data-i18n="lw25"></option>
-          <option value="0.35" selected data-i18n="lw35"></option>
+          <option value="0.35" data-i18n="lw35"></option>
           <option value="0.5" data-i18n="lw50"></option>
         </select>
       </div>
@@ -298,7 +299,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
       noplot: "打印「不打印」图层（AutoCAD 默认不打）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
       fmt: "输出方式", fmtImg: "图片", fmtVec: "矢量", fmtHint: "矢量（默认）：线条和文字放大不糊，转得快，文件小。图片：原来的方式；图纸里有插入的照片时请选图片。", vecProg: "正在生成矢量 PDF…第 {n}/{m} 页", vec: "矢量",
-      lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
+      lwAuto: "自动（按图的疏密）", lw13: "0.13 mm　细", lw25: "0.25 mm　标准", lw35: "0.35 mm　粗", lw50: "0.50 mm　很粗",
       hifiLoad: "正在加载高保真渲染组件…", hifiOpen: "正在准备高保真渲染（读取图纸和字体）…", hifiPage: "正在渲染第 {n}/{m} 页…（{p}%）", hifiProg: "正在生成 PDF…（{p}%）", hifiLines: "正在渲染线条…（{p}%）", hifiText: "正在渲染文字…（{p}%）", hifi: "高保真", vecFallback: "高保真渲染失败，已自动改用矢量方式，中文可能显示不正常",
       go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
       sample: "示例图纸", sampleName: "示例平面图.dxf",
@@ -354,7 +355,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
       noplot: "Include layers set to not plot (AutoCAD leaves them out)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
       fmt: "Output", fmtImg: "Image", fmtVec: "Vector", fmtHint: "Vector (default): lines and text stay sharp at any zoom, faster, smaller files. Image: the original method; choose it if the drawing contains inserted photos.", vecProg: "Creating vector PDF… page {n} of {m}", vec: "vector",
-      lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
+      lwAuto: "Auto (by drawing density)", lw13: "0.13 mm  fine", lw25: "0.25 mm  standard", lw35: "0.35 mm  bold", lw50: "0.50 mm  heavy",
       hifiLoad: "Loading the high-fidelity renderer…", hifiOpen: "Preparing high-fidelity render (reading drawing and fonts)…", hifiPage: "Rendering page {n} of {m}… ({p}%)", hifiProg: "Creating PDF… ({p}%)", hifiLines: "Rendering linework… ({p}%)", hifiText: "Rendering text… ({p}%)", hifi: "high fidelity", vecFallback: "high-fidelity rendering failed, so vector output was used; Chinese text may not display correctly",
       go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
       sample: "Sample drawing", sampleName: "sample-plan.dxf",
@@ -945,7 +946,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     const S = sheetSizePt(vb), m = 36; // 0.5 in margin
     const s = Math.min((S.w - 2 * m) / vb.w, (S.h - 2 * m) / vb.h);
     const ox = (S.w - vb.w * s) / 2 - vb.x * s, oy = (S.h - vb.h * s) / 2 - vb.y * s;
-    const lwPt = parseFloat($("lw").value) / 25.4 * 72;
+    const lwPt = lwFixedMm() / 25.4 * 72;
     const svg = document.createElementNS(NS, "svg");
     svg.setAttribute("xmlns", NS);
     svg.setAttribute("viewBox", `0 0 ${S.w} ${S.h}`);
@@ -1060,8 +1061,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
 
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
-  const HIFI_VER = "81dafa6258";   // set by tools/hifi/build.js
-  const HIFI_DATE = "2026-11-02 13:03";  // build date, shown as the version; set by tools/hifi/build.js
+  const HIFI_VER = "bf70cbaba5";   // set by tools/hifi/build.js
+  const HIFI_DATE = "2026-11-05 23:34";  // build date, shown as the version; set by tools/hifi/build.js
   const HIFI_BASE = new URL("hifi/", document.baseURI).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
@@ -1219,16 +1220,38 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   function newPdf(jsPDF, S) {
     return new jsPDF({ orientation: S.w >= S.h ? "l" : "p", unit: "pt", format: [S.w, S.h], compress: true });
   }
+  // Pen width. "Auto" picks one per page from how much line work it carries, so a dense site
+  // plan gets fine pens and a sparse sheet keeps bold ones.
+  const LW_STEPS = [0.35, 0.25, 0.18, 0.13];
+  // Where the page is busiest (lines per pt), the pen may cover at most this share of the paper;
+  // beyond it neighbouring lines (parking stripes, hatching drawn as lines) run together.
+  const LW_INK_MAX = 0.25;
+  function lwFixedMm() { const v = parseFloat($("lw").value); return isFinite(v) ? v : 0.25; }
+  function pageGeom(vb) {
+    const S = sheetSizePt(vb);
+    const m = 36, s = Math.min((S.w - 2 * m) / vb.w, (S.h - 2 * m) / vb.h);
+    const wPt = vb.w * s, hPt = vb.h * s, x = (S.w - wPt) / 2, oy = S.h - (S.h - hPt) / 2 - hPt;
+    const box = { x0: vb.x, x1: vb.x + vb.w, y0: -(vb.y + vb.h), y1: -vb.y };
+    return { S, box, ox: x, oy, s, clip: [x, oy, wPt, hPt] };
+  }
+  async function pageLwMm(H, pages) {
+    if ($("lw").value !== "auto") return pages.map(() => lwFixedMm());
+    const dens = await H.inkDensity(pages.map(pg => pageGeom(pg.vb)));
+    return dens.map(d => {
+      for (const mm of LW_STEPS) if (d * (mm / 25.4 * 72) <= LW_INK_MAX) return mm;
+      return LW_STEPS[LW_STEPS.length - 1];
+    });
+  }
   async function makePdfHifi(jsPDF, pages) {
     setStatus(hifiLib ? "hifiOpen" : "hifiLoad");
     const H = await hifiReady();
     const mono = document.querySelector('input[name="color"]:checked').value === "mono";
-    const lwMm = parseFloat($("lw").value);
-    const steps = Math.max(0, Math.round(lwMm / 25.4 * HIFI_DPI) - 1);
-    const textSteps = Math.max(0, Math.round(Math.min(lwMm, HIFI_TEXT_MM) / 25.4 * HIFI_TEXT_DPI) - 1);
-    const sheets = pages.map(pg => {
+    const lws = await pageLwMm(H, pages);
+    const stepsOf = (mm) => Math.max(0, Math.round(mm / 25.4 * HIFI_DPI) - 1);
+    const textStepsOf = (mm) => Math.max(0, Math.round(Math.min(mm, HIFI_TEXT_MM) / 25.4 * HIFI_TEXT_DPI) - 1);
+    const sheets = pages.map((pg, i) => {
       const S = sheetSizePt(pg.vb);
-      return { S, lines: hifiLayout(H, pg.vb, S, HIFI_DPI, HIFI_MARGIN), text: hifiLayout(H, pg.vb, S, HIFI_TEXT_DPI, HIFI_MARGIN) };
+      return { S, steps: stepsOf(lws[i]), textSteps: textStepsOf(lws[i]), lines: hifiLayout(H, pg.vb, S, HIFI_DPI, HIFI_MARGIN), text: hifiLayout(H, pg.vb, S, HIFI_TEXT_DPI, HIFI_MARGIN) };
     });
     const textBoxes = H.textBoxes();
     for (const sh of sheets) sh.text.tiles = sh.text.tiles.filter(t => hits(t.inner, textBoxes));
@@ -1248,7 +1271,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       if (!pdf) pdf = newPdf(jsPDF, S); else pdf.addPage([S.w, S.h], S.w >= S.h ? "l" : "p");
       for (const tl of L.tiles) {
         const cv = await H.renderTile(tl.wcs);
-        thicken(cv, steps);
+        thicken(cv, sh.steps);
         const crop = document.createElement("canvas"); crop.width = tl.w; crop.height = tl.h;
         crop.getContext("2d", { willReadFrequently: true }).drawImage(cv, HIFI_MARGIN, HIFI_MARGIN, tl.w, tl.h, 0, 0, tl.w, tl.h);
         treatPixels(crop, { mono });
@@ -1264,7 +1287,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       pdf.setPage(i + 1);
       for (const tl of L.tiles) {
         const cv = await H.renderTile(tl.wcs);
-        thicken(cv, textSteps);
+        thicken(cv, sheets[i].textSteps);
         const crop = document.createElement("canvas"); crop.width = tl.w; crop.height = tl.h;
         crop.getContext("2d", { willReadFrequently: true }).drawImage(cv, HIFI_MARGIN, HIFI_MARGIN, tl.w, tl.h, 0, 0, tl.w, tl.h);
         treatPixels(crop, { mono });
@@ -1282,17 +1305,16 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     setStatus(hifiLib ? "hifiOpen" : "hifiLoad");
     const H = await hifiReady();
     const mono = document.querySelector('input[name="color"]:checked').value === "mono";
-    const lineW = parseFloat($("lw").value) / 25.4 * 72;
-    const hatchW = Math.min(lineW, 0.18 / 25.4 * 72);
-    const textW = Math.min(lineW, HIFI_TEXT_MM / 25.4 * 72);
-    // Larger CAD-font lettering is plotted up to the pen width (capped at 0.25 mm), as AutoCAD does.
-    const textMaxW = Math.max(textW, Math.min(lineW, 0.25 / 25.4 * 72));
-    const sheets = pages.map(pg => {
-      const vb = pg.vb, S = sheetSizePt(vb);
-      const m = 36, s = Math.min((S.w - 2 * m) / vb.w, (S.h - 2 * m) / vb.h);
-      const wPt = vb.w * s, hPt = vb.h * s, x = (S.w - wPt) / 2, oy = S.h - (S.h - hPt) / 2 - hPt;
-      const box = { x0: vb.x, x1: vb.x + vb.w, y0: -(vb.y + vb.h), y1: -vb.y };
-      return { S, opt: { box, ox: x, oy, s, clip: [x, oy, wPt, hPt], lineW, hatchW, textW, textMaxW, mono } };
+    const lws = await pageLwMm(H, pages);
+    const sheets = pages.map((pg, i) => {
+      const { S, box, ox, oy, s, clip } = pageGeom(pg.vb);
+      const lineW = lws[i] / 25.4 * 72;
+      const hatchW = Math.min(lineW, 0.18 / 25.4 * 72);
+      const textW = Math.min(lineW, HIFI_TEXT_MM / 25.4 * 72);
+      // Larger CAD-font lettering is plotted up to the pen width (capped at 0.25 mm), as AutoCAD does;
+      // with automatic widths lettering keeps its own weight however fine the line work gets.
+      const textMaxW = Math.max(textW, $("lw").value === "auto" ? 0.25 / 25.4 * 72 : Math.min(lineW, 0.25 / 25.4 * 72));
+      return { S, opt: { box, ox, oy, s, clip, lineW, hatchW, textW, textMaxW, mono } };
     });
     const res = await H.vectorPages(sheets.map(sh => sh.opt), (n, m) => setStatus("hifiProg", "", { p: Math.round(n / m * 100) }));
     let pdf = null;
