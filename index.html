@@ -124,9 +124,10 @@ button.go:disabled { opacity: .5; cursor: progress; }
 .status { font-size: .85rem; min-height: 1.3em; margin: 0; }
 .status.err { color: var(--warn); }
 .status.ok { color: var(--ok); }
-.stage { display: grid; gap: 10px; min-width: 0; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
 .meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--mono); font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .meta b { color: var(--ink); font-weight: 500; }
+.meta > span { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }   /* a long file name wraps instead of widening the page */
 .sheetbox { background: color-mix(in srgb, var(--ink) 6%, var(--bg)); border-radius: 6px; padding: 18px; display: grid; place-items: center; min-height: 260px; }
 .sheets { display: grid; gap: 16px; width: 100%; justify-items: center; position: relative; }
 .pagecap { font-family: var(--mono); font-size: .75rem; color: var(--muted); justify-self: start; }
@@ -134,6 +135,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
 .sheet svg { display: block; width: 100%; height: auto; }
 .badge { position: absolute; top: 8px; left: 8px; font-family: var(--mono); font-size: .72rem; background: #18202b; color: #fff; padding: 2px 7px; border-radius: 3px; letter-spacing: .04em; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .8rem; color: var(--muted); }
+.legend span { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--rule); }
 .busy { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(255,255,255,.75); font-family: var(--display); color: #18202b; font-size: 1rem; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
@@ -493,6 +495,15 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     for (const e of blk.entities || []) { const q = pt(e); if (q && isFinite(q.x) && isFinite(q.y)) { a = { x: q.x, y: q.y }; break; } }
     blk.__anchor = a;
     return a;
+  }
+  // Older DWGs write Chinese/Japanese/Korean names as \M+5B3F8 (code page + two bytes); show the characters.
+  const MIF_CP = { 1: "shift_jis", 2: "big5", 3: "euc-kr", 5: "gbk" };
+  function decodeMif(str) {
+    if (typeof str !== "string" || str.indexOf("\\M+") < 0) return str;
+    return str.replace(/\\M\+([1-5])([0-9A-Fa-f]{4})/g, (all, cp, hex) => {
+      try { return new TextDecoder(MIF_CP[cp]).decode(new Uint8Array([parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2), 16)])); }
+      catch (e) { return all; }
+    });
   }
   function renderModel(model) {
     const layerTbl = model.layers || {};
@@ -1106,7 +1117,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     $("legend").innerHTML = state.layers.slice(0, 24).map(([n, c]) => {
       const rgb = parseColor(c);
       const pc = rgb ? paperColor(rgb, { mono: false, darken: false }) : c;
-      return `<span><i style="background:${pc}"></i>${esc(n)}</span>`;
+      return `<span><i style="background:${pc}"></i>${esc(decodeMif(n))}</span>`;
     }).join("");
   }
   function setStatus(k, kind, v) { const s = $("status"); lastStatus = k ? { k, kind, v } : null; s.textContent = k ? (k instanceof UserError ? k.message : t(k, v)) : ""; s.className = "status" + (kind ? " " + kind : ""); }
