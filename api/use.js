@@ -20,6 +20,7 @@ export async function POST(request) {
   const fonts = (Array.isArray(b.mf) ? b.mf : []).map(x => String(x).replace(/[\u0000-\u001f|]/g, '').trim().slice(0, 32)).filter(Boolean).slice(0, 6);
   if (fonts.length) f.mf = Buffer.from(fonts.join('|'), 'utf8').toString('base64url').slice(0, 400);
   const meta = Object.entries(f).map(([k, v]) => `${k}=${v}`).join('~');
-  await put(`use/${day}/${who}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}~${meta}`, '', { access: 'private', addRandomSuffix: false });
+  // The record is the path; the body is one byte (the Blob API refuses an empty body).
+  await put(`use/${day}/${who}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}~${meta}`, '1', { access: 'private', addRandomSuffix: false });
   return new Response(null, { status: 204 });
 }
