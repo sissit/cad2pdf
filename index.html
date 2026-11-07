@@ -337,7 +337,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       batchH: "批量转换：{n} 个文件", batchOut: "批量输出方式", bZip: "每张一个 PDF（ZIP）", bMerge: "合并成一个 PDF",
       goAll: "生成 PDF（{n} 个文件）", batchProg: "第 {i}/{n} 个：{name}", batchMerging: "正在合并 PDF…", batchZipping: "正在打包 ZIP…",
       batchDone: "完成：{ok}/{n} 个文件转换成功，已下载 {f}。", batchNone: "这批文件都没有转换成功。", batchSkipped: "已跳过不支持的文件：{n}",
-      bWait: "等待", bWork: "转换中…", bOk: "完成", bFail: "失败",
+      batchRepack: "这批图纸已经转好了，直接点「生成 PDF」就会按新的方式重新打包下载，不用再转换。", bWait: "等待", bWork: "转换中…", bOk: "完成", bFail: "失败",
       onlyExt: "只支持 .dwg 和 .dxf 文件。", readingDwg: "正在读取 DWG…", readingDxf: "正在读取 DXF…",
       loadingLib: "第一次打开 DWG，正在加载读图组件（约 11 MB）…",
       loaded: "已读入 {n}，确认预览没问题后点「生成 PDF」。",
@@ -406,7 +406,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       batchH: "Batch: {n} files", batchOut: "Batch output", bZip: "One PDF each (ZIP)", bMerge: "Merge into one PDF",
       goAll: "Create PDFs ({n} files)", batchProg: "File {i} of {n}: {name}", batchMerging: "Merging the PDFs…", batchZipping: "Packing the ZIP…",
       batchDone: "Done: {ok} of {n} files converted, downloaded {f}.", batchNone: "None of these files could be converted.", batchSkipped: "Skipped unsupported files: {n}",
-      bWait: "waiting", bWork: "converting…", bOk: "done", bFail: "failed",
+      batchRepack: "These drawings are already converted: click Create PDF to download them packaged the new way, without converting again.", bWait: "waiting", bWork: "converting…", bOk: "done", bFail: "failed",
       onlyExt: "Only .dwg and .dxf files are supported.", readingDwg: "Reading DWG…", readingDxf: "Reading DXF…",
       loadingLib: "Loading the DWG reader (about 11 MB) for the first time…",
       loaded: "Loaded {n}. Check the preview, then click Create PDF.",
@@ -1643,7 +1643,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       loadFile(files[0]).then(ok => { if (ok && $("autogo").checked) $("go").click(); });
       return;
     }
-    batch = files.map(file => ({ file, st: "wait" }));
+    batch = files.map(file => ({ file, st: "wait" })); lastBatch = null;
     showBatch();
     if (files.length < all.length) setStatus("batchSkipped", "", { n: all.length - files.length });
     if ($("autogo").checked) $("go").click();
@@ -1699,11 +1699,19 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     out.setTitle("cad2pdf"); out.setCreator("cad2pdf");
     return new Blob([await out.save()], { type: "application/pdf" });
   }
+  // The PDFs of the last finished batch, kept so switching between ZIP and merged PDF (with the
+  // same files and settings) only repackages them instead of converting everything again.
+  let lastBatch = null;
+  const batchSig = () => ["size", "lw"].map(id => $(id).value).concat(["noplot", "frames", "trim"].map(id => $(id).checked),
+    ["orient", "color", "fmt"].map(n => document.querySelector('input[name="' + n + '"]:checked').value)).join("|");
   async function runBatch() {
     const btn = $("go"); btn.disabled = true; busy = true;
-    const done = [];
+    const sig = batchSig();
+    const reuse = lastBatch && lastBatch.batch === batch && lastBatch.sig === sig;
+    const done = reuse ? lastBatch.done : [];
     try {
-      for (let i = 0; i < batch.length; i++) {
+      if (!reuse) lastBatch = null;
+      for (let i = 0; i < batch.length && !reuse; i++) {
         const it = batch[i];
         it.st = "work"; showBatch();
         const t0 = performance.now(); let outType = "";
@@ -1725,11 +1733,12 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       if (!done.length) { setStatus("batchNone", "err"); return; }
       // Unique names inside the ZIP.
       const seen = new Map();
-      for (const d of done) { const k = d.name.toLowerCase(), n = seen.get(k) || 0; seen.set(k, n + 1); if (n) d.name = d.name.replace(/\.pdf$/i, " (" + (n + 1) + ").pdf"); }
+      if (!reuse) for (const d of done) { const k = d.name.toLowerCase(), n = seen.get(k) || 0; seen.set(k, n + 1); if (n) d.name = d.name.replace(/\.pdf$/i, " (" + (n + 1) + ").pdf"); }
       const merge = document.querySelector('input[name="bout"]:checked').value === "merge";
       let blob, fname;
       if (merge) { setStatus("batchMerging"); blob = await mergePdfs(done.map(d => d.blob)); fname = "cad2pdf-" + done.length + ".pdf"; }
       else { setStatus("batchZipping"); blob = await makeZip(done); fname = "cad2pdf-" + done.length + ".zip"; }
+      lastBatch = { batch, sig, done };
       await deliver(blob, fname);
       setStatus("batchDone", "ok", { ok: done.length, n: batch.length, f: fname });
     } catch (e) {
@@ -1772,6 +1781,9 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
   ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
   drop.addEventListener("drop", e => { if (e.dataTransfer) pickFiles(e.dataTransfer.files); });
+  document.querySelectorAll('input[name="bout"]').forEach(r => r.addEventListener("change", () => {
+    if (!busy && lastBatch && lastBatch.batch === batch && lastBatch.sig === batchSig()) setStatus("batchRepack", "ok");
+  }));
   // "Create the PDF as soon as a file is chosen" is remembered on this device.
   try { $("autogo").checked = localStorage.getItem("cad2pdf-autogo") === "1"; } catch (e) {}
   $("autogo").addEventListener("change", () => { try { localStorage.setItem("cad2pdf-autogo", $("autogo").checked ? "1" : "0"); } catch (e) {} });

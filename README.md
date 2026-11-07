@@ -37,6 +37,19 @@ npm run build
 CAD fonts (SHX/TTF) load at run time from
 [mlightcad/cad-data](https://github.com/mlightcad/cad-data) via jsDelivr.
 
+## License
+
+cad2pdf is free software: you can redistribute it and/or modify it under the terms of the
+GNU General Public License as published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version. See [LICENSE](LICENSE).
+
+Copyright (C) 2026 Sissi Tang
+
+The DWG reader in `dwg/` and `dwg-next/` is LibreDWG (GPL-3.0) compiled to WebAssembly; the
+source of the backup reader is mlightcad/libredwg-web with LibreDWG merged in, built by
+`.github/workflows/build-dwg-reader.yml` with the changes in `tools/dwg/`. The bundled fonts in
+`fonts/` keep their own license (SIL Open Font License, see `fonts/OFL-*.txt`).
+
 ## Libraries and licenses
 
 - [@mlightcad/cad-simple-viewer](https://www.npmjs.com/package/@mlightcad/cad-simple-viewer) and the RealDWG-Web data model – MIT
