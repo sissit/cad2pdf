@@ -11,16 +11,16 @@ m = re.search(r'/\* tabs \*/.*?/\* /tabs \*/', idx, re.S)
 tabcss = m.group(0) if m else ''
 
 FAQ = [
- ("怎么把 PDF 转成 DXF？", "点「选择或拖入 PDF」，选好 PDF 文件，右边会显示能转出来的线条和文字。选单位和图纸比例，再点「生成 DXF」，DXF 会直接下载。多页 PDF 默认每页一个 DXF，打包成 ZIP。",
-  "How do I convert a PDF to DXF?", "Click “Choose or drop PDFs”, pick a PDF, and the preview shows the lines and text that will come across. Choose the units and drawing scale, then click “Create DXF”. The DXF downloads straight away. A multi-page PDF gives one DXF per page, packed in a ZIP."),
+ ("怎么把 PDF 转成 DWG？", "点「选择或拖入 PDF」，选好 PDF 文件，右边会显示能转出来的线条和文字。选输出格式（DWG 或 DXF）、单位和图纸比例，再点「生成 DWG」，文件会直接下载。多页 PDF 默认每页一个文件，打包成 ZIP。",
+  "How do I convert a PDF to DWG?", "Click “Choose or drop PDFs”, pick a PDF, and the preview shows the lines and text that will come across. Choose the format (DWG or DXF), units and drawing scale, then click “Create DWG”. The file downloads straight away. A multi-page PDF gives one file per page, packed in a ZIP."),
  ("什么样的 PDF 能转？", "从 AutoCAD、Revit 等软件直接导出或打印的矢量 PDF 效果最好，线条和文字都能还原。扫描件或照片是图片，里面没有线条，转不出来（预览会提示）。",
   "Which PDFs work?", "Vector PDFs exported or printed from AutoCAD, Revit and similar programs work best: lines and text come back. Scans and photos are pictures with no lines in them, so they can't be converted (the preview tells you)."),
- ("转出来的尺寸对吗？", "PDF 里只记录纸面尺寸，不记录图纸比例。默认按纸面 1:1 输出；在「图纸比例」里选图上标的比例（比如 1/4\" = 1'-0\" 或 1:100），DXF 里量出来就是实际尺寸。转完可以量一段已知长度核对。",
-  "Will the dimensions be right?", "A PDF only records paper size, not the drawing scale. By default the DXF is at paper size (1:1). Pick the scale shown on the sheet (for example 1/4\" = 1'-0\" or 1:100) and distances in the DXF measure true size. Measure a known length afterwards to check."),
- ("能直接转成 DWG 吗？", "网站输出 DXF（AutoCAD R12 格式），AutoCAD、BricsCAD、LibreCAD 等都能直接打开。需要 DWG 的话，在 AutoCAD 里打开后「另存为」DWG，或者用免费的 Autodesk DWG TrueView、ODA File Converter 转换。",
-  "Can I get a DWG directly?", "The site writes DXF (AutoCAD R12 format), which AutoCAD, BricsCAD, LibreCAD and others open directly. For a DWG, open it in AutoCAD and “Save As” DWG, or use the free Autodesk DWG TrueView or ODA File Converter."),
- ("DXF 里会有什么？", "线条（曲线由短线段组成）、虚线、颜色、填充区域的外轮廓（在 PDF_FILL 图层），以及可编辑的文字（在 PDF_TEXT 图层）。原图的图层、图块和标注对象 PDF 里没有保存，所以无法还原；图片不转换。",
-  "What ends up in the DXF?", "Lines (curves become short segments), dashed lines, colors, outlines of filled areas (on layer PDF_FILL) and editable text (on layer PDF_TEXT). The original layers, blocks and dimension objects aren't stored in a PDF, so they can't be recovered; pictures are not converted."),
+ ("转出来的尺寸对吗？", "PDF 里只记录纸面尺寸，不记录图纸比例。默认按纸面 1:1 输出；在「图纸比例」里选图上标的比例（比如 1/4\" = 1'-0\" 或 1:100），DWG 里量出来就是实际尺寸。转完可以量一段已知长度核对。",
+  "Will the dimensions be right?", "A PDF only records paper size, not the drawing scale. By default the drawing is at paper size (1:1). Pick the scale shown on the sheet (for example 1/4\" = 1'-0\" or 1:100) and distances in the drawing measure true size. Measure a known length afterwards to check."),
+ ("DWG 和 DXF 选哪个？", "要在 AutoCAD 里用，选 DWG（默认）：AutoCAD 2000 格式，AutoCAD 2000 到最新版、BricsCAD、DWG TrueView 都能直接打开，文件也比 DXF 小得多。DXF（R12 格式）几乎所有 CAD 和绘图软件都能读，适合 LibreCAD、激光切割、CNC 等软件。两种文件里的内容完全一样。",
+  "DWG or DXF?", "For AutoCAD, choose DWG (the default): AutoCAD 2000 format, which AutoCAD 2000 through the latest version, BricsCAD and DWG TrueView open directly, and much smaller than DXF. DXF (R12) is read by almost every CAD and drawing program, handy for LibreCAD, laser cutting and CNC software. Both contain exactly the same drawing."),
+ ("转出来的图里有什么？", "线条和多段线（曲线由短线段组成）、虚线、颜色、填充区域的外轮廓（在 PDF_FILL 图层），以及可编辑的文字（在 PDF_TEXT 图层）。原图的图层、图块和标注对象 PDF 里没有保存，所以无法还原；图片不转换。",
+  "What ends up in the drawing?", "Lines and polylines (curves become short segments), dashed lines, colors, outlines of filled areas (on layer PDF_FILL) and editable text (on layer PDF_TEXT). The original layers, blocks and dimension objects aren't stored in a PDF, so they can't be recovered; pictures are not converted."),
  ("文字是乱码或变成了线条怎么办？", "有些 PDF 把文字存成了轮廓线，这种文字会变成线条，看起来一样但不能编辑。少数 PDF 的字体编码特殊，文字会是乱码，可以取消「包含文字」，只要线条。",
   "Text is garbled or turned into lines?", "Some PDFs store text as outlines; that text comes across as lines, which look the same but can't be edited. A few PDFs use unusual font encodings and their text comes out garbled; untick “Include text” to keep only the lines."),
  ("文件会上传到服务器吗？", "不会。PDF 只在你自己的浏览器里读取和转换，不经过任何服务器。",
@@ -75,6 +75,8 @@ en = dict(
  aboutH="FAQ", aboutP="5cad2pdf PDF to DXF is a free online tool that turns PDF drawings exported from CAD back into DXF that AutoCAD can edit, keeping lines, dashes, colors and text, with the drawing scale restored if you choose it.",
  footFb="Feedback:", footFbA="main page",
 )
+zh.update({'title': 'PDF 转 DWG 在线免费转换 · PDF to DWG / DXF Converter | cad2pdf', 'h1': 'PDF 图纸转 DWG / DXF', 'tag': 'PDF → DWG · DXF · 文件只在本机浏览器里处理，不上传', 'tabPdf': 'PDF 转 DWG', 'fmtL': '输出格式', 'fmtHdwg': 'AutoCAD 2000 格式，AutoCAD 各版本都能直接打开。', 'fmtHdxf': 'R12 格式，几乎所有 CAD 软件都能读。', 'goDwg': '生成 DWG', 'goDxf': '生成 DXF', 'pgEach': '每页一个文件', 'pgOne': '合成一个文件', 'done': '完成：{n} 个文件（{mb} MB）已下载。', 'doneSome': '完成：{n} 个文件已下载，{b} 个文件读不了。', 'doneEmpty': '已下载，但有的 PDF 里没有矢量线条（可能是扫描件），转出来会是空的。', 'fail': '生成文件失败，请再试一次。', 'aboutP': '5cad2pdf 的 PDF 转 DWG 是免费的在线工具：把从 CAD 导出的 PDF 图纸还原成 AutoCAD 能编辑的 DWG 或 DXF，线条、虚线、颜色和文字都保留，可以按图纸比例还原实际尺寸。'})
+en.update({'title': 'PDF to DWG Converter, free and online (DWG / DXF) | cad2pdf', 'h1': 'PDF to DWG / DXF', 'tag': 'PDF → DWG · DXF · files stay in your browser, nothing is uploaded', 'tabPdf': 'PDF to DWG', 'fmtL': 'Format', 'fmtHdwg': 'AutoCAD 2000 format; every AutoCAD version opens it.', 'fmtHdxf': 'R12 format; read by almost every CAD program.', 'goDwg': 'Create DWG', 'goDxf': 'Create DXF', 'pgEach': 'One file per page', 'pgOne': 'One file', 'done': 'Done: {n} files ({mb} MB) downloaded.', 'doneSome': "Done: {n} files downloaded; {b} files couldn't be read.", 'doneEmpty': 'Downloaded, but some PDFs have no vector lines (probably scans), so their drawings are empty.', 'fail': "Couldn't create the file. Please try again.", 'aboutP': '5cad2pdf PDF to DWG is a free online tool that turns PDF drawings exported from CAD back into DWG or DXF that AutoCAD can edit, keeping lines, dashes, colors and text, with the drawing scale restored if you choose it.'})
 faq_html = []
 for i, (qz, az, qe, ae) in enumerate(FAQ):
     zh[f'q{i}'] = qz; zh[f'a{i}'] = az; en[f'q{i}'] = qe; en[f'a{i}'] = ae
@@ -88,5 +90,5 @@ out = (tpl.replace('%%CSS%%', css).replace('%%TABCSS%%', tabcss)
        .replace('%%STR%%', json.dumps({"zh": zh, "en": en}, ensure_ascii=False)))
 out = out.replace('<p class="about-lead" data-i18n="aboutP"></p>', f'<p class="about-lead" data-i18n="aboutP">{zh["aboutP"]}</p>')
 out = out.replace('<p class="hint" data-i18n="hint"></p>', f'<p class="hint" data-i18n="hint">{zh["hint"]}</p>')
-open(os.path.join(ROOT, 'pdf-to-dxf.html'), 'w', encoding='utf-8').write(out)
-print('wrote pdf-to-dxf.html', len(out))
+open(os.path.join(ROOT, 'pdf-to-dwg.html'), 'w', encoding='utf-8').write(out)
+print('wrote pdf-to-dwg.html', len(out))

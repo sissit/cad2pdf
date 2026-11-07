@@ -172,7 +172,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
     <h1 data-i18n="h1">DWG 图纸转 PDF</h1>
     <div class="hd-right"><span class="tag" data-i18n="tag">DWG · DXF → PDF · 文件只在本机浏览器里处理，不上传</span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
   </header>
-  <nav class="tabs" aria-label="Tools"><a href="/" aria-current="page" data-i18n="tabCad">CAD 转 PDF</a><a href="/pdf-to-dxf" data-i18n="tabPdf">PDF 转 DXF</a></nav>
+  <nav class="tabs" aria-label="Tools"><a href="/" aria-current="page" data-i18n="tabCad">CAD 转 PDF</a><a href="/pdf-to-dwg" data-i18n="tabPdf">PDF 转 DWG</a></nav>
 
   <div class="main">
     <aside class="rail">
@@ -249,7 +249,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <label class="check"><input type="checkbox" id="autogo"> <span data-i18n="autoGo"></span></label>
       <button class="go" id="go" type="button" data-i18n="go"></button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
-      <div class="pdfask" id="pdfask" hidden><span data-i18n="pdfAsk">这是 PDF 文件，要转成 DXF 吗？</span><button type="button" id="pdfgo" data-i18n="pdfGo">转到 PDF 转 DXF</button></div>
+      <div class="pdfask" id="pdfask" hidden><span data-i18n="pdfAsk">这是 PDF 文件。要把 PDF 转成 DWG 或 DXF 吗？</span><button type="button" id="pdfgo" data-i18n="pdfGo">转到 PDF 转 DWG</button></div>
       <p class="hint" data-i18n="hint"></p>
     </aside>
 
@@ -305,7 +305,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
   const STR = {
     zh: {
-      tabCad: "CAD 转 PDF", tabPdf: "PDF 转 DXF", pdfAsk: "这是 PDF 文件。要把 PDF 转成 DXF 吗？", pdfGo: "转到 PDF 转 DXF",
+      tabCad: "CAD 转 PDF", tabPdf: "PDF 转 DWG", pdfAsk: "这是 PDF 文件。要把 PDF 转成 DWG 或 DXF 吗？", pdfGo: "转到 PDF 转 DWG",
       visits: "访客 {n}",
       fbH: "意见反馈",
       fbP: "转换效果不对、想要新功能，都可以告诉我。不用登录，联系方式可以不填。",
@@ -375,7 +375,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       sampleFail: "示例图纸没有显示出来，可以直接选择你的图纸。"
     },
     en: {
-      tabCad: "CAD to PDF", tabPdf: "PDF to DXF", pdfAsk: "That’s a PDF. Do you want to convert the PDF to DXF?", pdfGo: "Go to PDF to DXF",
+      tabCad: "CAD to PDF", tabPdf: "PDF to DWG", pdfAsk: "That’s a PDF. Do you want to convert the PDF to DWG or DXF?", pdfGo: "Go to PDF to DWG",
       visits: "Visitors {n}",
       fbH: "Feedback",
       fbP: "Tell me if a conversion looks wrong or what you would like added. No sign-in needed; contact details are optional.",
@@ -1885,7 +1885,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     try { localStorage.setItem("cad2pdf-lang", lang); } catch (e) {}
     applyLang();
   }));
-  $("pdfgo").addEventListener("click", () => { if (pendingPdfs) handOff(pendingPdfs, "/pdf-to-dxf"); else location.href = "/pdf-to-dxf"; });
+  $("pdfgo").addEventListener("click", () => { if (pendingPdfs) handOff(pendingPdfs, "/pdf-to-dwg"); else location.href = "/pdf-to-dwg"; });
   applyLang();
   takeHandOff();
 })();

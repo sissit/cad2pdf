@@ -3,25 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="免费在线把 PDF 图纸转成 DXF：线条、虚线、颜色和文字都保留，可按图纸比例还原真实尺寸，AutoCAD 直接打开。文件只在浏览器里处理，不上传。Free PDF to DXF converter that runs in your browser.">
-<link rel="canonical" href="https://5cad2pdf.com/pdf-to-dxf">
+<meta name="description" content="免费在线把 PDF 图纸转成 DWG 或 DXF：线条、虚线、颜色和文字都保留，可按图纸比例还原真实尺寸，AutoCAD 直接打开。文件只在浏览器里处理，不上传。Free PDF to DWG / DXF converter that runs in your browser.">
+<link rel="canonical" href="https://5cad2pdf.com/pdf-to-dwg">
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#1d5bb8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d5bb8'/%3E%3Cpath d='M8 9h16v14H8z' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M8 17h16M16 9v14' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://5cad2pdf.com/pdf-to-dxf">
-<meta property="og:title" content="PDF 转 DXF 在线免费转换 · cad2pdf">
-<meta property="og:description" content="PDF 图纸在浏览器里直接转 DXF，线条、文字可编辑，可按比例还原尺寸，文件不上传。">
+<meta property="og:url" content="https://5cad2pdf.com/pdf-to-dwg">
+<meta property="og:title" content="PDF 转 DWG 在线免费转换 · cad2pdf">
+<meta property="og:description" content="PDF 图纸在浏览器里直接转 DWG 或 DXF，线条、文字可编辑，可按比例还原尺寸，文件不上传。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:locale:alternate" content="en_US">
 <meta property="og:image" content="https://5cad2pdf.com/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://5cad2pdf.com/og.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"cad2pdf PDF to DXF","alternateName":"PDF 转 DXF","url":"https://5cad2pdf.com/pdf-to-dxf","description":"Free in-browser converter from vector PDF drawings to DXF. Lines, dashes, colors and text are kept; drawing scale can be restored. Files are not uploaded.","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","inLanguage":["zh-CN","en"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"cad2pdf PDF to DWG","alternateName":"PDF 转 DWG","url":"https://5cad2pdf.com/pdf-to-dwg","description":"Free in-browser converter from vector PDF drawings to DWG (AutoCAD 2000) and DXF. Lines, dashes, colors and text are kept; drawing scale can be restored. Files are not uploaded.","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","inLanguage":["zh-CN","en"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 %%FAQLD%%
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
-<title>PDF 转 DXF 在线免费转换 · PDF to DXF Converter | cad2pdf</title>
+<title>PDF 转 DWG 在线免费转换 · PDF to DWG / DXF Converter | cad2pdf</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -38,10 +38,10 @@
 <body>
 <div class="wrap">
   <header>
-    <h1 data-i18n="h1">PDF 图纸转 DXF</h1>
-    <div class="hd-right"><span class="tag" data-i18n="tag">PDF → DXF · 文件只在本机浏览器里处理，不上传</span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
+    <h1 data-i18n="h1">PDF 图纸转 DWG / DXF</h1>
+    <div class="hd-right"><span class="tag" data-i18n="tag">PDF → DWG · DXF · 文件只在本机浏览器里处理，不上传</span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
   </header>
-  <nav class="tabs" aria-label="Tools"><a href="/" data-i18n="tabCad">CAD 转 PDF</a><a href="/pdf-to-dxf" aria-current="page" data-i18n="tabPdf">PDF 转 DXF</a></nav>
+  <nav class="tabs" aria-label="Tools"><a href="/" data-i18n="tabCad">CAD 转 PDF</a><a href="/pdf-to-dwg" aria-current="page" data-i18n="tabPdf">PDF 转 DWG</a></nav>
 
   <div class="main">
     <aside class="rail">
@@ -53,6 +53,14 @@
       <div class="batch" id="batch" hidden>
         <div class="label" id="batch-h"></div>
         <ol id="batch-list"></ol>
+      </div>
+      <div class="field">
+        <span class="label" data-i18n="fmtL">输出格式</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="fmt" value="dwg" checked><span>DWG</span></label>
+          <label><input type="radio" name="fmt" value="dxf"><span>DXF</span></label>
+        </div>
+        <p class="hint" id="fmt-h"></p>
       </div>
       <div class="field">
         <span class="label" data-i18n="unitL">单位</span>
@@ -102,12 +110,12 @@
       <div class="field">
         <span class="label" data-i18n="pagesL">多页 PDF</span>
         <div class="seg" role="radiogroup">
-          <label><input type="radio" name="pg" value="each" checked><span data-i18n="pgEach">每页一个 DXF</span></label>
-          <label><input type="radio" name="pg" value="one"><span data-i18n="pgOne">合成一个 DXF</span></label>
+          <label><input type="radio" name="pg" value="each" checked><span data-i18n="pgEach">每页一个文件</span></label>
+          <label><input type="radio" name="pg" value="one"><span data-i18n="pgOne">合成一个文件</span></label>
         </div>
       </div>
       <label class="check"><input type="checkbox" id="txt" checked> <span data-i18n="txtL">包含文字（可编辑的 TEXT）</span></label>
-      <button class="go" id="go" type="button" data-i18n="go">生成 DXF</button>
+      <button class="go" id="go" type="button">生成 DWG</button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
       <p class="hint" data-i18n="hint"></p>
     </aside>
@@ -129,6 +137,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="/pdf2dxf/core.js"></script>
+<script src="/pdf2dxf/dwg.js"></script>
 <script>
 (function () {
   "use strict";
@@ -149,6 +158,7 @@
     scale: +$("scale").value || 1,
     pg: document.querySelector('input[name="pg"]:checked').value,
     text: $("txt").checked,
+    fmt: document.querySelector('input[name="fmt"]:checked').value,
   });
   const base = (n) => n.replace(/\.pdf$/i, "");
 
@@ -289,12 +299,25 @@
   }
   function logUse(ok, t0, pages, err) {
     try {
-      const body = JSON.stringify({ ok, out: "dxf", ext: "pdf", pages, sec: (performance.now() - t0) / 1000, col: opts().unit, sh: String(opts().scale), err });
+      const body = JSON.stringify({ ok, out: opts().fmt, ext: "pdf", pages, sec: (performance.now() - t0) / 1000, col: opts().unit, sh: String(opts().scale), err });
       if (navigator.sendBeacon) navigator.sendBeacon("/api/use", body);
       else fetch("/api/use", { method: "POST", body, keepalive: true }).catch(() => {});
     } catch (e) {}
   }
-  const dxfBlob = (pages, o) => new Blob([PDF2DXF.toDxf(o.text ? pages : pages.map(p => ({ ...p, texts: [] })), { unit: o.unit, scale: o.scale }).dxf], { type: "application/dxf" });
+  // DWG: written on top of a blank AutoCAD 2000 drawing (fetched once, 170 KB).
+  let template = null;
+  function loadTemplate() {
+    if (!template) template = fetch("/pdf2dxf/template-r2000.dwg").then(r => { if (!r.ok) throw new Error("template"); return r.arrayBuffer(); })
+      .then(b => new Uint8Array(b)).catch(e => { template = null; throw e; });
+    return template;
+  }
+  async function outBlob(pages, o) {
+    if (o.fmt === "dwg") {
+      const tpl = await loadTemplate();
+      return new Blob([PDF2DWG.build(tpl, pages, { unit: o.unit, scale: o.scale, text: o.text }).bytes], { type: "application/acad" });
+    }
+    return new Blob([PDF2DXF.toDxf(o.text ? pages : pages.map(p => ({ ...p, texts: [] })), { unit: o.unit, scale: o.scale }).dxf], { type: "application/dxf" });
+  }
 
   async function convert() {
     if (busy) return;
@@ -315,15 +338,15 @@
           }
           pages += it.n;
           if (!list.some(p => p.paths.length || p.texts.length)) empty++;
-          if (o.pg === "one" || it.n === 1) out.push({ name: base(it.name) + ".dxf", blob: dxfBlob(list, o) });
-          else list.forEach((p, i) => out.push({ name: `${base(it.name)}_p${i + 1}.dxf`, blob: dxfBlob([p], o) }));
+          if (o.pg === "one" || it.n === 1) out.push({ name: base(it.name) + "." + o.fmt, blob: await outBlob(list, o) });
+          else for (let i = 0; i < list.length; i++) out.push({ name: `${base(it.name)}_p${i + 1}.${o.fmt}`, blob: await outBlob([list[i]], o) });
           it.st = "ok";
         } catch (e) { console.error(e); it.st = "bad"; bad++; }
         showBatch();
       }
       if (!out.length) { setStatus(files.length > 1 ? "allBad" : "badPdf", "err"); logUse(false, t0, pages, "read"); return; }
       if (out.length === 1) download(out[0].blob, out[0].name);
-      else { setStatus("zipping"); download(await makeZip(out), files.length === 1 ? base(files[0].name) + "_dxf.zip" : "pdf-to-dxf.zip"); }
+      else { setStatus("zipping"); download(await makeZip(out), files.length === 1 ? base(files[0].name) + "_" + o.fmt + ".zip" : "pdf-to-" + o.fmt + ".zip"); }
       const mb = out.reduce((n, e) => n + e.blob.size, 0) / 1048576;
       setStatus(empty ? "doneEmpty" : bad ? "doneSome" : "done", empty || bad ? "err" : "ok", { n: out.length, mb: mb.toFixed(1), b: bad });
       logUse(true, t0, pages);
@@ -354,6 +377,11 @@
   }
 
   // ---------- language ----------
+  function fmtHint() {
+    const f = opts().fmt;
+    $("fmt-h").textContent = t(f === "dwg" ? "fmtHdwg" : "fmtHdxf");
+    $("go").textContent = t(f === "dwg" ? "goDwg" : "goDxf");
+  }
   function scaleHint() {
     const o = opts();
     $("scale-h").textContent = o.scale === 1 ? t("scaleH1") : t(o.unit === "mm" ? "scaleHmm" : "scaleHin");
@@ -365,7 +393,7 @@
     document.querySelectorAll("[data-i18n-label]").forEach(el => el.setAttribute("label", t(el.dataset.i18nLabel)));
     document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
     if (lastStatus) setStatus(lastStatus.k, lastStatus.kind, lastStatus.v);
-    scaleHint(); showBatch();
+    scaleHint(); fmtHint(); showBatch();
     if (files.length) preview();
   }
 
@@ -378,6 +406,7 @@
   $("go").addEventListener("click", convert);
   document.querySelectorAll('input[name="unit"]').forEach(r => r.addEventListener("change", scaleHint));
   $("scale").addEventListener("change", scaleHint);
+  document.querySelectorAll('input[name="fmt"]').forEach(r => r.addEventListener("change", fmtHint));
   $("txt").addEventListener("change", () => { if (files.length) preview(); });
   document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => {
     lang = b.dataset.lang;

@@ -50,6 +50,11 @@ source of the backup reader is mlightcad/libredwg-web with LibreDWG merged in, b
 `.github/workflows/build-dwg-reader.yml` with the changes in `tools/dwg/`. The bundled fonts in
 `fonts/` keep their own license (SIL Open Font License, see `fonts/OFL-*.txt`).
 
+PDF to DWG / DXF (`/pdf-to-dwg`, source in `pdf2dxf/` and `tools/pdf2dxf/`) reads PDFs with
+[pdf.js](https://mozilla.github.io/pdf.js/) (Apache-2.0). The DWG writer (`pdf2dxf/dwg.js`) is our own;
+it starts from `pdf2dxf/template-r2000.dwg`, a blank drawing saved by AutoCAD in 2000 format, taken from
+the LibreDWG test data (`test/test-data/2000/Line.dwg`, GPL-3.0).
+
 ## Libraries and licenses
 
 - [@mlightcad/cad-simple-viewer](https://www.npmjs.com/package/@mlightcad/cad-simple-viewer) and the RealDWG-Web data model – MIT

@@ -5,8 +5,8 @@
       "destination": "/admin.html"
     },
     {
-      "source": "/pdf-to-dxf",
-      "destination": "/pdf-to-dxf.html"
+      "source": "/pdf-to-dwg",
+      "destination": "/pdf-to-dwg.html"
     }
   ],
   "headers": [
@@ -22,6 +22,18 @@
           "value": "no-store"
         }
       ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/pdf-to-dxf",
+      "destination": "/pdf-to-dwg",
+      "permanent": true
+    },
+    {
+      "source": "/pdf-to-dxf.html",
+      "destination": "/pdf-to-dwg",
+      "permanent": true
     }
   ]
 }
