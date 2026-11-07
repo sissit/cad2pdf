@@ -123,7 +123,12 @@ button.go.fb-send { width: auto; padding-left: 28px; padding-right: 28px; }
 .batch li.wk { font-weight: 600; }
 .batch li.ok::marker, .batch li.ok { color: inherit; }
 .batch li.bad { color: #b42318; }
-.batch li span { color: var(--muted); }
+.batch li > span:not(.bname) { color: var(--muted); }
+.batch .bname { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; color: inherit; }
+.batch .bname.cur { font-weight: 700; text-decoration: none; }
+.batch .bname.off { cursor: default; text-decoration: none; }
+.batch .bname:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.batch .bhint { font-size: .8rem; color: var(--muted); margin: 0; }
 button.go {
   font: inherit; font-family: var(--display); font-weight: 600; font-size: 1.05rem; letter-spacing: .02em;
   background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; padding: 11px 14px; cursor: pointer;
@@ -223,6 +228,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
 
       <div class="batch" id="batch" hidden>
         <span class="label" id="batch-h"></span>
+        <p class="bhint" data-i18n="bHint"></p>
         <ol id="batch-list"></ol>
         <div class="seg" role="radiogroup" data-i18n-aria="batchOut">
           <label><input type="radio" name="bout" id="b-zip" value="zip" checked><span data-i18n="bZip"></span></label>
@@ -337,7 +343,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       batchH: "批量转换：{n} 个文件", batchOut: "批量输出方式", bZip: "每张一个 PDF（ZIP）", bMerge: "合并成一个 PDF",
       goAll: "生成 PDF（{n} 个文件）", batchProg: "第 {i}/{n} 个：{name}", batchMerging: "正在合并 PDF…", batchZipping: "正在打包 ZIP…",
       batchDone: "完成：{ok}/{n} 个文件转换成功，已下载 {f}。", batchNone: "这批文件都没有转换成功。", batchSkipped: "已跳过不支持的文件：{n}",
-      batchRepack: "这批图纸已经转好了，直接点「生成 PDF」就会按新的方式重新打包下载，不用再转换。", bWait: "等待", bWork: "转换中…", bOk: "完成", bFail: "失败",
+      batchRepack: "这批图纸已经转好了，直接点「生成 PDF」就会按新的方式重新打包下载，不用再转换。", bPreview: "点击预览这个文件", bHint: "点文件名可以预览该文件（当前预览的加粗显示）。", bWait: "等待", bWork: "转换中…", bOk: "完成", bFail: "失败",
       onlyExt: "只支持 .dwg 和 .dxf 文件。", readingDwg: "正在读取 DWG…", readingDxf: "正在读取 DXF…",
       loadingLib: "第一次打开 DWG，正在加载读图组件（约 11 MB）…",
       loaded: "已读入 {n}，确认预览没问题后点「生成 PDF」。",
@@ -406,7 +412,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       batchH: "Batch: {n} files", batchOut: "Batch output", bZip: "One PDF each (ZIP)", bMerge: "Merge into one PDF",
       goAll: "Create PDFs ({n} files)", batchProg: "File {i} of {n}: {name}", batchMerging: "Merging the PDFs…", batchZipping: "Packing the ZIP…",
       batchDone: "Done: {ok} of {n} files converted, downloaded {f}.", batchNone: "None of these files could be converted.", batchSkipped: "Skipped unsupported files: {n}",
-      batchRepack: "These drawings are already converted: click Create PDF to download them packaged the new way, without converting again.", bWait: "waiting", bWork: "converting…", bOk: "done", bFail: "failed",
+      batchRepack: "These drawings are already converted: click Create PDF to download them packaged the new way, without converting again.", bPreview: "Preview this file", bHint: "Click a file name to preview it (the one shown is in bold).", bWait: "waiting", bWork: "converting…", bOk: "done", bFail: "failed",
       onlyExt: "Only .dwg and .dxf files are supported.", readingDwg: "Reading DWG…", readingDxf: "Reading DXF…",
       loadingLib: "Loading the DWG reader (about 11 MB) for the first time…",
       loaded: "Loaded {n}. Check the preview, then click Create PDF.",
@@ -1627,10 +1633,18 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     for (const it of batch) {
       const li = document.createElement("li");
       li.className = it.st === "work" ? "wk" : it.st === "fail" ? "bad" : it.st === "ok" ? "ok" : "";
-      li.textContent = it.file.name + " ";
+      // Click a name to preview that file (not while the batch is running).
+      // A span, not a button: a button stays a box, so long names wrapped away from the list number.
+      const b = document.createElement("span");
+      b.className = "bname" + (state.file === it.file ? " cur" : "") + (busy ? " off" : "");
+      b.textContent = it.file.name; b.title = t("bPreview");
+      if (!busy) { b.setAttribute("role", "button"); b.tabIndex = 0; }
+      const open = async () => { if (busy) return; await loadFile(it.file); showBatch(); };
+      b.addEventListener("click", open);
+      b.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
       const sp = document.createElement("span");
-      sp.textContent = "— " + t(it.st === "work" ? "bWork" : it.st === "ok" ? "bOk" : it.st === "fail" ? "bFail" : "bWait");
-      li.appendChild(sp); ol.appendChild(li);
+      sp.textContent = " — " + t(it.st === "work" ? "bWork" : it.st === "ok" ? "bOk" : it.st === "fail" ? "bFail" : "bWait");
+      li.appendChild(b); li.appendChild(sp); ol.appendChild(li);
     }
   }
   function pickFiles(list) {
@@ -1647,7 +1661,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     showBatch();
     if (files.length < all.length) setStatus("batchSkipped", "", { n: all.length - files.length });
     if ($("autogo").checked) $("go").click();
-    else loadFile(files[0]);                      // show the first one while the settings are chosen
+    else loadFile(files[0]).then(showBatch);      // show the first one while the settings are chosen
   }
   // Minimal ZIP writer (stored, no compression: PDFs are compressed already).
   const CRC = (() => { const tb = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; tb[n] = c >>> 0; } return tb; })();
@@ -1746,7 +1760,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       const code = e && e.code;
       if (code === "declined") setStatus("declined", "");
       else setStatus(code ? "noSave" : "genFail", "err");
-    } finally { btn.disabled = false; busy = false; }
+    } finally { btn.disabled = false; busy = false; showBatch(); }
   }
 
   $("go").addEventListener("click", async () => {
