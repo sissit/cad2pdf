@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="免费在线把 AutoCAD DWG / DXF 图纸转成 PDF：按图框分页、彩色或黑白、24×36 等图纸尺寸，矢量输出放大不糊。文件只在浏览器里处理，不上传。Free DWG/DXF to PDF converter that runs in your browser.">
 <link rel="canonical" href="https://5cad2pdf.com/">
+<link rel="alternate" hreflang="zh-Hans" href="https://5cad2pdf.com/">
+<link rel="alternate" hreflang="en" href="https://5cad2pdf.com/en/">
+<link rel="alternate" hreflang="x-default" href="https://5cad2pdf.com/en/">
+<script>/* language: an English-language browser opening a Chinese address goes to the English one, unless a language was chosen before; crawlers stay, so both versions get indexed */(function(){try{var p=location.pathname,en=/^\/en(\/|$)/.test(p),s=null;try{s=localStorage.getItem("cad2pdf-lang")}catch(e){}if(/bot|crawl|spider|slurp|bingpreview|facebookexternalhit|lighthouse|headlesschrome/i.test(navigator.userAgent))return;var w=s||(/^zh/i.test(navigator.language||"")?"zh":"en");if(!en&&w==="en")location.replace("/en"+(p==="/"||p==="/index.html"?"/":p)+location.search+location.hash);else if(en&&s==="zh")location.replace((p.replace(/^\/en/,"")||"/")+location.search+location.hash)}catch(e){}})();</script>
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#1d5bb8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d5bb8'/%3E%3Cpath d='M8 9h16v14H8z' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M8 17h16M16 9v14' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E">
@@ -172,7 +176,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
     <h1 data-i18n="h1">DWG 图纸转 PDF</h1>
     <div class="hd-right"><span class="tag" data-i18n="tag">DWG · DXF → PDF · 文件只在本机浏览器里处理，不上传</span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
   </header>
-  <nav class="tabs" aria-label="Tools"><a href="/" aria-current="page" data-i18n="tabCad">CAD 转 PDF</a><a href="/pdf-to-dwg" data-i18n="tabPdf">PDF 转 DWG</a></nav>
+  <nav class="tabs" aria-label="Tools"><a href="/" data-path="/" aria-current="page" data-i18n="tabCad">CAD 转 PDF</a><a href="/pdf-to-dwg" data-path="/pdf-to-dwg" data-i18n="tabPdf">PDF 转 DWG</a></nav>
 
   <div class="main">
     <aside class="rail">
@@ -289,7 +293,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <div class="fb-row"><button class="go fb-send" type="submit" id="fb-send" data-i18n="fbSend">提交</button><span class="hint" id="fb-st" role="status" aria-live="polite"></span></div>
     </form>
   </section>
-  <footer class="foot"><span>© 2026 5cad2pdf.com · <a href="/pdf-to-dwg" data-i18n="footOther">PDF 转 DWG</a></span><span class="foot-r"><span id="ver"></span><span id="visits" hidden></span></span></footer>
+  <footer class="foot"><span>© 2026 5cad2pdf.com · <a href="/pdf-to-dwg" data-path="/pdf-to-dwg" data-i18n="footOther">PDF 转 DWG</a></span><span class="foot-r"><span id="ver"></span><span id="visits" hidden></span></span></footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -305,6 +309,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
   const STR = {
     zh: {
+      docTitle: "DWG 转 PDF 在线免费转换 · DWG/DXF to PDF Converter | cad2pdf",
       tabCad: "CAD 转 PDF", tabPdf: "PDF 转 DWG", footOther: "PDF 转 DWG", pdfAsk: "这是 PDF 文件。要把 PDF 转成 DWG 或 DXF 吗？", pdfGo: "转到 PDF 转 DWG",
       visits: "访客 {n}",
       fbH: "意见反馈",
@@ -375,6 +380,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       sampleFail: "示例图纸没有显示出来，可以直接选择你的图纸。"
     },
     en: {
+      docTitle: "DWG to PDF Converter – Free, Online, No Upload | cad2pdf",
       tabCad: "CAD to PDF", tabPdf: "PDF to DWG", footOther: "PDF to DWG", pdfAsk: "That’s a PDF. Do you want to convert the PDF to DWG or DXF?", pdfGo: "Go to PDF to DWG",
       visits: "Visitors {n}",
       fbH: "Feedback",
@@ -445,8 +451,9 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       sampleFail: "The sample drawing didn't load. You can still choose your own drawing."
     }
   };
-  let lang = "zh";
-  try { const s = localStorage.getItem("cad2pdf-lang"); if (s === "en" || s === "zh") lang = s; else if (!/^zh/i.test(navigator.language || "")) lang = "en"; } catch (e) {}
+  // The address decides the language: / is Chinese, /en/ English (see the redirect in <head>).
+  let lang = document.documentElement.lang === "en" ? "en" : "zh";
+  const L = (path) => lang === "en" ? (path === "/" ? "/en/" : "/en" + path) : path;
   class UserError extends Error {}
   const t = (k, v) => { let s = (STR[lang] && STR[lang][k]) || STR.zh[k] || k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
   const fail = (k) => { const e = new UserError(t(k)); e.key = k; throw e; };
@@ -459,6 +466,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   }
   function applyLang() {
     document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.title = t("docTitle");
+    document.querySelectorAll("a[data-path]").forEach(a => { a.href = L(a.dataset.path) + (a.dataset.hash || ""); });
     document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll("[data-i18n-ph]").forEach(el => el.setAttribute("placeholder", t(el.dataset.i18nPh)));
     document.querySelectorAll("[data-i18n-aria]").forEach(el => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
@@ -747,8 +756,8 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
   // ---------- DWG via LibreDWG (WebAssembly) ----------
   let dwgLib = null;
-  const DWG_JS = new URL("dwg/dist/libredwg-web.js", document.baseURI).href;
-  const DWG_WASM = window.CAD2PDF_DWG_WASM || new URL("dwg/wasm/", document.baseURI).href;
+  const DWG_JS = new URL("/dwg/dist/libredwg-web.js", location.origin).href;
+  const DWG_WASM = window.CAD2PDF_DWG_WASM || new URL("/dwg/wasm/", location.origin).href;
   async function loadDwgLib() {
     if (dwgLib) return dwgLib;
     // The reader's JavaScript is our copy in /dwg (memory capped, see tools/dwg/build.cjs); its
@@ -851,7 +860,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   }
   // Backup reader: newer LibreDWG, built by .github/workflows/build-dwg-reader.yml into /dwg-next.
   // Tried only when the usual reader fails on a file.
-  const DWG_NEXT = new URL("dwg-next/", document.baseURI).href;
+  const DWG_NEXT = new URL("/dwg-next/", location.origin).href;
   let dwgNextOk = null;
   async function dwgNextAvailable() {
     if (dwgNextOk === null) {
@@ -1297,7 +1306,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   // ---------- High fidelity: mlightcad CAD viewer rendered off screen ----------
   const HIFI_VER = "0ed4703c02";   // set by tools/hifi/build.js
   const HIFI_DATE = "2026-11-07 12:39";  // build date, shown as the version; set by tools/hifi/build.js
-  const HIFI_BASE = new URL("hifi/", document.baseURI).href;
+  const HIFI_BASE = new URL("/hifi/", location.origin).href;
   const HIFI_FONTS = window.CAD2PDF_FONT_BASE || "https://cdn.jsdelivr.net/gh/mlightcad/cad-data@main/";
   let hifiLib = null, hifiDoc = null;
   function loadHifi() {
@@ -1883,9 +1892,10 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => {
     lang = b.dataset.lang;
     try { localStorage.setItem("cad2pdf-lang", lang); } catch (e) {}
+    try { history.replaceState(null, "", L("/") + location.hash); } catch (e) {}
     applyLang();
   }));
-  $("pdfgo").addEventListener("click", () => { if (pendingPdfs) handOff(pendingPdfs, "/pdf-to-dwg"); else location.href = "/pdf-to-dwg"; });
+  $("pdfgo").addEventListener("click", () => { if (pendingPdfs) handOff(pendingPdfs, L("/pdf-to-dwg")); else location.href = L("/pdf-to-dwg"); });
   applyLang();
   takeHandOff();
 })();

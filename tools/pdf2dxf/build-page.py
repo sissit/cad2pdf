@@ -75,8 +75,8 @@ en = dict(
  aboutH="FAQ", aboutP="5cad2pdf PDF to DXF is a free online tool that turns PDF drawings exported from CAD back into DXF that AutoCAD can edit, keeping lines, dashes, colors and text, with the drawing scale restored if you choose it.",
  footFb="Feedback:", footFbA="main page", footOther="DWG to PDF",
 )
-zh.update({'title': 'PDF 转 DWG 在线免费转换 · PDF to DWG / DXF Converter | cad2pdf', 'h1': 'PDF 图纸转 DWG / DXF', 'tag': 'PDF → DWG · DXF · 文件只在本机浏览器里处理，不上传', 'tabPdf': 'PDF 转 DWG', 'fmtL': '输出格式', 'fmtHdwg': 'AutoCAD 2000 格式，AutoCAD 各版本都能直接打开。', 'fmtHdxf': 'R12 格式，几乎所有 CAD 软件都能读。', 'goDwg': '生成 DWG', 'goDxf': '生成 DXF', 'pgEach': '每页一个文件', 'pgOne': '合成一个文件', 'done': '完成：{n} 个文件（{mb} MB）已下载。', 'doneSome': '完成：{n} 个文件已下载，{b} 个文件读不了。', 'doneEmpty': '已下载，但有的 PDF 里没有矢量线条（可能是扫描件），转出来会是空的。', 'fail': '生成文件失败，请再试一次。', 'aboutP': '5cad2pdf 的 PDF 转 DWG 是免费的在线工具：把从 CAD 导出的 PDF 图纸还原成 AutoCAD 能编辑的 DWG 或 DXF，线条、虚线、颜色和文字都保留，可以按图纸比例还原实际尺寸。'})
-en.update({'title': 'PDF to DWG Converter, free and online (DWG / DXF) | cad2pdf', 'h1': 'PDF to DWG / DXF', 'tag': 'PDF → DWG · DXF · files stay in your browser, nothing is uploaded', 'tabPdf': 'PDF to DWG', 'fmtL': 'Format', 'fmtHdwg': 'AutoCAD 2000 format; every AutoCAD version opens it.', 'fmtHdxf': 'R12 format; read by almost every CAD program.', 'goDwg': 'Create DWG', 'goDxf': 'Create DXF', 'pgEach': 'One file per page', 'pgOne': 'One file', 'done': 'Done: {n} files ({mb} MB) downloaded.', 'doneSome': "Done: {n} files downloaded; {b} files couldn't be read.", 'doneEmpty': 'Downloaded, but some PDFs have no vector lines (probably scans), so their drawings are empty.', 'fail': "Couldn't create the file. Please try again.", 'aboutP': '5cad2pdf PDF to DWG is a free online tool that turns PDF drawings exported from CAD back into DWG or DXF that AutoCAD can edit, keeping lines, dashes, colors and text, with the drawing scale restored if you choose it.'})
+zh.update({'title': 'PDF 转 DWG 在线免费转换 · PDF to DWG / DXF Converter | cad2pdf', 'h1': 'PDF 图纸转 DWG / DXF', 'tag': 'PDF → DWG · DXF · 文件只在本机浏览器里处理，不上传', 'tabPdf': 'PDF 转 DWG', 'fmtL': '输出格式', 'fmtHdwg': 'AutoCAD 2000 格式，AutoCAD 各版本都能直接打开。', 'fmtHdxf': 'R12 格式，几乎所有 CAD 软件都能读。', 'goDwg': '生成 DWG', 'goDxf': '生成 DXF', 'pgEach': '每页一个文件', 'pgOne': '合成一个文件', 'done': '完成：{n} 个文件（{mb} MB）已下载。', 'done1': '完成：文件（{mb} MB）已下载。', 'doneSome': '完成：{n} 个文件已下载，{b} 个文件读不了。', 'doneEmpty': '已下载，但有的 PDF 里没有矢量线条（可能是扫描件），转出来会是空的。', 'fail': '生成文件失败，请再试一次。', 'aboutP': '5cad2pdf 的 PDF 转 DWG 是免费的在线工具：把从 CAD 导出的 PDF 图纸还原成 AutoCAD 能编辑的 DWG 或 DXF，线条、虚线、颜色和文字都保留，可以按图纸比例还原实际尺寸。'})
+en.update({'title': 'PDF to DWG Converter, free and online (DWG / DXF) | cad2pdf', 'h1': 'PDF to DWG / DXF', 'tag': 'PDF → DWG · DXF · files stay in your browser, nothing is uploaded', 'tabPdf': 'PDF to DWG', 'fmtL': 'Format', 'fmtHdwg': 'AutoCAD 2000 format; every AutoCAD version opens it.', 'fmtHdxf': 'R12 format; read by almost every CAD program.', 'goDwg': 'Create DWG', 'goDxf': 'Create DXF', 'pgEach': 'One file per page', 'pgOne': 'One file', 'done': 'Done: {n} files ({mb} MB) downloaded.', 'done1': 'Done: the file ({mb} MB) is downloaded.', 'doneSome': "Done: {n} files downloaded; {b} files couldn't be read.", 'doneEmpty': 'Downloaded, but some PDFs have no vector lines (probably scans), so their drawings are empty.', 'fail': "Couldn't create the file. Please try again.", 'aboutP': '5cad2pdf PDF to DWG is a free online tool that turns PDF drawings exported from CAD back into DWG or DXF that AutoCAD can edit, keeping lines, dashes, colors and text, with the drawing scale restored if you choose it.'})
 faq_html = []
 for i, (qz, az, qe, ae) in enumerate(FAQ):
     zh[f'q{i}'] = qz; zh[f'a{i}'] = az; en[f'q{i}'] = qe; en[f'a{i}'] = ae
@@ -92,3 +92,37 @@ out = out.replace('<p class="about-lead" data-i18n="aboutP"></p>', f'<p class="a
 out = out.replace('<p class="hint" data-i18n="hint"></p>', f'<p class="hint" data-i18n="hint">{zh["hint"]}</p>')
 open(os.path.join(ROOT, 'pdf-to-dwg.html'), 'w', encoding='utf-8').write(out)
 print('wrote pdf-to-dwg.html', len(out))
+
+# English page (/en/pdf-to-dwg): the same page with the English text written in.
+import html as H
+e = out
+def must(a, b):
+    global e
+    if a not in e: raise SystemExit('not found: ' + a[:80])
+    e = e.replace(a, b)
+must('<html lang="zh-CN">', '<html lang="en">')
+e = re.sub(r'<meta name="description" content="[^"]*">', '<meta name="description" content="' + H.escape("Free online PDF to DWG converter: turn PDF drawings exported from AutoCAD back into editable DWG (AutoCAD 2000) or DXF. Lines, dashes, colors and text are kept and the drawing scale can be restored. Runs in your browser; nothing is uploaded.") + '">', e)
+must('<link rel="canonical" href="https://5cad2pdf.com/pdf-to-dwg">', '<link rel="canonical" href="https://5cad2pdf.com/en/pdf-to-dwg">')
+must('<meta property="og:url" content="https://5cad2pdf.com/pdf-to-dwg">', '<meta property="og:url" content="https://5cad2pdf.com/en/pdf-to-dwg">')
+e = re.sub(r'<meta property="og:title" content="[^"]*">', '<meta property="og:title" content="PDF to DWG Converter – Free, Online · cad2pdf">', e)
+e = re.sub(r'<meta property="og:description" content="[^"]*">', '<meta property="og:description" content="Turn PDF drawings into editable DWG or DXF in your browser: lines and text kept, scale restored, nothing uploaded.">', e)
+must('<meta property="og:locale" content="zh_CN">\n<meta property="og:locale:alternate" content="en_US">', '<meta property="og:locale" content="en_US">\n<meta property="og:locale:alternate" content="zh_CN">')
+e = re.sub(r'<meta property="og:image:alt" content="[^"]*">', '<meta property="og:image:alt" content="PDF to DWG converter · 5cad2pdf.com">', e)
+e = re.sub(r'<title>[^<]*</title>', '<title>' + H.escape(en['title']) + '</title>', e)
+e = e.replace('"alternateName":"PDF 转 DWG"', '"alternateName":"PDF to DWG"').replace('"inLanguage":["zh-CN","en"]', '"inLanguage":"en"')
+ld_en = {"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+    {"@type": "Question", "name": qe, "acceptedAnswer": {"@type": "Answer", "text": ae}} for (_, _, qe, ae) in FAQ]}
+e = re.sub(r'<script type="application/ld\+json">\{"@context": "https://schema.org", "@type": "FAQPage".*?</script>', lambda m: '<script type="application/ld+json">' + json.dumps(ld_en, ensure_ascii=False) + '</script>', e, flags=re.S)
+cnt = [0]
+def tr(m):
+    k = m.group(3)
+    if k not in en: raise SystemExit('no English for ' + k)
+    cnt[0] += 1
+    return m.group(1) + H.escape(en[k], quote=False) + m.group(5)
+e = re.sub(r'(<([a-z0-9]+)\b[^>]*\bdata-i18n="(\w+)"[^>]*>)([^<]*)(</\2>)', tr, e)
+e = re.sub(r'(<optgroup [^>]*data-i18n-label="(\w+)"[^>]*?)label="[^"]*"', lambda m: m.group(1) + 'label="' + H.escape(en[m.group(2)]) + '"', e)
+e = re.sub(r'(<a [^>]*)href="([^"]*)" data-path="([^"]*)"( data-hash="([^"]*)")?', lambda m: m.group(1) + 'href="' + ('/en/' if m.group(3) == '/' else '/en' + m.group(3)) + (m.group(5) or '') + '" data-path="' + m.group(3) + '"' + (m.group(4) or ''), e)
+e = e.replace('<button class="go" id="go" type="button">生成 DWG</button>', '<button class="go" id="go" type="button">Create DWG</button>')
+e = e.replace('https://5cad2pdf.com/og-pdf2dwg.png', 'https://5cad2pdf.com/og-pdf2dwg-en.png')
+open(os.path.join(ROOT, 'en-pdf-to-dwg.html'), 'w', encoding='utf-8').write(e)
+print('wrote en-pdf-to-dwg.html,', cnt[0], 'texts in English')

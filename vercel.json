@@ -7,6 +7,18 @@
     {
       "source": "/pdf-to-dwg",
       "destination": "/pdf-to-dwg.html"
+    },
+    {
+      "source": "/en",
+      "destination": "/en.html"
+    },
+    {
+      "source": "/en/",
+      "destination": "/en.html"
+    },
+    {
+      "source": "/en/pdf-to-dwg",
+      "destination": "/en-pdf-to-dwg.html"
     }
   ],
   "headers": [
@@ -33,6 +45,11 @@
     {
       "source": "/pdf-to-dxf.html",
       "destination": "/pdf-to-dwg",
+      "permanent": true
+    },
+    {
+      "source": "/en/pdf-to-dxf",
+      "destination": "/en/pdf-to-dwg",
       "permanent": true
     }
   ]

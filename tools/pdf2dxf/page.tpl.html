@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="免费在线把 PDF 图纸转成 DWG 或 DXF：线条、虚线、颜色和文字都保留，可按图纸比例还原真实尺寸，AutoCAD 直接打开。文件只在浏览器里处理，不上传。Free PDF to DWG / DXF converter that runs in your browser.">
 <link rel="canonical" href="https://5cad2pdf.com/pdf-to-dwg">
+<link rel="alternate" hreflang="zh-Hans" href="https://5cad2pdf.com/pdf-to-dwg">
+<link rel="alternate" hreflang="en" href="https://5cad2pdf.com/en/pdf-to-dwg">
+<link rel="alternate" hreflang="x-default" href="https://5cad2pdf.com/en/pdf-to-dwg">
+<script>/* language: an English-language browser opening a Chinese address goes to the English one, unless a language was chosen before; crawlers stay, so both versions get indexed */(function(){try{var p=location.pathname,en=/^\/en(\/|$)/.test(p),s=null;try{s=localStorage.getItem("cad2pdf-lang")}catch(e){}if(/bot|crawl|spider|slurp|bingpreview|facebookexternalhit|lighthouse|headlesschrome/i.test(navigator.userAgent))return;var w=s||(/^zh/i.test(navigator.language||"")?"zh":"en");if(!en&&w==="en")location.replace("/en"+(p==="/"||p==="/index.html"?"/":p)+location.search+location.hash);else if(en&&s==="zh")location.replace((p.replace(/^\/en/,"")||"/")+location.search+location.hash)}catch(e){}})();</script>
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#1d5bb8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d5bb8'/%3E%3Cpath d='M8 9h16v14H8z' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M8 17h16M16 9v14' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E">
@@ -44,7 +48,7 @@
     <h1 data-i18n="h1">PDF 图纸转 DWG / DXF</h1>
     <div class="hd-right"><span class="tag" data-i18n="tag">PDF → DWG · DXF · 文件只在本机浏览器里处理，不上传</span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
   </header>
-  <nav class="tabs" aria-label="Tools"><a href="/" data-i18n="tabCad">CAD 转 PDF</a><a href="/pdf-to-dwg" aria-current="page" data-i18n="tabPdf">PDF 转 DWG</a></nav>
+  <nav class="tabs" aria-label="Tools"><a href="/" data-path="/" data-i18n="tabCad">CAD 转 PDF</a><a href="/pdf-to-dwg" data-path="/pdf-to-dwg" aria-current="page" data-i18n="tabPdf">PDF 转 DWG</a></nav>
 
   <div class="main">
     <aside class="rail">
@@ -135,7 +139,7 @@
     <p class="about-lead" data-i18n="aboutP"></p>
 %%FAQ%%
   </section>
-  <footer class="foot"><span>© 2026 5cad2pdf.com · <a href="/" data-i18n="footOther">DWG 转 PDF</a></span><span class="foot-r"><span data-i18n="footFb">意见反馈请到</span>&nbsp;<a href="/#fb-h" data-i18n="footFbA">主页</a></span></footer>
+  <footer class="foot"><span>© 2026 5cad2pdf.com · <a href="/" data-path="/" data-i18n="footOther">DWG 转 PDF</a></span><span class="foot-r"><span data-i18n="footFb">意见反馈请到</span>&nbsp;<a href="/#fb-h" data-path="/" data-hash="#fb-h" data-i18n="footFbA">主页</a></span></footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -146,8 +150,9 @@
   "use strict";
   const $ = (id) => document.getElementById(id);
   const STR = %%STR%%;
-  let lang = "zh";
-  try { const s = localStorage.getItem("cad2pdf-lang"); if (s === "en" || s === "zh") lang = s; else if (!/^zh/i.test(navigator.language || "")) lang = "en"; } catch (e) {}
+  // The address decides the language: /pdf-to-dwg is Chinese, /en/pdf-to-dwg English (see the redirect in <head>).
+  let lang = document.documentElement.lang === "en" ? "en" : "zh";
+  const L = (path) => lang === "en" ? (path === "/" ? "/en/" : "/en" + path) : path;
   const t = (k, v) => { let s = (STR[lang] && STR[lang][k]) || STR.zh[k] || k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
   let lastStatus = null;
   function setStatus(k, kind, v) { const s = $("status"); lastStatus = k ? { k, kind, v } : null; s.textContent = k ? t(k, v) : ""; s.className = "status" + (kind ? " " + kind : ""); }
@@ -258,7 +263,7 @@
     const all = Array.from(list || []), pdfs = all.filter(f => /\.pdf$/i.test(f.name) || f.type === "application/pdf");
     if (!all.length) return;
     if (!pdfs.length) {
-      if (all.some(f => /\.(dwg|dxf)$/i.test(f.name))) { handOff(all, "/"); return; }
+      if (all.some(f => /\.(dwg|dxf)$/i.test(f.name))) { handOff(all, L("/")); return; }
       setStatus("onlyPdf", "err"); return;
     }
     for (const it of files) if (it.pdf) it.pdf.destroy();
@@ -351,7 +356,7 @@
       if (out.length === 1) download(out[0].blob, out[0].name);
       else { setStatus("zipping"); download(await makeZip(out), files.length === 1 ? base(files[0].name) + "_" + o.fmt + ".zip" : "pdf-to-" + o.fmt + ".zip"); }
       const mb = out.reduce((n, e) => n + e.blob.size, 0) / 1048576;
-      setStatus(empty ? "doneEmpty" : bad ? "doneSome" : "done", empty || bad ? "err" : "ok", { n: out.length, mb: mb.toFixed(1), b: bad });
+      setStatus(empty ? "doneEmpty" : bad ? "doneSome" : out.length === 1 ? "done1" : "done", empty || bad ? "err" : "ok", { n: out.length, mb: mb.toFixed(1), b: bad });
       logUse(true, t0, pages);
     } catch (e) {
       console.error(e); setStatus("fail", "err"); logUse(false, t0, pages, "write");
@@ -392,6 +397,7 @@
   function applyLang() {
     document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
     document.title = t("title");
+    document.querySelectorAll("a[data-path]").forEach(a => { a.href = L(a.dataset.path) + (a.dataset.hash || ""); });
     document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
     document.querySelectorAll("[data-i18n-label]").forEach(el => el.setAttribute("label", t(el.dataset.i18nLabel)));
     document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
@@ -414,6 +420,7 @@
   document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => {
     lang = b.dataset.lang;
     try { localStorage.setItem("cad2pdf-lang", lang); } catch (e) {}
+    try { history.replaceState(null, "", L("/pdf-to-dwg")); } catch (e) {}
     applyLang();
   }));
   applyLang();

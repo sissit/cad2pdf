@@ -37,6 +37,13 @@ npm run build
 CAD fonts (SHX/TTF) load at run time from
 [mlightcad/cad-data](https://github.com/mlightcad/cad-data) via jsDelivr.
 
+## Two languages
+
+Each page has a Chinese address and an English one: `/` and `/en/`, `/pdf-to-dwg` and `/en/pdf-to-dwg`,
+linked with hreflang. `index.html` is the source of both main pages; after changing it run
+`node tools/i18n/build-en.cjs` to rebuild `en.html`. The PDF to DWG pages are built by
+`python3 tools/pdf2dxf/build-page.py` (writes `pdf-to-dwg.html` and `en-pdf-to-dwg.html`).
+
 ## License
 
 cad2pdf is free software: you can redistribute it and/or modify it under the terms of the
