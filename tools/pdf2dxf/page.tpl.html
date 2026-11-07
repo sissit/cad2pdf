@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="免费在线把 PDF 图纸转成 DXF：线条、虚线、颜色和文字都保留，可按图纸比例还原真实尺寸，AutoCAD 直接打开。文件只在浏览器里处理，不上传。Free PDF to DXF converter that runs in your browser.">
+<link rel="canonical" href="https://5cad2pdf.com/pdf-to-dxf">
+<meta name="robots" content="index,follow">
+<meta name="theme-color" content="#1d5bb8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d5bb8'/%3E%3Cpath d='M8 9h16v14H8z' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M8 17h16M16 9v14' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://5cad2pdf.com/pdf-to-dxf">
+<meta property="og:title" content="PDF 转 DXF 在线免费转换 · cad2pdf">
+<meta property="og:description" content="PDF 图纸在浏览器里直接转 DXF，线条、文字可编辑，可按比例还原尺寸，文件不上传。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:image" content="https://5cad2pdf.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://5cad2pdf.com/og.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"cad2pdf PDF to DXF","alternateName":"PDF 转 DXF","url":"https://5cad2pdf.com/pdf-to-dxf","description":"Free in-browser converter from vector PDF drawings to DXF. Lines, dashes, colors and text are kept; drawing scale can be restored. Files are not uploaded.","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","inLanguage":["zh-CN","en"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+%%FAQLD%%
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<title>PDF 转 DXF 在线免费转换 · PDF to DXF Converter | cad2pdf</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+%%CSS%%
+<style>
+%%TABCSS%%
+.pv { width: 100%; }
+.sheet svg text { font-family: Arial, "Liberation Sans", "PingFang SC", "Microsoft YaHei", sans-serif; }
+.note { font-size: .85rem; color: var(--warn); margin: 0; }
+.empty { color: var(--muted); font-size: .9rem; text-align: center; padding: 40px 12px; }
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 data-i18n="h1">PDF 图纸转 DXF</h1>
+    <div class="hd-right"><span class="tag" data-i18n="tag">PDF → DXF · 文件只在本机浏览器里处理，不上传</span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
+  </header>
+  <nav class="tabs" aria-label="Tools"><a href="/" data-i18n="tabCad">CAD 转 PDF</a><a href="/pdf-to-dxf" aria-current="page" data-i18n="tabPdf">PDF 转 DXF</a></nav>
+
+  <div class="main">
+    <aside class="rail">
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept=".pdf,application/pdf" multiple>
+        <strong data-i18n="pick">选择或拖入 PDF（可多选）</strong>
+        <span data-i18n="pickSub">从 AutoCAD 等软件导出的矢量 PDF</span>
+      </label>
+      <div class="batch" id="batch" hidden>
+        <div class="label" id="batch-h"></div>
+        <ol id="batch-list"></ol>
+      </div>
+      <div class="field">
+        <span class="label" data-i18n="unitL">单位</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="unit" value="in" checked><span data-i18n="uIn">英寸</span></label>
+          <label><input type="radio" name="unit" value="mm"><span data-i18n="uMm">毫米</span></label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="scale" data-i18n="scaleL">图纸比例</label>
+        <select id="scale">
+          <option value="1" data-i18n="s1">1:1（纸面尺寸）</option>
+          <optgroup data-i18n-label="sArch" label="建筑（英制）">
+            <option value="192">1/16" = 1'-0"</option>
+            <option value="128">3/32" = 1'-0"</option>
+            <option value="96">1/8" = 1'-0"</option>
+            <option value="64">3/16" = 1'-0"</option>
+            <option value="48">1/4" = 1'-0"</option>
+            <option value="32">3/8" = 1'-0"</option>
+            <option value="24">1/2" = 1'-0"</option>
+            <option value="16">3/4" = 1'-0"</option>
+            <option value="12">1" = 1'-0"</option>
+            <option value="8">1 1/2" = 1'-0"</option>
+            <option value="4">3" = 1'-0"</option>
+          </optgroup>
+          <optgroup data-i18n-label="sEng" label="工程（英制）">
+            <option value="120">1" = 10'</option>
+            <option value="240">1" = 20'</option>
+            <option value="360">1" = 30'</option>
+            <option value="480">1" = 40'</option>
+            <option value="600">1" = 50'</option>
+            <option value="1200">1" = 100'</option>
+          </optgroup>
+          <optgroup data-i18n-label="sMet" label="公制">
+            <option value="10">1:10</option>
+            <option value="20">1:20</option>
+            <option value="25">1:25</option>
+            <option value="50">1:50</option>
+            <option value="100">1:100</option>
+            <option value="200">1:200</option>
+            <option value="500">1:500</option>
+            <option value="1000">1:1000</option>
+          </optgroup>
+        </select>
+        <p class="hint" id="scale-h"></p>
+      </div>
+      <div class="field">
+        <span class="label" data-i18n="pagesL">多页 PDF</span>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="pg" value="each" checked><span data-i18n="pgEach">每页一个 DXF</span></label>
+          <label><input type="radio" name="pg" value="one"><span data-i18n="pgOne">合成一个 DXF</span></label>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="txt" checked> <span data-i18n="txtL">包含文字（可编辑的 TEXT）</span></label>
+      <button class="go" id="go" type="button" data-i18n="go">生成 DXF</button>
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+      <p class="hint" data-i18n="hint"></p>
+    </aside>
+
+    <section class="stage">
+      <div class="meta" id="meta"></div>
+      <div class="sheetbox">
+        <div class="sheets" id="sheet"><p class="empty" data-i18n="empty">选好 PDF 后，这里显示能转出来的线条和文字。</p></div>
+      </div>
+    </section>
+  </div>
+  <section class="about" aria-labelledby="about-h">
+    <h2 id="about-h" data-i18n="aboutH">常见问题</h2>
+    <p class="about-lead" data-i18n="aboutP"></p>
+%%FAQ%%
+  </section>
+  <footer class="foot"><span>© 2026 5cad2pdf.com</span><span class="foot-r"><span data-i18n="footFb">意见反馈请到</span>&nbsp;<a href="/#fb-h" data-i18n="footFbA">主页</a></span></footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="/pdf2dxf/core.js"></script>
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const STR = %%STR%%;
+  let lang = "zh";
+  try { const s = localStorage.getItem("cad2pdf-lang"); if (s === "en" || s === "zh") lang = s; else if (!/^zh/i.test(navigator.language || "")) lang = "en"; } catch (e) {}
+  const t = (k, v) => { let s = (STR[lang] && STR[lang][k]) || STR.zh[k] || k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
+  let lastStatus = null;
+  function setStatus(k, kind, v) { const s = $("status"); lastStatus = k ? { k, kind, v } : null; s.textContent = k ? t(k, v) : ""; s.className = "status" + (kind ? " " + kind : ""); }
+
+  if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+  // files: [{ file, name, pdf, pages: [extracted or undefined], n, st }]
+  let files = [], cur = 0, busy = false;
+  const opts = () => ({
+    unit: document.querySelector('input[name="unit"]:checked').value,
+    scale: +$("scale").value || 1,
+    pg: document.querySelector('input[name="pg"]:checked').value,
+    text: $("txt").checked,
+  });
+  const base = (n) => n.replace(/\.pdf$/i, "");
+
+  async function openPdf(it) {
+    if (it.pdf) return it.pdf;
+    if (!window.pdfjsLib || !window.PDF2DXF) throw Object.assign(new Error("lib"), { key: "libFail" });
+    const data = new Uint8Array(await it.file.arrayBuffer());
+    try { it.pdf = await pdfjsLib.getDocument({ data, isEvalSupported: false }).promise; }
+    catch (e) { throw Object.assign(new Error("pdf"), { key: e && e.name === "PasswordException" ? "locked" : "badPdf" }); }
+    it.n = it.pdf.numPages; it.pages = new Array(it.n);
+    return it.pdf;
+  }
+  // Extraction keeps text even when the option is off, so switching it needs no second pass.
+  async function pageData(it, i) {
+    if (!it.pages[i]) { const p = await it.pdf.getPage(i + 1); it.pages[i] = await PDF2DXF.extractPage(pdfjsLib, p, { text: true }); p.cleanup(); }
+    return it.pages[i];
+  }
+
+  // ---------- preview ----------
+  const PREVIEW_MAX = 6;
+  const css = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
+  const r2 = (v) => Math.round(v * 100) / 100;
+  function esc(s) { return s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]); }
+  function svgFor(pg, withText) {
+    const W = pg.width, H = pg.height, groups = new Map();
+    for (const p of pg.paths) {
+      const key = (p.fill ? css(p.fill) : "none") + "|" + (p.stroke ? css(p.stroke) : "none") + "|" + (p.stroke ? r2(Math.max(p.lw, 0.25)) : 0) + "|" + (p.dash ? p.dash.map(r2).join(" ") : "");
+      let d = groups.get(key); if (!d) { d = []; groups.set(key, d); }
+      d.push("M" + p.pts.map(q => r2(q[0]) + " " + r2(q[1])).join("L") + (p.closed ? "Z" : ""));
+    }
+    let out = `<svg xmlns="http://www.w3.org/2000/svg" class="pv" viewBox="0 0 ${r2(W)} ${r2(H)}"><g transform="matrix(1 0 0 -1 0 ${r2(H)})" stroke-linecap="round" stroke-linejoin="round">`;
+    for (const [key, d] of groups) {
+      const [fill, stroke, lw, dash] = key.split("|");
+      out += `<path d="${d.join("")}" fill="${fill}" fill-rule="evenodd" stroke="${stroke}"${stroke !== "none" ? ` stroke-width="${lw}"` : ""}${dash ? ` stroke-dasharray="${dash}"` : ""}/>`;
+    }
+    if (withText) for (const x of pg.texts) {
+      out += `<text transform="translate(${r2(x.x)} ${r2(x.y)}) rotate(${r2(x.rot)}) scale(1 -1)" font-size="${r2(x.size || x.h)}" fill="#18202b">${esc(x.s)}</text>`;
+    }
+    return out + "</g></svg>";
+  }
+  let previewToken = 0;
+  async function preview() {
+    const box = $("sheet"), it = files[cur];
+    if (!it) { box.innerHTML = `<p class="empty">${esc(t("empty"))}</p>`; $("meta").textContent = ""; return; }
+    const my = ++previewToken;
+    box.innerHTML = `<p class="empty">${esc(t("reading"))}</p>`;
+    try {
+      await openPdf(it);
+      const n = Math.min(it.n, PREVIEW_MAX), o = opts();
+      let html = "", lines = 0, texts = 0, imgs = 0;
+      for (let i = 0; i < n; i++) {
+        const pg = await pageData(it, i);
+        if (my !== previewToken) return;
+        lines += pg.paths.length; texts += pg.texts.length; imgs += pg.images;
+        const cap = t("pageCap", { p: i + 1, l: pg.paths.length.toLocaleString(), t: pg.texts.length.toLocaleString() });
+        const warn = !pg.paths.length && !pg.texts.length ? `<p class="note">${esc(t(pg.images ? "scanned" : "blank"))}</p>` : "";
+        html += `<span class="pagecap">${esc(cap)}</span>${warn}<div class="sheet">${svgFor(pg, o.text)}</div>`;
+      }
+      if (it.n > n) html += `<span class="pagecap">${esc(t("morePages", { n: it.n - n }))}</span>`;
+      box.innerHTML = html;
+      const inch = (v) => r2(v / 72);
+      const p0 = it.pages[0];
+      $("meta").innerHTML = `<span><b>${esc(it.name)}</b></span><span>${esc(t(it.n === 1 ? "metaPage1" : "metaPages", { n: it.n }))}</span>` +
+        (p0 ? `<span>${esc(t("metaSize", { w: inch(p0.width), h: inch(p0.height), mw: Math.round(p0.width / 72 * 25.4), mh: Math.round(p0.height / 72 * 25.4) }))}</span>` : "");
+      setStatus(lines + texts ? "" : (imgs ? "scanned" : "blank"), lines + texts ? "" : "err");
+    } catch (e) {
+      console.error(e);
+      if (my !== previewToken) return;
+      box.innerHTML = ""; setStatus(e.key || "badPdf", "err");
+    }
+  }
+
+  // ---------- list of files ----------
+  function showBatch() {
+    const box = $("batch");
+    box.hidden = files.length < 2;
+    if (box.hidden) return;
+    $("batch-h").textContent = t("batchH", { n: files.length });
+    const ol = $("batch-list"); ol.innerHTML = "";
+    files.forEach((it, i) => {
+      const li = document.createElement("li");
+      li.className = it.st === "ok" ? "ok" : it.st === "bad" ? "bad" : it.st === "wk" ? "wk" : "";
+      const nm = document.createElement("span");
+      nm.className = "bname" + (i === cur ? " cur" : ""); nm.textContent = it.name; nm.tabIndex = 0; nm.setAttribute("role", "button");
+      const pick = () => { if (busy || i === cur) return; cur = i; showBatch(); preview(); };
+      nm.addEventListener("click", pick); nm.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+      li.appendChild(nm);
+      if (it.st) { const s = document.createElement("span"); s.textContent = " · " + t("st_" + it.st); li.appendChild(s); }
+      ol.appendChild(li);
+    });
+  }
+  function pickFiles(list) {
+    if (busy) return;
+    const all = Array.from(list || []), pdfs = all.filter(f => /\.pdf$/i.test(f.name) || f.type === "application/pdf");
+    if (!all.length) return;
+    if (!pdfs.length) {
+      if (all.some(f => /\.(dwg|dxf)$/i.test(f.name))) { handOff(all, "/"); return; }
+      setStatus("onlyPdf", "err"); return;
+    }
+    for (const it of files) if (it.pdf) it.pdf.destroy();
+    files = pdfs.map(file => ({ file, name: file.name, st: "" })); cur = 0;
+    setStatus(pdfs.length < all.length ? "skipped" : "", "", { n: all.length - pdfs.length });
+    showBatch(); preview();
+  }
+
+  // ---------- writing ----------
+  const CRC = (() => { const tb = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; tb[n] = c >>> 0; } return tb; })();
+  function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  async function makeZip(entries) {
+    const enc = new TextEncoder(), parts = [], central = [];
+    let off = 0;
+    const d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF,
+      dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+    for (const e of entries) {
+      const data = new Uint8Array(await e.blob.arrayBuffer()), name = enc.encode(e.name), crc = crc32(data);
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+      h.setUint16(10, dt, true); h.setUint16(12, dd, true); h.setUint32(14, crc, true);
+      h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+      parts.push(h, name, data);
+      const c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+      c.setUint16(12, dt, true); c.setUint16(14, dd, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true);
+      c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+      central.push(c, name);
+      off += 30 + name.length + data.length;
+    }
+    const csize = central.reduce((n, x) => n + x.byteLength, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, entries.length, true); end.setUint16(10, entries.length, true);
+    end.setUint32(12, csize, true); end.setUint32(16, off, true);
+    return new Blob([...parts, ...central, end], { type: "application/zip" });
+  }
+  function download(blob, fname) {
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+  function logUse(ok, t0, pages, err) {
+    try {
+      const body = JSON.stringify({ ok, out: "dxf", ext: "pdf", pages, sec: (performance.now() - t0) / 1000, col: opts().unit, sh: String(opts().scale), err });
+      if (navigator.sendBeacon) navigator.sendBeacon("/api/use", body);
+      else fetch("/api/use", { method: "POST", body, keepalive: true }).catch(() => {});
+    } catch (e) {}
+  }
+  const dxfBlob = (pages, o) => new Blob([PDF2DXF.toDxf(o.text ? pages : pages.map(p => ({ ...p, texts: [] })), { unit: o.unit, scale: o.scale }).dxf], { type: "application/dxf" });
+
+  async function convert() {
+    if (busy) return;
+    if (!files.length) { setStatus("needFile", "err"); return; }
+    busy = true; $("go").disabled = true;
+    const t0 = performance.now(), o = opts(), out = [];
+    let pages = 0, bad = 0, empty = 0;
+    try {
+      for (let fi = 0; fi < files.length; fi++) {
+        const it = files[fi];
+        it.st = "wk"; showBatch();
+        try {
+          await openPdf(it);
+          const list = [];
+          for (let i = 0; i < it.n; i++) {
+            setStatus("working", "", files.length > 1 ? { x: `${fi + 1}/${files.length} · ${t("pageN", { p: i + 1, n: it.n })}` } : { x: t("pageN", { p: i + 1, n: it.n }) });
+            list.push(await pageData(it, i));
+          }
+          pages += it.n;
+          if (!list.some(p => p.paths.length || p.texts.length)) empty++;
+          if (o.pg === "one" || it.n === 1) out.push({ name: base(it.name) + ".dxf", blob: dxfBlob(list, o) });
+          else list.forEach((p, i) => out.push({ name: `${base(it.name)}_p${i + 1}.dxf`, blob: dxfBlob([p], o) }));
+          it.st = "ok";
+        } catch (e) { console.error(e); it.st = "bad"; bad++; }
+        showBatch();
+      }
+      if (!out.length) { setStatus(files.length > 1 ? "allBad" : "badPdf", "err"); logUse(false, t0, pages, "read"); return; }
+      if (out.length === 1) download(out[0].blob, out[0].name);
+      else { setStatus("zipping"); download(await makeZip(out), files.length === 1 ? base(files[0].name) + "_dxf.zip" : "pdf-to-dxf.zip"); }
+      const mb = out.reduce((n, e) => n + e.blob.size, 0) / 1048576;
+      setStatus(empty ? "doneEmpty" : bad ? "doneSome" : "done", empty || bad ? "err" : "ok", { n: out.length, mb: mb.toFixed(1), b: bad });
+      logUse(true, t0, pages);
+    } catch (e) {
+      console.error(e); setStatus("fail", "err"); logUse(false, t0, pages, "write");
+    } finally { busy = false; $("go").disabled = false; }
+  }
+
+  // ---------- hand-off between the two tools (files travel through IndexedDB, never a server) ----------
+  function idb() {
+    return new Promise((res, rej) => { const r = indexedDB.open("cad2pdf", 1); r.onupgradeneeded = () => r.result.createObjectStore("handoff"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  }
+  async function handOff(list, to) {
+    try {
+      const db = await idb();
+      await new Promise((res, rej) => { const tx = db.transaction("handoff", "readwrite"); tx.objectStore("handoff").put(Array.from(list), "files"); tx.oncomplete = res; tx.onerror = () => rej(tx.error); });
+      location.href = to + "?from=handoff";
+    } catch (e) { setStatus("onlyPdf", "err"); }
+  }
+  async function takeHandOff() {
+    if (!/[?&]from=handoff/.test(location.search)) return;
+    history.replaceState(null, "", location.pathname);
+    try {
+      const db = await idb();
+      const list = await new Promise((res, rej) => { const tx = db.transaction("handoff", "readwrite"), st = tx.objectStore("handoff"), g = st.get("files"); g.onsuccess = () => { st.delete("files"); res(g.result); }; g.onerror = () => rej(g.error); });
+      if (list && list.length) pickFiles(list);
+    } catch (e) {}
+  }
+
+  // ---------- language ----------
+  function scaleHint() {
+    const o = opts();
+    $("scale-h").textContent = o.scale === 1 ? t("scaleH1") : t(o.unit === "mm" ? "scaleHmm" : "scaleHin");
+  }
+  function applyLang() {
+    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+    document.title = t("title");
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+    document.querySelectorAll("[data-i18n-label]").forEach(el => el.setAttribute("label", t(el.dataset.i18nLabel)));
+    document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    if (lastStatus) setStatus(lastStatus.k, lastStatus.kind, lastStatus.v);
+    scaleHint(); showBatch();
+    if (files.length) preview();
+  }
+
+  // ---------- events ----------
+  $("file").addEventListener("change", (e) => { pickFiles(e.target.files); e.target.value = ""; });
+  const drop = $("drop");
+  ["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", (e) => pickFiles(e.dataTransfer.files));
+  $("go").addEventListener("click", convert);
+  document.querySelectorAll('input[name="unit"]').forEach(r => r.addEventListener("change", scaleHint));
+  $("scale").addEventListener("change", scaleHint);
+  $("txt").addEventListener("change", () => { if (files.length) preview(); });
+  document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => {
+    lang = b.dataset.lang;
+    try { localStorage.setItem("cad2pdf-lang", lang); } catch (e) {}
+    applyLang();
+  }));
+  applyLang();
+  if (!window.pdfjsLib) setStatus("libFail", "err");
+  takeHandOff();
+  window.P2D_TEST = { files: () => files, preview };
+})();
+</script>
+</body>
+</html>

@@ -1,6 +1,27 @@
 {
-  "rewrites": [{ "source": "/admin", "destination": "/admin.html" }],
+  "rewrites": [
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/pdf-to-dxf",
+      "destination": "/pdf-to-dxf.html"
+    }
+  ],
   "headers": [
-    { "source": "/admin(.html)?", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }, { "key": "Cache-Control", "value": "no-store" }] }
+    {
+      "source": "/admin(.html)?",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
   ]
 }
