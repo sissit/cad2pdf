@@ -435,6 +435,18 @@ function mapLatinFonts(db) {
   for (const rec of db.tables.textStyleTable.newIterator()) {
     const f = String(rec.fileName || '').replace(/^.*[\\/]/, '');
     let to = null;
+    if (!f || f === rec.name && /\$/.test(f)) {
+      // A TrueType style that names its face only in the style name, as PDF-to-DWG converters
+      // write them ("Arial$001H0", "Times New Roman$001H0", "BookmanOldStyle$001H0"): AutoCAD
+      // draws that face. The viewer takes the style name for the font file, which was then
+      // treated as a missing SHX font and drawn in simplex.
+      const face = String(rec.name || '').replace(/\$.*$/, '').toLowerCase().replace(/[\s_-]+/g, '');
+      to = /^(arial|helvetica|swiss|calibri|segoeui|tahoma|verdana)/.test(face) ? 'arial.ttf'
+        : /^(times|bookman|georgia|garamond|cambria|palatino|bookantiqua|century|dutch)/.test(face) ? 'times.ttf'
+        : /^(courier|consolas|lucidaconsole)/.test(face) ? 'cour.ttf' : null;
+      if (to) { try { rec.fileName = to; n++; } catch (e) { /* keep */ } }
+      continue;
+    }
     if (LATIN_TTF.test(f) && !LATIN_BOLD.test(f)) to = 'arial.ttf';
     else {
       // Chinese face names (often with a leading "@" or "-" for vertical text) for faces we have.
@@ -526,6 +538,17 @@ function applyPass(db, mode) {
 // redraw queued. Starting another regen then makes the two runs collide.
 const busy = (v) => v._numOfEntitiesToProcess > 0 || v._pendingGeometryJobs > 0 || !!v._convertDrainPromise
   || !!v._fontLoadedRedrawTimer || (v._convertQueue && v._convertQueue.length > 0);
+// Redraws everything and waits until the database has been replayed to the view. The viewer's
+// regen() starts that replay without waiting for it, and the replay hands control back to the
+// page between chunks, when the view can look idle: a second redraw could then clear the view
+// under the first, and entities still arriving from the first failed with "layer '0' doesn't
+// exist", which lost random letters (about one run in four on a 600 KB plumbing sheet).
+async function redraw(m) {
+  const db = m.curDocument.database;
+  m.curView.clear();
+  await db.regen();
+}
+
 async function settle(view) {
   await frame();
   await view.waitUntilIdle(120000);
@@ -981,7 +1004,7 @@ window.CADHIFI = {
     // Every PDF starts with the line work pass, so open straight into it: one drawing pass here
     // instead of one for 'all' and another for 'lines' when the PDF starts.
     applyPass(db, 'lines'); pass = 'lines';
-    AcDbRenderingCache.instance.clear(); m.regen(); await settle(view);
+    AcDbRenderingCache.instance.clear(); await redraw(m); await settle(view);
     await frame(); await frame();
     return true;
   },
@@ -992,7 +1015,7 @@ window.CADHIFI = {
     const changed = applyPass(mgr.curDocument.database, mode);
     pass = mode;
     // Block graphics are cached per block definition; drop them so hidden contents really disappear.
-    if (changed) { AcDbRenderingCache.instance.clear(); mgr.regen(); await settle(mgr.curView); }
+    if (changed) { AcDbRenderingCache.instance.clear(); await redraw(mgr); await settle(mgr.curView); }
   },
   // Renders WCS box {x0,y0,x1,y1} (square) into a fresh TILE x TILE canvas.
   async renderTile(box) {
