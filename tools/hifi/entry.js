@@ -46,7 +46,12 @@ function preParsedConverter(conv) {
   const parse = conv.parse.bind(conv);
   conv.parse = async (data, timeout) => {
     const p = preParsed;
-    if (p && data && data.byteLength === p.len) { preParsed = null; return p.ex; }
+    if (p && data && data.byteLength === p.len) {
+      preParsed = null;
+      // Same shape as the parser worker's answer: convertEx gives { database, stats }.
+      const ex = p.ex;
+      return ex && ex.database ? { model: ex.database, data: ex.stats } : ex;
+    }
     return parse(data, timeout);
   };
   return conv;
