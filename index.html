@@ -116,6 +116,14 @@ button.go.fb-send { width: auto; padding-left: 28px; padding-right: 28px; }
 .foot-r > span:not([hidden]) + span:not([hidden])::before { content: "·"; margin-right: 8px; }
 @media (max-width: 600px) { .foot { flex-direction: column; gap: 2px; } }
 .hint { font-size: .8rem; color: var(--muted); margin: 0; }
+.batch { border: 1px solid var(--rule); border-radius: 4px; padding: 10px; display: grid; gap: 8px; }
+.batch[hidden] { display: none; }
+.batch ol { margin: 0; padding-left: 1.4em; font-size: .85rem; max-height: 180px; overflow: auto; }
+.batch li { overflow-wrap: anywhere; }
+.batch li.wk { font-weight: 600; }
+.batch li.ok::marker, .batch li.ok { color: inherit; }
+.batch li.bad { color: #b42318; }
+.batch li span { color: var(--muted); }
 button.go {
   font: inherit; font-family: var(--display); font-weight: 600; font-size: 1.05rem; letter-spacing: .02em;
   background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 4px; padding: 11px 14px; cursor: pointer;
@@ -153,8 +161,8 @@ button.go:disabled { opacity: .5; cursor: progress; }
   <div class="main">
     <aside class="rail">
       <label class="drop" id="drop">
-        <input type="file" id="file" accept=".dwg,.dxf">
-        <strong data-i18n="pick">选择或拖入图纸</strong>
+        <input type="file" id="file" accept=".dwg,.dxf" multiple>
+        <strong data-i18n="pick">选择或拖入图纸（可多选）</strong>
         <span data-i18n="support">支持 .dwg（R13 至最新版）和 .dxf</span>
       </label>
 
@@ -213,6 +221,15 @@ button.go:disabled { opacity: .5; cursor: progress; }
       </div>
 
 
+      <div class="batch" id="batch" hidden>
+        <span class="label" id="batch-h"></span>
+        <ol id="batch-list"></ol>
+        <div class="seg" role="radiogroup" data-i18n-aria="batchOut">
+          <label><input type="radio" name="bout" id="b-zip" value="zip" checked><span data-i18n="bZip"></span></label>
+          <label><input type="radio" name="bout" id="b-merge" value="merge"><span data-i18n="bMerge"></span></label>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="autogo"> <span data-i18n="autoGo"></span></label>
       <button class="go" id="go" type="button" data-i18n="go"></button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
       <p class="hint" data-i18n="hint"></p>
@@ -306,7 +323,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       q6: "收费吗？需要注册吗？",
       a6: "完全免费，不用注册，打开网页就能用，电脑和手机都可以。",
       h1: "DWG 图纸转 PDF", tag: "DWG · DXF → PDF · 文件只在本机浏览器里处理，不上传",
-      pick: "选择或拖入图纸", support: "支持 .dwg（R13 至最新版）和 .dxf", paper: "纸张", orient: "方向",
+      pick: "选择或拖入图纸（可多选）", support: "支持 .dwg（R13 至最新版）和 .dxf", paper: "纸张", orient: "方向",
       auto: "自动", land: "横向", port: "纵向", color: "颜色", cColor: "彩色", cMono: "黑白",
       noplot: "打印「不打印」图层（AutoCAD 默认不打）", trim: "忽略离主图很远的零散对象", frames: "按图框分页（每个图框一页，和 AutoCAD 出图一样）", lw: "线宽", dropped: "未打印的图框外对象", mPages: "页数", pageN: "第 {n} 页", 
       fmt: "输出方式", fmtImg: "图片", fmtVec: "矢量", fmtHint: "矢量（默认）：线条和文字放大不糊，转得快，文件小。图片：原来的方式；图纸里有插入的照片时请选图片。", vecProg: "正在生成矢量 PDF…第 {n}/{m} 页", vec: "矢量",
@@ -315,6 +332,11 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       go: "生成 PDF", hint: "PDF 会按图纸实际范围居中放进纸张，四周留 0.5 英寸边。DWG 第一次打开要加载约 11 MB 的读图组件。",
       sample: "示例图纸", sampleName: "示例平面图.dxf",
       mFile: "文件", mCount: "图形", mPaper: "纸张", mText: "文字", tCJK: "含中文", tLatin: "英文/数字",
+      autoGo: "选好文件后自动生成 PDF（跳过预览确认）",
+      batchH: "批量转换：{n} 个文件", batchOut: "批量输出方式", bZip: "每张一个 PDF（ZIP）", bMerge: "合并成一个 PDF",
+      goAll: "生成 PDF（{n} 个文件）", batchProg: "第 {i}/{n} 个：{name}", batchMerging: "正在合并 PDF…", batchZipping: "正在打包 ZIP…",
+      batchDone: "完成：{ok}/{n} 个文件转换成功，已下载 {f}。", batchNone: "这批文件都没有转换成功。", batchSkipped: "已跳过不支持的文件：{n}",
+      bWait: "等待", bWork: "转换中…", bOk: "完成", bFail: "失败",
       onlyExt: "只支持 .dwg 和 .dxf 文件。", readingDwg: "正在读取 DWG…", readingDxf: "正在读取 DXF…",
       loadingLib: "第一次打开 DWG，正在加载读图组件（约 11 MB）…",
       loaded: "已读入 {n}，确认预览没问题后点「生成 PDF」。",
@@ -370,7 +392,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       q6: "Is it free? Do I need an account?",
       a6: "It is completely free with no sign-up. Just open the page, on a computer or a phone.",
       h1: "DWG to PDF", tag: "DWG · DXF → PDF · Files stay in your browser, nothing is uploaded",
-      pick: "Choose or drop a drawing", support: ".dwg (R13 to latest) and .dxf", paper: "Sheet size", orient: "Orientation",
+      pick: "Choose or drop drawings (one or many)", support: ".dwg (R13 to latest) and .dxf", paper: "Sheet size", orient: "Orientation",
       auto: "Auto", land: "Landscape", port: "Portrait", color: "Color", cColor: "Color", cMono: "Black & white",
       noplot: "Include layers set to not plot (AutoCAD leaves them out)", trim: "Ignore stray objects far from the main drawing", frames: "One page per drawing frame (like plotting each title block in AutoCAD)", lw: "Line weight", dropped: "Objects outside frames left off", mPages: "Pages", pageN: "Page {n}", 
       fmt: "Output", fmtImg: "Image", fmtVec: "Vector", fmtHint: "Vector (default): lines and text stay sharp at any zoom, faster, smaller files. Image: the original method; choose it if the drawing contains inserted photos.", vecProg: "Creating vector PDF… page {n} of {m}", vec: "vector",
@@ -379,6 +401,11 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       go: "Create PDF", hint: "The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.",
       sample: "Sample drawing", sampleName: "sample-plan.dxf",
       mFile: "File", mCount: "Objects", mPaper: "Sheet", mText: "Text", tCJK: "Has Chinese", tLatin: "Latin only",
+      autoGo: "Create the PDF as soon as a file is chosen (skip the preview check)",
+      batchH: "Batch: {n} files", batchOut: "Batch output", bZip: "One PDF each (ZIP)", bMerge: "Merge into one PDF",
+      goAll: "Create PDFs ({n} files)", batchProg: "File {i} of {n}: {name}", batchMerging: "Merging the PDFs…", batchZipping: "Packing the ZIP…",
+      batchDone: "Done: {ok} of {n} files converted, downloaded {f}.", batchNone: "None of these files could be converted.", batchSkipped: "Skipped unsupported files: {n}",
+      bWait: "waiting", bWork: "converting…", bOk: "done", bFail: "failed",
       onlyExt: "Only .dwg and .dxf files are supported.", readingDwg: "Reading DWG…", readingDxf: "Reading DXF…",
       loadingLib: "Loading the DWG reader (about 11 MB) for the first time…",
       loaded: "Loaded {n}. Check the preview, then click Create PDF.",
@@ -419,6 +446,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
     showVisits();
     if (state.isSample) state.name = t("sampleName");
     if (lastStatus) setStatus(lastStatus.k, lastStatus.kind, lastStatus.v);
+    if (typeof showBatch === "function") showBatch();
     render();
   }
   const state = { name: "示例平面图.dxf", isSample: true, content: null, vb: null, layers: [], hasCJK: false, count: 0 };
@@ -1233,12 +1261,14 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       render();
       setStatus("loaded", "ok", { n: file.name });
       hifiReady().catch(e => console.warn("hifi warm-up", e));
+      return true;
     } catch (e) {
       console.error(e);
       showBusy("");
       setStatus(e instanceof UserError ? e : (ext === "dwg" ? "dwgFail" : "dxfFail"), "err");
       // Files that cannot be opened count in the usage stats too (outcome only, no file name).
       logUse(0, t0, { ext, out: "load", mb: file.size / 1048576, mf: [], err: (e && e.key) || (ext + "fail") });
+      return false;
     }
   }
 
@@ -1575,7 +1605,142 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       else fetch("/api/use", { method: "POST", body, keepalive: true }).catch(() => {});
     } catch (e) {}
   }
+  // Saves a finished file: through the host's downloads when running inside Claude, else the browser.
+  async function deliver(blob, fname) {
+    if (downloads) { setStatus("confirm"); await downloads.save({ filename: fname, data: blob }); return "saved"; }
+    browserDownload(blob, fname); return "downloaded";
+  }
+
+  // ---------- batch conversion ----------
+  // Several files: each is read and converted with the current settings, one after another (one at
+  // a time keeps memory in check), then delivered as a ZIP of PDFs or as one merged PDF.
+  let batch = null, busy = false;
+  const isCad = (f) => /\.(dwg|dxf)$/i.test(f.name);
+  function showBatch() {
+    const box = $("batch");
+    box.hidden = !batch;
+    $("go").textContent = batch ? t("goAll", { n: batch.length }) : t("go");
+    if (!batch) return;
+    $("batch-h").textContent = t("batchH", { n: batch.length });
+    const ol = $("batch-list"); ol.innerHTML = "";
+    for (const it of batch) {
+      const li = document.createElement("li");
+      li.className = it.st === "work" ? "wk" : it.st === "fail" ? "bad" : it.st === "ok" ? "ok" : "";
+      li.textContent = it.file.name + " ";
+      const sp = document.createElement("span");
+      sp.textContent = "— " + t(it.st === "work" ? "bWork" : it.st === "ok" ? "bOk" : it.st === "fail" ? "bFail" : "bWait");
+      li.appendChild(sp); ol.appendChild(li);
+    }
+  }
+  function pickFiles(list) {
+    if (busy) return;
+    const all = Array.from(list || []), files = all.filter(isCad);
+    if (!all.length) return;
+    if (!files.length) { setStatus("onlyExt", "err"); return; }
+    if (files.length === 1) {
+      batch = null; showBatch();
+      loadFile(files[0]).then(ok => { if (ok && $("autogo").checked) $("go").click(); });
+      return;
+    }
+    batch = files.map(file => ({ file, st: "wait" }));
+    showBatch();
+    if (files.length < all.length) setStatus("batchSkipped", "", { n: all.length - files.length });
+    if ($("autogo").checked) $("go").click();
+    else loadFile(files[0]);                      // show the first one while the settings are chosen
+  }
+  // Minimal ZIP writer (stored, no compression: PDFs are compressed already).
+  const CRC = (() => { const tb = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; tb[n] = c >>> 0; } return tb; })();
+  function crc32(u8) { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  async function makeZip(entries) {
+    const enc = new TextEncoder(), parts = [], central = [];
+    let off = 0;
+    const d = new Date(), dt = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF,
+      dd = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+    for (const e of entries) {
+      const data = new Uint8Array(await e.blob.arrayBuffer()), name = enc.encode(e.name), crc = crc32(data);
+      const h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+      h.setUint16(10, dt, true); h.setUint16(12, dd, true); h.setUint32(14, crc, true);
+      h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+      parts.push(h, name, data);
+      const c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+      c.setUint16(12, dt, true); c.setUint16(14, dd, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true);
+      c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+      central.push(c, name);
+      off += 30 + name.length + data.length;
+    }
+    const csize = central.reduce((n, x) => n + x.byteLength, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, entries.length, true); end.setUint16(10, entries.length, true);
+    end.setUint32(12, csize, true); end.setUint32(16, off, true);
+    return new Blob([...parts, ...central, end], { type: "application/zip" });
+  }
+  let pdfLib = null;
+  function loadPdfLib() {
+    if (pdfLib) return pdfLib;
+    pdfLib = new Promise((res, rej) => {
+      const sc = document.createElement("script");
+      sc.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js";
+      sc.onload = () => window.PDFLib ? res(window.PDFLib) : rej(new Error("pdf-lib missing"));
+      sc.onerror = () => rej(new Error("pdf-lib did not load"));
+      document.head.appendChild(sc);
+    }).catch(e => { pdfLib = null; throw e; });
+    return pdfLib;
+  }
+  async function mergePdfs(blobs) {
+    const { PDFDocument } = await loadPdfLib();
+    const out = await PDFDocument.create();
+    for (const b of blobs) {
+      const src = await PDFDocument.load(await b.arrayBuffer());
+      for (const pg of await out.copyPages(src, src.getPageIndices())) out.addPage(pg);
+    }
+    out.setTitle("cad2pdf"); out.setCreator("cad2pdf");
+    return new Blob([await out.save()], { type: "application/pdf" });
+  }
+  async function runBatch() {
+    const btn = $("go"); btn.disabled = true; busy = true;
+    const done = [];
+    try {
+      for (let i = 0; i < batch.length; i++) {
+        const it = batch[i];
+        it.st = "work"; showBatch();
+        const t0 = performance.now(); let outType = "";
+        try {
+          if (!(await loadFile(it.file))) throw new Error("load");
+          setStatus("batchProg", "", { i: i + 1, n: batch.length, name: it.file.name });
+          const { blob, fellBack, vec } = await makePdf();
+          outType = fellBack ? "fallback" : vec ? "vec" : "img";
+          logUse(1, t0, { out: outType, mb: blob.size / 1048576, batch: batch.length });
+          done.push({ name: it.file.name.replace(/\.(dwg|dxf)$/i, "") + ".pdf", blob });
+          it.st = "ok";
+        } catch (e) {
+          console.error("batch", it.file.name, e);
+          if (e && e.message !== "load") logUse(0, t0, { out: document.querySelector('input[name="fmt"]:checked').value, err: (e && e.name) || "error", batch: batch.length });
+          it.st = "fail";
+        }
+        showBatch();
+      }
+      if (!done.length) { setStatus("batchNone", "err"); return; }
+      // Unique names inside the ZIP.
+      const seen = new Map();
+      for (const d of done) { const k = d.name.toLowerCase(), n = seen.get(k) || 0; seen.set(k, n + 1); if (n) d.name = d.name.replace(/\.pdf$/i, " (" + (n + 1) + ").pdf"); }
+      const merge = document.querySelector('input[name="bout"]:checked').value === "merge";
+      let blob, fname;
+      if (merge) { setStatus("batchMerging"); blob = await mergePdfs(done.map(d => d.blob)); fname = "cad2pdf-" + done.length + ".pdf"; }
+      else { setStatus("batchZipping"); blob = await makeZip(done); fname = "cad2pdf-" + done.length + ".zip"; }
+      await deliver(blob, fname);
+      setStatus("batchDone", "ok", { ok: done.length, n: batch.length, f: fname });
+    } catch (e) {
+      console.error(e);
+      const code = e && e.code;
+      if (code === "declined") setStatus("declined", "");
+      else setStatus(code ? "noSave" : "genFail", "err");
+    } finally { btn.disabled = false; busy = false; }
+  }
+
   $("go").addEventListener("click", async () => {
+    if (batch) { if (!busy) { if (!dlReady) { setStatus("wait"); return; } if (inClaude && !downloads) { setStatus("noSave", "err"); return; } await runBatch(); } return; }
     if (!state.content) return;
     if (!dlReady) { setStatus("wait"); return; }
     if (inClaude && !downloads) { setStatus("noSave", "err"); return; }
@@ -1588,14 +1753,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       const info = { n: fname, s: (blob.size / 1048576).toFixed(1), m: t(fellBack ? "vecFallback" : vec ? "vec" : "hifi") };
       outType = fellBack ? "fallback" : vec ? "vec" : "img";
       logUse(1, t0, { out: outType, mb: blob.size / 1048576 });
-      if (downloads) {
-        setStatus("confirm");
-        await downloads.save({ filename: fname, data: blob });
-        setStatus("saved", "ok", info);
-      } else {
-        browserDownload(blob, fname);
-        setStatus("downloaded", "ok", info);
-      }
+      setStatus(await deliver(blob, fname), "ok", info);
     } catch (e) {
       console.error(e);
       const code = e && e.code;
@@ -1609,10 +1767,13 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
   });
 
   const fileInput = $("file"), drop = $("drop");
-  fileInput.addEventListener("change", () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); fileInput.value = ""; });
+  fileInput.addEventListener("change", () => { pickFiles(fileInput.files); fileInput.value = ""; });
   ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
   ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
-  drop.addEventListener("drop", e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) loadFile(f); });
+  drop.addEventListener("drop", e => { if (e.dataTransfer) pickFiles(e.dataTransfer.files); });
+  // "Create the PDF as soon as a file is chosen" is remembered on this device.
+  try { $("autogo").checked = localStorage.getItem("cad2pdf-autogo") === "1"; } catch (e) {}
+  $("autogo").addEventListener("change", () => { try { localStorage.setItem("cad2pdf-autogo", $("autogo").checked ? "1" : "0"); } catch (e) {} });
   ["size", "lw"].forEach(id => $(id).addEventListener("change", render));
   // Plot flags are applied while reading the drawing, so re-read it.
   $("noplot").addEventListener("change", () => { if (state.file) loadFile(state.file); else render(); });
