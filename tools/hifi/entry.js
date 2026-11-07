@@ -3,7 +3,7 @@
 // either the linework or the text, so the page can thicken lines to the plot
 // line weight without smearing text.
 import { AcApDocManager, AcApFontUtil, LIBREDWG_PARSER_WORKER_FILE, MTEXT_RENDERER_WORKER_FILE, collectTextStyleFontNames } from '@mlightcad/cad-simple-viewer';
-import { AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbEntity, AcDbHatch, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbPolyline, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
+import { AcCmEventManager, AcDbArcAlignedText, AcDbBlockReference, AcDbDatabaseConverterManager, AcDbDimension, AcDbEntity, AcDbHatch, AcDbLeader, AcDbFileType, AcDbMLeader, AcDbMText, AcDbPolyline, AcDbRenderingCache, AcDbTable, AcDbText } from '@mlightcad/data-model';
 import { AcGeArea2d, AcGeBox2d, AcGePoint2d, AcGePoint3d, AcGePolyline2d } from '@mlightcad/geometry-engine';
 import polybool from '@velipso/polybool';
 import { AcDbLibreDwgConverter } from '@mlightcad/libredwg-converter';
@@ -42,7 +42,28 @@ let mgr = null, host = null, hook = null;
 // index.html) arrives here already parsed; use that instead of parsing it again with the reader
 // that fails on it.
 let preParsed = null;
+
+// While a drawing opens, the viewer draws each entity as the reader adds it. The fixes in open()
+// then change entities and the whole drawing is drawn again, so every drawing was drawn twice
+// (36 of the 88 seconds a 12 MB, 40-sheet set took to open). Entities added during the open are
+// not drawn; open() draws everything once, after the fixes.
+let holdDrawing = false;
+{
+  const P = AcCmEventManager && AcCmEventManager.prototype, d = P && P.dispatch;
+  if (d && !d.__cad2pdf) {
+    P.dispatch = function (e) {
+      if (holdDrawing && e && e.entity && e.database && e.database.events && this === e.database.events.entityAppended) return;
+      return d.apply(this, arguments);
+    };
+    P.dispatch.__cad2pdf = true;
+  }
+}
 function preParsedConverter(conv) {
+  // Dynamic-block metadata (the dictionaries behind a dynamic block's grips and parameters) is
+  // only needed to edit such blocks; the drawing itself uses the blocks' resolved geometry. The
+  // viewer's import of it is quadratic in dictionary size and took 27 of the 30 seconds needed
+  // to open a 16 MB sheet set, so it is skipped.
+  if (typeof conv.processDynBlockMetadata === 'function') conv.processDynBlockMetadata = () => {};
   const parse = conv.parse.bind(conv);
   conv.parse = async (data, timeout) => {
     const p = preParsed;
@@ -936,7 +957,8 @@ window.CADHIFI = {
         if (onProgress) onProgress(++n, pages.length * 2);
       }
     }
-    await this.setPass('all');
+    // The renderer stays in the text pass: nothing draws 'all' any more, and the next PDF starts
+    // by switching to whichever pass it needs (a whole extra drawing pass saved per PDF).
     return out;
   },
 
@@ -944,7 +966,10 @@ window.CADHIFI = {
   async open(buf, name, opts) {
     preParsed = opts && opts.preParsed && buf && opts.preParsed.len === buf.byteLength ? opts.preParsed : null;
     const m = setup(opts);
-    const ok = await m.openDocument(name, buf, { readOnly: true, drawNoPlotLayers: !!opts.drawNoPlotLayers });
+    let ok;
+    holdDrawing = true;
+    try { ok = await m.openDocument(name, buf, { readOnly: true, drawNoPlotLayers: !!opts.drawNoPlotLayers }); }
+    finally { holdDrawing = false; }
     if (!ok) throw new Error('open failed');
     pass = 'all';
     const view = m.curView;
@@ -953,7 +978,10 @@ window.CADHIFI = {
     const db = m.curDocument.database;
     for (const rec of db.tables.blockTable.newIterator()) for (const x of rec.newIterator()) if (x.visibility === false) x.__hidden = true;
     const fixed = hideFrozenInserts(db) + inheritLayer0(db) + leaderDimColors(db) + dashWidePolylines(db) + flattenElevation(db) + literalBackslashes(db) + paragraphUnits(db) + flattenMTextHeight(db) + mapLatinFonts(db);
-    if (fixed > 0) { AcDbRenderingCache.instance.clear(); m.regen(); await settle(view); }
+    // Every PDF starts with the line work pass, so open straight into it: one drawing pass here
+    // instead of one for 'all' and another for 'lines' when the PDF starts.
+    applyPass(db, 'lines'); pass = 'lines';
+    AcDbRenderingCache.instance.clear(); m.regen(); await settle(view);
     await frame(); await frame();
     return true;
   },
@@ -1006,7 +1034,7 @@ window.CADHIFI = {
         t = blockHasText(x.blockName, 0);
         if (!t && typeof x.attributeIterator === 'function') for (const _ of x.attributeIterator()) { t = true; break; }
       }
-      if (!t || !x.visibility && pass === 'all') continue;
+      if (!t || x.__hidden) continue;
       let ex; try { ex = x.geometricExtents; } catch (err) { continue; }
       if (ex && isFinite(ex.min.x) && isFinite(ex.max.x)) boxes.push({ x0: ex.min.x, y0: ex.min.y, x1: ex.max.x, y1: ex.max.y });
     }
