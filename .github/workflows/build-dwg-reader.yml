@@ -97,7 +97,7 @@ jobs:
         env:
           DWG_READER_NOTE: "libredwg-web@${{ inputs.web_commit }} + LibreDWG@${{ inputs.upstream_commit }}"
         run: |
-          node tools/dwg/build.cjs "$LW/bindings/javascript" dwg-next --with-wasm
+          node tools/dwg/build.cjs "$LW/bindings/javascript" dwg-next --with-wasm --heap-mb=2048
           ls -la dwg-next dwg-next/*
 
       - name: Commit

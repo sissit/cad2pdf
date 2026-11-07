@@ -3672,6 +3672,8 @@ class LibreDwgConverter {
       if (name == "DIMBLK" || name == "DIMBLK1" || name == "DIMBLK2") {
         var_name = var_name + "_T";
       }
+      if (name == "ACADVER") { const v = libredwg.dwg_get_version_type(data); header[name] = v && v.hdr || ""; return; }
+      if (name == "CEPSNID" || name == "DIMFAC") return;
       let value = libredwg.dwg_dynapi_header_data(data, var_name);
       if (name == "CELTYPE" || name == "CLAYER" || name == "CLAYER" || name == "DIMSTYLE" || name == "DIMTXSTY" || name == "TEXTSTYLE") {
         value = value ? libredwg.dwg_ref_get_object_name(value) : "";
