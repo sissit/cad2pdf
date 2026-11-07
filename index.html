@@ -289,7 +289,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
       <div class="fb-row"><button class="go fb-send" type="submit" id="fb-send" data-i18n="fbSend">提交</button><span class="hint" id="fb-st" role="status" aria-live="polite"></span></div>
     </form>
   </section>
-  <footer class="foot"><span>© 2026 5cad2pdf.com</span><span class="foot-r"><span id="ver"></span><span id="visits" hidden></span></span></footer>
+  <footer class="foot"><span>© 2026 5cad2pdf.com · <a href="/pdf-to-dwg" data-i18n="footOther">PDF 转 DWG</a></span><span class="foot-r"><span id="ver"></span><span id="visits" hidden></span></span></footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -305,7 +305,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
 
   const STR = {
     zh: {
-      tabCad: "CAD 转 PDF", tabPdf: "PDF 转 DWG", pdfAsk: "这是 PDF 文件。要把 PDF 转成 DWG 或 DXF 吗？", pdfGo: "转到 PDF 转 DWG",
+      tabCad: "CAD 转 PDF", tabPdf: "PDF 转 DWG", footOther: "PDF 转 DWG", pdfAsk: "这是 PDF 文件。要把 PDF 转成 DWG 或 DXF 吗？", pdfGo: "转到 PDF 转 DWG",
       visits: "访客 {n}",
       fbH: "意见反馈",
       fbP: "转换效果不对、想要新功能，都可以告诉我。不用登录，联系方式可以不填。",
@@ -375,7 +375,7 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       sampleFail: "示例图纸没有显示出来，可以直接选择你的图纸。"
     },
     en: {
-      tabCad: "CAD to PDF", tabPdf: "PDF to DWG", pdfAsk: "That’s a PDF. Do you want to convert the PDF to DWG or DXF?", pdfGo: "Go to PDF to DWG",
+      tabCad: "CAD to PDF", tabPdf: "PDF to DWG", footOther: "PDF to DWG", pdfAsk: "That’s a PDF. Do you want to convert the PDF to DWG or DXF?", pdfGo: "Go to PDF to DWG",
       visits: "Visitors {n}",
       fbH: "Feedback",
       fbP: "Tell me if a conversion looks wrong or what you would like added. No sign-in needed; contact details are optional.",

@@ -50,7 +50,7 @@ zh = dict(
  done="完成：{n} 个 DXF（{mb} MB）已下载。", doneSome="完成：{n} 个 DXF 已下载，{b} 个文件读不了。",
  doneEmpty="已下载，但有的文件里没有矢量线条（可能是扫描件），DXF 会是空的。", allBad="这些 PDF 都打不开。", fail="生成 DXF 失败，请再试一次。",
  aboutH="常见问题", aboutP="5cad2pdf 的 PDF 转 DXF 是免费的在线工具：把从 CAD 导出的 PDF 图纸还原成 AutoCAD 能编辑的 DXF，线条、虚线、颜色和文字都保留，可以按图纸比例还原实际尺寸。",
- footFb="意见反馈请到", footFbA="主页",
+ footFb="意见反馈请到", footFbA="主页", footOther="DWG 转 PDF",
 )
 en = dict(
  title="PDF to DXF Converter, free and online | cad2pdf",
@@ -73,7 +73,7 @@ en = dict(
  done="Done: {n} DXF ({mb} MB) downloaded.", doneSome="Done: {n} DXF downloaded; {b} files couldn't be read.",
  doneEmpty="Downloaded, but some files have no vector lines (probably scans), so their DXF is empty.", allBad="None of these PDFs could be opened.", fail="Couldn't create the DXF. Please try again.",
  aboutH="FAQ", aboutP="5cad2pdf PDF to DXF is a free online tool that turns PDF drawings exported from CAD back into DXF that AutoCAD can edit, keeping lines, dashes, colors and text, with the drawing scale restored if you choose it.",
- footFb="Feedback:", footFbA="main page",
+ footFb="Feedback:", footFbA="main page", footOther="DWG to PDF",
 )
 zh.update({'title': 'PDF 转 DWG 在线免费转换 · PDF to DWG / DXF Converter | cad2pdf', 'h1': 'PDF 图纸转 DWG / DXF', 'tag': 'PDF → DWG · DXF · 文件只在本机浏览器里处理，不上传', 'tabPdf': 'PDF 转 DWG', 'fmtL': '输出格式', 'fmtHdwg': 'AutoCAD 2000 格式，AutoCAD 各版本都能直接打开。', 'fmtHdxf': 'R12 格式，几乎所有 CAD 软件都能读。', 'goDwg': '生成 DWG', 'goDxf': '生成 DXF', 'pgEach': '每页一个文件', 'pgOne': '合成一个文件', 'done': '完成：{n} 个文件（{mb} MB）已下载。', 'doneSome': '完成：{n} 个文件已下载，{b} 个文件读不了。', 'doneEmpty': '已下载，但有的 PDF 里没有矢量线条（可能是扫描件），转出来会是空的。', 'fail': '生成文件失败，请再试一次。', 'aboutP': '5cad2pdf 的 PDF 转 DWG 是免费的在线工具：把从 CAD 导出的 PDF 图纸还原成 AutoCAD 能编辑的 DWG 或 DXF，线条、虚线、颜色和文字都保留，可以按图纸比例还原实际尺寸。'})
 en.update({'title': 'PDF to DWG Converter, free and online (DWG / DXF) | cad2pdf', 'h1': 'PDF to DWG / DXF', 'tag': 'PDF → DWG · DXF · files stay in your browser, nothing is uploaded', 'tabPdf': 'PDF to DWG', 'fmtL': 'Format', 'fmtHdwg': 'AutoCAD 2000 format; every AutoCAD version opens it.', 'fmtHdxf': 'R12 format; read by almost every CAD program.', 'goDwg': 'Create DWG', 'goDxf': 'Create DXF', 'pgEach': 'One file per page', 'pgOne': 'One file', 'done': 'Done: {n} files ({mb} MB) downloaded.', 'doneSome': "Done: {n} files downloaded; {b} files couldn't be read.", 'doneEmpty': 'Downloaded, but some PDFs have no vector lines (probably scans), so their drawings are empty.', 'fail': "Couldn't create the file. Please try again.", 'aboutP': '5cad2pdf PDF to DWG is a free online tool that turns PDF drawings exported from CAD back into DWG or DXF that AutoCAD can edit, keeping lines, dashes, colors and text, with the drawing scale restored if you choose it.'})
