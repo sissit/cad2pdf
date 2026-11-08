@@ -427,9 +427,9 @@ function flattenMTextHeight(db) {
 
 // Common Latin TrueType faces we don't ship (Swiss 721, Helvetica, Calibri...): draw them with
 // Arial, a sans face, rather than the default Song-style fallback.
-const LATIN_TTF = /^(swis(s|721)\w*|arial(bd|bi|i|n|nb|nbi|ni)|ariblk|helv\w*|calibri\w*|segoeui\w*|frank\w*|trebuc\w*|tahomabd)(\.ttf)?$/i;
+const LATIN_TTF = /^(swis(s|721)\w*|arial(bd|bi|i|n|nb|nbi|ni)|ariblk|helv\w*|calibri\w*|segoeui\w*|frank\w*|trebuc\w*|tahomabd|aptos(?![ -]?(serif|mono))[\w -]*)(\.ttf)?$/i;
 // Bold faces are left alone: the site ships Arimo Bold under these names (see build.js).
-const LATIN_BOLD = /^(arialbd|arialbi|arialnb|ariblk|swissb|swisseb|swissbi|swisscb|swissbo|swissek|swissebi|calibrib|segoeuib|trebucbd|tahomabd)(\.ttf)?$/i;
+const LATIN_BOLD = /^(arialbd|arialbi|arialnb|ariblk|swissb|swisseb|swissbi|swisscb|swissbo|swissek|swissebi|calibrib|segoeuib|trebucbd|tahomabd|aptos[ -]?(semibold|bold|extrabold|black)[\w -]*)(\.ttf)?$/i;
 function mapLatinFonts(db) {
   let n = 0;
   for (const rec of db.tables.textStyleTable.newIterator()) {
@@ -441,7 +441,7 @@ function mapLatinFonts(db) {
       // draws that face. The viewer takes the style name for the font file, which was then
       // treated as a missing SHX font and drawn in simplex.
       const face = String(rec.name || '').replace(/\$.*$/, '').toLowerCase().replace(/[\s_-]+/g, '');
-      to = /^(arial|helvetica|swiss|calibri|segoeui|tahoma|verdana)/.test(face) ? 'arial.ttf'
+      to = /^(arial|helvetica|swiss|calibri|segoeui|tahoma|verdana|aptos)/.test(face) ? 'arial.ttf'
         : /^(times|bookman|georgia|garamond|cambria|palatino|bookantiqua|century|dutch)/.test(face) ? 'times.ttf'
         : /^(courier|consolas|lucidaconsole)/.test(face) ? 'cour.ttf' : null;
       if (to) { try { rec.fileName = to; n++; } catch (e) { /* keep */ } }
@@ -465,7 +465,10 @@ function mapLatinFonts(db) {
         else if (/\.(ttf|otf)$/i.test(f) && /^[\x20-\x7e]+$/.test(f)) to = 'arial.ttf';
       }
     }
-    if (to && to !== f) { try { rec.fileName = to; n++; } catch (e) { /* keep */ } }
+    // A font named with its folder, as old drawings do ("C:\\ACADWIN\\FONTS\\SIMPLEX"): AutoCAD
+    // looks the file up by name, so do the same instead of reporting it missing.
+    if (!to && f && f !== String(rec.fileName || '')) to = f;
+    if (to && to !== String(rec.fileName || '')) { try { rec.fileName = to; n++; } catch (e) { /* keep */ } }
   }
   return n;
 }

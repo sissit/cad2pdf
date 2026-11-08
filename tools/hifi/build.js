@@ -7,12 +7,13 @@ const out = path.join(__dirname, "..", "..", "hifi");
 // for), added to the font catalog the page and the text worker read. Names are the font file
 // names drawings ask for, without extension.
 const EXTRA_FONTS = [
-  ["arimo-bold.woff", ["arimo-bold", "arialbd", "arialbi", "arialnb", "ariblk", "swissb", "swisseb", "swissbi", "swisscb", "swissbo", "swissek", "swissebi", "calibrib", "segoeuib", "trebucbd", "tahomabd", "verdanab", "helveticab", "helvetica-bold"]],
-  ["tinos.woff", ["tinos", "times", "times new roman", "timesnewroman", "tnr", "dutch", "dutch801", "serif", "georgia", "cambria", "garamond", "book antiqua", "bookos", "pala", "palatino", "century", "schlbk"]],
+  ["arimo.woff", ["arimo", "aptos", "aptos display", "aptos narrow", "aptos light", "aptos-light", "aptos-display", "aptos-narrow", "calibri", "segoe ui", "segoeui", "verdana", "tahoma", "helvetica"]],
+  ["arimo-bold.woff", ["arimo-bold", "arialbd", "arialbi", "arialnb", "ariblk", "swissb", "swisseb", "swissbi", "swisscb", "swissbo", "swissek", "swissebi", "calibrib", "segoeuib", "trebucbd", "tahomabd", "verdanab", "helveticab", "helvetica-bold", "aptos-bold", "aptos-semibold", "aptos-extrabold", "aptos-black", "aptos bold", "aptos semibold", "aptos extrabold", "aptos black"]],
+  ["tinos.woff", ["tinos", "times", "times new roman", "timesnewroman", "tnr", "dutch", "dutch801", "serif", "georgia", "cambria", "garamond", "book antiqua", "bookos", "pala", "palatino", "century", "schlbk", "aptos serif", "aptos-serif"]],
   ["tinos-bold.woff", ["tinos-bold", "timesbd", "imprisha", "imprint", "imprint mt shadow", "dutchb", "dutcheb", "georgiab", "cambriab", "palab", "bookosb", "centuryb", "schlbkb"]],
   ["tinos-italic.woff", ["tinos-italic", "timesi", "dutchi", "georgiai", "cambriai", "palai", "bookosi", "schlbki"]],
   ["tinos-bolditalic.woff", ["tinos-bolditalic", "timesbi", "dutchbi", "georgiaz", "cambriaz", "palabi", "bookosbi", "schlbkbi"]],
-  ["cousine.woff", ["cousine", "cour", "courier", "courier new", "couriernew", "consola", "consolas", "lucon", "monos"]],
+  ["cousine.woff", ["cousine", "cour", "courier", "courier new", "couriernew", "consola", "consolas", "lucon", "monos", "aptos mono", "aptos-mono"]],
   ["cousine-bold.woff", ["cousine-bold", "courbd", "consolab"]],
 ];
 // MTEXT paragraph spacing (\pb = space before, \pa = space after, in text heights): the worker
@@ -95,7 +96,7 @@ for (const [from, to] of [
 }
 // Stamp the bundle hash into index.html so browsers always fetch the matching renderer.
 const hash = require("crypto").createHash("sha256").update(fs.readFileSync(path.join(out, "cadhifi.js"))).digest("hex").slice(0, 10);
-const indexPath = path.join(__dirname, "..", "..", "index.html");
+const indexPath = path.join(__dirname, "..", "..", "zh.html");   // the source page; tools/i18n/build-en.cjs makes index.html from it
 // Version shown to users: build date and time in Houston.
 const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
   .formatToParts(new Date()).map((x) => [x.type, x.value]));
