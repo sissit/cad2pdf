@@ -1,11 +1,22 @@
 # cad2pdf
 
-Convert AutoCAD DWG and DXF drawings to PDF in the browser. Files are never uploaded.
+Free CAD conversion in the browser at [5cad2pdf.com](https://5cad2pdf.com). Files are never uploaded.
+
+**DWG / DXF to PDF** (`/`)
 
 - Default sheet: 24 × 36 in (ARCH D), full color; also ARCH E/C, Tabloid, Letter, A1, A3
 - One PDF page per drawing frame; orientation auto/landscape/portrait
 - Color (as set in the drawing) or black & white
-- Chinese / English interface
+- Several files at once, as a ZIP or one merged PDF
+
+**PDF to DWG / DXF** (`/pdf-to-dwg`)
+
+- Reads the line work and text of vector PDFs (exported from AutoCAD, Revit and similar)
+- Writes DWG (AutoCAD 2000) or DXF (R12): lines, polylines, dashes, colors, editable text
+- Drawing scale and units (inches or millimeters) can be restored
+- Several PDFs or pages at once, packed in a ZIP
+
+English interface by default, Chinese at `/zh/`.
 
 ## Output
 
@@ -22,8 +33,13 @@ background after a drawing is opened.
 
 ## Layout
 
-- `index.html` – the whole app (static, no build step)
+- `zh.html` – the DWG to PDF app, Chinese (the source; static, no build step)
+- `index.html` – the same app in English, generated from `zh.html` by `tools/i18n/build-en.cjs`
+- `pdf-to-dwg.html`, `zh-pdf-to-dwg.html` – the PDF to DWG / DXF page, built from `tools/pdf2dxf/`
+- `pdf2dxf/` – `core.js` (reads PDFs, writes DXF), `dwg.js` (writes DWG) and the blank DWG template
 - `hifi/` – built high-fidelity renderer: `cadhifi.js` plus the DWG parser and MTEXT workers
+- `dwg/`, `dwg-next/` – DWG readers (LibreDWG compiled to WebAssembly); `tools/dwg/` builds them
+- `api/` – usage statistics and feedback (Vercel functions); `admin.html` shows them
 - `tools/hifi/` – source and build script for `hifi/`
 
 Rebuild `hifi/` after changing `tools/hifi/entry.js` or upgrading packages:
