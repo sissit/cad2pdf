@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Builds en.html (served at /en/) from index.html: the same page with its English text written
+// Builds index.html (English, served at /) from zh.html (Chinese, served at /zh/): the same page with its English text written
 // into the HTML, so search engines index an English version at its own address.
-// index.html stays the one source; run this after every change to it:
+// zh.html is the one source; run this after every change to it:
 //   node tools/i18n/build-en.cjs
 "use strict";
 const fs = require("fs"), path = require("path");
 const ROOT = path.join(__dirname, "..", "..");
-let s = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+let s = fs.readFileSync(path.join(ROOT, "zh.html"), "utf8");
 
 // The page's own strings (the STR object in its script).
 const a = s.indexOf("const STR = {"), b = s.indexOf("\n  };", a);
@@ -19,8 +19,8 @@ const must = (from, to) => { if (!s.includes(from)) throw new Error("not found: 
 // <head>
 must('<html lang="zh-CN">', '<html lang="en">');
 s = s.replace(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${attr("Free online DWG to PDF converter: turn AutoCAD DWG and DXF drawings into PDF, one page per title block, color or black and white, ARCH D 24×36 and other sheet sizes, sharp vector output. Files are converted in your browser and never uploaded.")}">`);
-must('<link rel="canonical" href="https://5cad2pdf.com/">', '<link rel="canonical" href="https://5cad2pdf.com/en/">');
-must('<meta property="og:url" content="https://5cad2pdf.com/">', '<meta property="og:url" content="https://5cad2pdf.com/en/">');
+must('<link rel="canonical" href="https://5cad2pdf.com/zh/">', '<link rel="canonical" href="https://5cad2pdf.com/">');
+must('<meta property="og:url" content="https://5cad2pdf.com/zh/">', '<meta property="og:url" content="https://5cad2pdf.com/">');
 s = s.replace(/<meta property="og:title" content="[^"]*">/, '<meta property="og:title" content="DWG to PDF Converter – Free, Online · cad2pdf">');
 s = s.replace(/<meta property="og:description" content="[^"]*">/, '<meta property="og:description" content="Convert AutoCAD DWG / DXF drawings to PDF in your browser: one page per title block, sharp vector output, nothing uploaded.">');
 must('<meta property="og:locale" content="zh_CN">\n<meta property="og:locale:alternate" content="en_US">', '<meta property="og:locale" content="en_US">\n<meta property="og:locale:alternate" content="zh_CN">');
@@ -46,8 +46,8 @@ s = s.replace(/(<([a-z0-9]+)\b[^>]*\bdata-i18n="(\w+)"[^>]*>)([^<]*)(<\/\2>)/g, 
 });
 s = s.replace(/(data-i18n-ph="(\w+)"[^>]*?placeholder=")[^"]*"/g, (m, pre, k) => pre + attr(en[k]) + '"');
 s = s.replace(/<([a-z]+)([^>]*)data-i18n-aria="(\w+)"/g, (m, tag, rest, k) => `<${tag}${rest}data-i18n-aria="${k}" aria-label="${attr(en[k])}"`);
-s = s.replace(/(<a [^>]*)href="([^"]*)" data-path="([^"]*)"/g, (m, pre, href, p) => `${pre}href="${p === "/" ? "/en/" : "/en" + p}" data-path="${p}"`);
+s = s.replace(/(<a [^>]*)href="([^"]*)" data-path="([^"]*)"/g, (m, pre, href, p) => `${pre}href="${p}" data-path="${p}"`);
 
 s = s.split("https://5cad2pdf.com/og.png").join("https://5cad2pdf.com/og-en.png");
-fs.writeFileSync(path.join(ROOT, "en.html"), s);
-console.log("wrote en.html,", n, "texts in English");
+fs.writeFileSync(path.join(ROOT, "index.html"), s);
+console.log("wrote index.html,", n, "texts in English");

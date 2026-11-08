@@ -90,10 +90,10 @@ out = (tpl.replace('%%CSS%%', css).replace('%%TABCSS%%', tabcss)
        .replace('%%STR%%', json.dumps({"zh": zh, "en": en}, ensure_ascii=False)))
 out = out.replace('<p class="about-lead" data-i18n="aboutP"></p>', f'<p class="about-lead" data-i18n="aboutP">{zh["aboutP"]}</p>')
 out = out.replace('<p class="hint" data-i18n="hint"></p>', f'<p class="hint" data-i18n="hint">{zh["hint"]}</p>')
-open(os.path.join(ROOT, 'pdf-to-dwg.html'), 'w', encoding='utf-8').write(out)
-print('wrote pdf-to-dwg.html', len(out))
+open(os.path.join(ROOT, 'zh-pdf-to-dwg.html'), 'w', encoding='utf-8').write(out)
+print('wrote zh-pdf-to-dwg.html', len(out))
 
-# English page (/en/pdf-to-dwg): the same page with the English text written in.
+# English page (/pdf-to-dwg): the same page with the English text written in.
 import html as H
 e = out
 def must(a, b):
@@ -102,8 +102,9 @@ def must(a, b):
     e = e.replace(a, b)
 must('<html lang="zh-CN">', '<html lang="en">')
 e = re.sub(r'<meta name="description" content="[^"]*">', '<meta name="description" content="' + H.escape("Free online PDF to DWG converter: turn PDF drawings exported from AutoCAD back into editable DWG (AutoCAD 2000) or DXF. Lines, dashes, colors and text are kept and the drawing scale can be restored. Runs in your browser; nothing is uploaded.") + '">', e)
-must('<link rel="canonical" href="https://5cad2pdf.com/pdf-to-dwg">', '<link rel="canonical" href="https://5cad2pdf.com/en/pdf-to-dwg">')
-must('<meta property="og:url" content="https://5cad2pdf.com/pdf-to-dwg">', '<meta property="og:url" content="https://5cad2pdf.com/en/pdf-to-dwg">')
+must('<link rel="canonical" href="https://5cad2pdf.com/zh/pdf-to-dwg">', '<link rel="canonical" href="https://5cad2pdf.com/pdf-to-dwg">')
+must('<meta property="og:url" content="https://5cad2pdf.com/zh/pdf-to-dwg">', '<meta property="og:url" content="https://5cad2pdf.com/pdf-to-dwg">')
+e = e.replace('"url":"https://5cad2pdf.com/zh/pdf-to-dwg"', '"url":"https://5cad2pdf.com/pdf-to-dwg"')
 e = re.sub(r'<meta property="og:title" content="[^"]*">', '<meta property="og:title" content="PDF to DWG Converter – Free, Online · cad2pdf">', e)
 e = re.sub(r'<meta property="og:description" content="[^"]*">', '<meta property="og:description" content="Turn PDF drawings into editable DWG or DXF in your browser: lines and text kept, scale restored, nothing uploaded.">', e)
 must('<meta property="og:locale" content="zh_CN">\n<meta property="og:locale:alternate" content="en_US">', '<meta property="og:locale" content="en_US">\n<meta property="og:locale:alternate" content="zh_CN">')
@@ -121,8 +122,8 @@ def tr(m):
     return m.group(1) + H.escape(en[k], quote=False) + m.group(5)
 e = re.sub(r'(<([a-z0-9]+)\b[^>]*\bdata-i18n="(\w+)"[^>]*>)([^<]*)(</\2>)', tr, e)
 e = re.sub(r'(<optgroup [^>]*data-i18n-label="(\w+)"[^>]*?)label="[^"]*"', lambda m: m.group(1) + 'label="' + H.escape(en[m.group(2)]) + '"', e)
-e = re.sub(r'(<a [^>]*)href="([^"]*)" data-path="([^"]*)"( data-hash="([^"]*)")?', lambda m: m.group(1) + 'href="' + ('/en/' if m.group(3) == '/' else '/en' + m.group(3)) + (m.group(5) or '') + '" data-path="' + m.group(3) + '"' + (m.group(4) or ''), e)
+e = re.sub(r'(<a [^>]*)href="([^"]*)" data-path="([^"]*)"( data-hash="([^"]*)")?', lambda m: m.group(1) + 'href="' + m.group(3) + (m.group(5) or '') + '" data-path="' + m.group(3) + '"' + (m.group(4) or ''), e)
 e = e.replace('<button class="go" id="go" type="button">生成 DWG</button>', '<button class="go" id="go" type="button">Create DWG</button>')
 e = e.replace('https://5cad2pdf.com/og-pdf2dwg.png', 'https://5cad2pdf.com/og-pdf2dwg-en.png')
-open(os.path.join(ROOT, 'en-pdf-to-dwg.html'), 'w', encoding='utf-8').write(e)
-print('wrote en-pdf-to-dwg.html,', cnt[0], 'texts in English')
+open(os.path.join(ROOT, 'pdf-to-dwg.html'), 'w', encoding='utf-8').write(e)
+print('wrote pdf-to-dwg.html,', cnt[0], 'texts in English')

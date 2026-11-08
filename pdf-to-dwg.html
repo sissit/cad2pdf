@@ -1,34 +1,34 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="免费在线把 PDF 图纸转成 DWG 或 DXF：线条、虚线、颜色和文字都保留，可按图纸比例还原真实尺寸，AutoCAD 直接打开。文件只在浏览器里处理，不上传。Free PDF to DWG / DXF converter that runs in your browser.">
+<meta name="description" content="Free online PDF to DWG converter: turn PDF drawings exported from AutoCAD back into editable DWG (AutoCAD 2000) or DXF. Lines, dashes, colors and text are kept and the drawing scale can be restored. Runs in your browser; nothing is uploaded.">
 <link rel="canonical" href="https://5cad2pdf.com/pdf-to-dwg">
-<link rel="alternate" hreflang="zh-Hans" href="https://5cad2pdf.com/pdf-to-dwg">
-<link rel="alternate" hreflang="en" href="https://5cad2pdf.com/en/pdf-to-dwg">
-<link rel="alternate" hreflang="x-default" href="https://5cad2pdf.com/en/pdf-to-dwg">
-<script>/* language: an English-language browser opening a Chinese address goes to the English one, unless a language was chosen before; crawlers stay, so both versions get indexed */(function(){try{var p=location.pathname,en=/^\/en(\/|$)/.test(p),s=null;try{s=localStorage.getItem("cad2pdf-lang")}catch(e){}if(/bot|crawl|spider|slurp|bingpreview|facebookexternalhit|lighthouse|headlesschrome/i.test(navigator.userAgent))return;var w=s||(/^zh/i.test(navigator.language||"")?"zh":"en");if(!en&&w==="en")location.replace("/en"+(p==="/"||p==="/index.html"?"/":p)+location.search+location.hash);else if(en&&s==="zh")location.replace((p.replace(/^\/en/,"")||"/")+location.search+location.hash)}catch(e){}})();</script>
+<link rel="alternate" hreflang="zh-Hans" href="https://5cad2pdf.com/zh/pdf-to-dwg">
+<link rel="alternate" hreflang="en" href="https://5cad2pdf.com/pdf-to-dwg">
+<link rel="alternate" hreflang="x-default" href="https://5cad2pdf.com/pdf-to-dwg">
+<script>/* language: English lives at /, Chinese at /zh/. A Chinese-language browser opening an English address goes to the Chinese one (and back), unless a language was chosen before; crawlers stay, so both versions get indexed */(function(){try{var p=location.pathname,zh=/^\/zh(\/|\.html|$)/.test(p),s=null;try{s=localStorage.getItem("cad2pdf-lang")}catch(e){}if(/bot|crawl|spider|slurp|bingpreview|facebookexternalhit|lighthouse|headlesschrome/i.test(navigator.userAgent))return;var w=s||(/^zh/i.test(navigator.language||"")?"zh":"en");if(!zh&&w==="zh")location.replace("/zh"+(p==="/"||p==="/index.html"?"/":p)+location.search+location.hash);else if(zh&&w==="en"&&s)location.replace((p.replace(/^\/zh(\.html)?/,"")||"/")+location.search+location.hash)}catch(e){}})();</script>
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#1d5bb8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d5bb8'/%3E%3Cpath d='M8 9h16v14H8z' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M8 17h16M16 9v14' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://5cad2pdf.com/pdf-to-dwg">
-<meta property="og:title" content="PDF 转 DWG 在线免费转换 · cad2pdf">
-<meta property="og:description" content="PDF 图纸在浏览器里直接转 DWG 或 DXF，线条、文字可编辑，可按比例还原尺寸，文件不上传。">
-<meta property="og:locale" content="zh_CN">
-<meta property="og:locale:alternate" content="en_US">
-<meta property="og:image" content="https://5cad2pdf.com/og-pdf2dwg.png">
+<meta property="og:title" content="PDF to DWG Converter – Free, Online · cad2pdf">
+<meta property="og:description" content="Turn PDF drawings into editable DWG or DXF in your browser: lines and text kept, scale restored, nothing uploaded.">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:image" content="https://5cad2pdf.com/og-pdf2dwg-en.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="PDF 转 DWG 在线免费转换 · 5cad2pdf.com">
+<meta property="og:image:alt" content="PDF to DWG converter · 5cad2pdf.com">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://5cad2pdf.com/og-pdf2dwg.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"cad2pdf PDF to DWG","alternateName":"PDF 转 DWG","url":"https://5cad2pdf.com/pdf-to-dwg","description":"Free in-browser converter from vector PDF drawings to DWG (AutoCAD 2000) and DXF. Lines, dashes, colors and text are kept; drawing scale can be restored. Files are not uploaded.","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","inLanguage":["zh-CN","en"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "怎么把 PDF 转成 DWG？", "acceptedAnswer": {"@type": "Answer", "text": "点「选择或拖入 PDF」，选好 PDF 文件，右边会显示能转出来的线条和文字。选输出格式（DWG 或 DXF）、单位和图纸比例，再点「生成 DWG」，文件会直接下载。多页 PDF 默认每页一个文件，打包成 ZIP。"}}, {"@type": "Question", "name": "什么样的 PDF 能转？", "acceptedAnswer": {"@type": "Answer", "text": "从 AutoCAD、Revit 等软件直接导出或打印的矢量 PDF 效果最好，线条和文字都能还原。扫描件或照片是图片，里面没有线条，转不出来（预览会提示）。"}}, {"@type": "Question", "name": "转出来的尺寸对吗？", "acceptedAnswer": {"@type": "Answer", "text": "PDF 里只记录纸面尺寸，不记录图纸比例。默认按纸面 1:1 输出；在「图纸比例」里选图上标的比例（比如 1/4\" = 1'-0\" 或 1:100），DWG 里量出来就是实际尺寸。转完可以量一段已知长度核对。"}}, {"@type": "Question", "name": "DWG 和 DXF 选哪个？", "acceptedAnswer": {"@type": "Answer", "text": "要在 AutoCAD 里用，选 DWG（默认）：AutoCAD 2000 格式，AutoCAD 2000 到最新版、BricsCAD、DWG TrueView 都能直接打开，文件也比 DXF 小得多。DXF（R12 格式）几乎所有 CAD 和绘图软件都能读，适合 LibreCAD、激光切割、CNC 等软件。两种文件里的内容完全一样。"}}, {"@type": "Question", "name": "转出来的图里有什么？", "acceptedAnswer": {"@type": "Answer", "text": "线条和多段线（曲线由短线段组成）、虚线、颜色、填充区域的外轮廓（在 PDF_FILL 图层），以及可编辑的文字（在 PDF_TEXT 图层）。原图的图层、图块和标注对象 PDF 里没有保存，所以无法还原；图片不转换。"}}, {"@type": "Question", "name": "文字是乱码或变成了线条怎么办？", "acceptedAnswer": {"@type": "Answer", "text": "有些 PDF 把文字存成了轮廓线，这种文字会变成线条，看起来一样但不能编辑。少数 PDF 的字体编码特殊，文字会是乱码，可以取消「包含文字」，只要线条。"}}, {"@type": "Question", "name": "文件会上传到服务器吗？", "acceptedAnswer": {"@type": "Answer", "text": "不会。PDF 只在你自己的浏览器里读取和转换，不经过任何服务器。"}}, {"@type": "Question", "name": "收费吗？需要注册吗？", "acceptedAnswer": {"@type": "Answer", "text": "完全免费，不用注册，电脑和手机都能用。"}}]}</script>
+<meta name="twitter:image" content="https://5cad2pdf.com/og-pdf2dwg-en.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"cad2pdf PDF to DWG","alternateName":"PDF to DWG","url":"https://5cad2pdf.com/pdf-to-dwg","description":"Free in-browser converter from vector PDF drawings to DWG (AutoCAD 2000) and DXF. Lines, dashes, colors and text are kept; drawing scale can be restored. Files are not uploaded.","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","inLanguage":"en","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert a PDF to DWG?", "acceptedAnswer": {"@type": "Answer", "text": "Click “Choose or drop PDFs”, pick a PDF, and the preview shows the lines and text that will come across. Choose the format (DWG or DXF), units and drawing scale, then click “Create DWG”. The file downloads straight away. A multi-page PDF gives one file per page, packed in a ZIP."}}, {"@type": "Question", "name": "Which PDFs work?", "acceptedAnswer": {"@type": "Answer", "text": "Vector PDFs exported or printed from AutoCAD, Revit and similar programs work best: lines and text come back. Scans and photos are pictures with no lines in them, so they can't be converted (the preview tells you)."}}, {"@type": "Question", "name": "Will the dimensions be right?", "acceptedAnswer": {"@type": "Answer", "text": "A PDF only records paper size, not the drawing scale. By default the drawing is at paper size (1:1). Pick the scale shown on the sheet (for example 1/4\" = 1'-0\" or 1:100) and distances in the drawing measure true size. Measure a known length afterwards to check."}}, {"@type": "Question", "name": "DWG or DXF?", "acceptedAnswer": {"@type": "Answer", "text": "For AutoCAD, choose DWG (the default): AutoCAD 2000 format, which AutoCAD 2000 through the latest version, BricsCAD and DWG TrueView open directly, and much smaller than DXF. DXF (R12) is read by almost every CAD and drawing program, handy for LibreCAD, laser cutting and CNC software. Both contain exactly the same drawing."}}, {"@type": "Question", "name": "What ends up in the drawing?", "acceptedAnswer": {"@type": "Answer", "text": "Lines and polylines (curves become short segments), dashed lines, colors, outlines of filled areas (on layer PDF_FILL) and editable text (on layer PDF_TEXT). The original layers, blocks and dimension objects aren't stored in a PDF, so they can't be recovered; pictures are not converted."}}, {"@type": "Question", "name": "Text is garbled or turned into lines?", "acceptedAnswer": {"@type": "Answer", "text": "Some PDFs store text as outlines; that text comes across as lines, which look the same but can't be edited. A few PDFs use unusual font encodings and their text comes out garbled; untick “Include text” to keep only the lines."}}, {"@type": "Question", "name": "Are my files uploaded?", "acceptedAnswer": {"@type": "Answer", "text": "No. The PDF is read and converted in your own browser and never goes to a server."}}, {"@type": "Question", "name": "Is it free? Do I need an account?", "acceptedAnswer": {"@type": "Answer", "text": "It's completely free, with no sign-up, on computers and phones."}}]}</script>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
-<title>PDF 转 DWG 在线免费转换 · PDF to DWG / DXF Converter | cad2pdf</title>
+<title>PDF to DWG Converter, free and online (DWG / DXF) | cad2pdf</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -187,24 +187,24 @@ button.go:disabled { opacity: .5; cursor: progress; }
 <body>
 <div class="wrap">
   <header>
-    <h1 data-i18n="h1">PDF 图纸转 DWG / DXF</h1>
-    <div class="hd-right"><span class="tag" data-i18n="tag">PDF → DWG · DXF · 文件只在本机浏览器里处理，不上传</span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
+    <h1 data-i18n="h1">PDF to DWG / DXF</h1>
+    <div class="hd-right"><span class="tag" data-i18n="tag">PDF → DWG · DXF · files stay in your browser, nothing is uploaded</span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
   </header>
-  <nav class="tabs" aria-label="Tools"><a href="/" data-path="/" data-i18n="tabCad">CAD 转 PDF</a><a href="/pdf-to-dwg" data-path="/pdf-to-dwg" aria-current="page" data-i18n="tabPdf">PDF 转 DWG</a></nav>
+  <nav class="tabs" aria-label="Tools"><a href="/" data-path="/" data-i18n="tabCad">CAD to PDF</a><a href="/pdf-to-dwg" data-path="/pdf-to-dwg" aria-current="page" data-i18n="tabPdf">PDF to DWG</a></nav>
 
   <div class="main">
     <aside class="rail">
       <label class="drop" id="drop">
         <input type="file" id="file" accept=".pdf,application/pdf" multiple>
-        <strong data-i18n="pick">选择或拖入 PDF（可多选）</strong>
-        <span data-i18n="pickSub">从 AutoCAD 等软件导出的矢量 PDF</span>
+        <strong data-i18n="pick">Choose or drop PDFs (one or many)</strong>
+        <span data-i18n="pickSub">Vector PDFs exported from AutoCAD and similar</span>
       </label>
       <div class="batch" id="batch" hidden>
         <div class="label" id="batch-h"></div>
         <ol id="batch-list"></ol>
       </div>
       <div class="field">
-        <span class="label" data-i18n="fmtL">输出格式</span>
+        <span class="label" data-i18n="fmtL">Format</span>
         <div class="seg" role="radiogroup">
           <label><input type="radio" name="fmt" value="dwg" checked><span>DWG</span></label>
           <label><input type="radio" name="fmt" value="dxf"><span>DXF</span></label>
@@ -212,17 +212,17 @@ button.go:disabled { opacity: .5; cursor: progress; }
         <p class="hint" id="fmt-h"></p>
       </div>
       <div class="field">
-        <span class="label" data-i18n="unitL">单位</span>
+        <span class="label" data-i18n="unitL">Units</span>
         <div class="seg" role="radiogroup">
-          <label><input type="radio" name="unit" value="in" checked><span data-i18n="uIn">英寸</span></label>
-          <label><input type="radio" name="unit" value="mm"><span data-i18n="uMm">毫米</span></label>
+          <label><input type="radio" name="unit" value="in" checked><span data-i18n="uIn">Inches</span></label>
+          <label><input type="radio" name="unit" value="mm"><span data-i18n="uMm">Millimeters</span></label>
         </div>
       </div>
       <div class="field">
-        <label class="label" for="scale" data-i18n="scaleL">图纸比例</label>
+        <label class="label" for="scale" data-i18n="scaleL">Drawing scale</label>
         <select id="scale">
-          <option value="1" data-i18n="s1">1:1（纸面尺寸）</option>
-          <optgroup data-i18n-label="sArch" label="建筑（英制）">
+          <option value="1" data-i18n="s1">1:1 (paper size)</option>
+          <optgroup data-i18n-label="sArch" label="Architectural">
             <option value="192">1/16" = 1'-0"</option>
             <option value="128">3/32" = 1'-0"</option>
             <option value="96">1/8" = 1'-0"</option>
@@ -235,7 +235,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
             <option value="8">1 1/2" = 1'-0"</option>
             <option value="4">3" = 1'-0"</option>
           </optgroup>
-          <optgroup data-i18n-label="sEng" label="工程（英制）">
+          <optgroup data-i18n-label="sEng" label="Engineering">
             <option value="120">1" = 10'</option>
             <option value="240">1" = 20'</option>
             <option value="360">1" = 30'</option>
@@ -243,7 +243,7 @@ button.go:disabled { opacity: .5; cursor: progress; }
             <option value="600">1" = 50'</option>
             <option value="1200">1" = 100'</option>
           </optgroup>
-          <optgroup data-i18n-label="sMet" label="公制">
+          <optgroup data-i18n-label="sMet" label="Metric">
             <option value="10">1:10</option>
             <option value="20">1:20</option>
             <option value="25">1:25</option>
@@ -257,38 +257,38 @@ button.go:disabled { opacity: .5; cursor: progress; }
         <p class="hint" id="scale-h"></p>
       </div>
       <div class="field">
-        <span class="label" data-i18n="pagesL">多页 PDF</span>
+        <span class="label" data-i18n="pagesL">Multi-page PDF</span>
         <div class="seg" role="radiogroup">
-          <label><input type="radio" name="pg" value="each" checked><span data-i18n="pgEach">每页一个文件</span></label>
-          <label><input type="radio" name="pg" value="one"><span data-i18n="pgOne">合成一个文件</span></label>
+          <label><input type="radio" name="pg" value="each" checked><span data-i18n="pgEach">One file per page</span></label>
+          <label><input type="radio" name="pg" value="one"><span data-i18n="pgOne">One file</span></label>
         </div>
       </div>
-      <label class="check"><input type="checkbox" id="txt" checked> <span data-i18n="txtL">包含文字（可编辑的 TEXT）</span></label>
-      <button class="go" id="go" type="button">生成 DWG</button>
+      <label class="check"><input type="checkbox" id="txt" checked> <span data-i18n="txtL">Include text (editable)</span></label>
+      <button class="go" id="go" type="button">Create DWG</button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
-      <p class="hint" data-i18n="hint">适合从 CAD 软件导出的 PDF。扫描件是图片，转不出线条。</p>
+      <p class="hint" data-i18n="hint">Works on PDFs exported from CAD programs. Scans are pictures and have no lines to convert.</p>
     </aside>
 
     <section class="stage">
       <div class="meta" id="meta"></div>
       <div class="sheetbox">
-        <div class="sheets" id="sheet"><p class="empty" data-i18n="empty">选好 PDF 后，这里显示能转出来的线条和文字。</p></div>
+        <div class="sheets" id="sheet"><p class="empty" data-i18n="empty">Choose a PDF and the lines and text that will come across show here.</p></div>
       </div>
     </section>
   </div>
   <section class="about" aria-labelledby="about-h">
-    <h2 id="about-h" data-i18n="aboutH">常见问题</h2>
-    <p class="about-lead" data-i18n="aboutP">5cad2pdf 的 PDF 转 DWG 是免费的在线工具：把从 CAD 导出的 PDF 图纸还原成 AutoCAD 能编辑的 DWG 或 DXF，线条、虚线、颜色和文字都保留，可以按图纸比例还原实际尺寸。</p>
-    <details><summary data-i18n="q0">怎么把 PDF 转成 DWG？</summary><p data-i18n="a0">点「选择或拖入 PDF」，选好 PDF 文件，右边会显示能转出来的线条和文字。选输出格式（DWG 或 DXF）、单位和图纸比例，再点「生成 DWG」，文件会直接下载。多页 PDF 默认每页一个文件，打包成 ZIP。</p></details>
-    <details><summary data-i18n="q1">什么样的 PDF 能转？</summary><p data-i18n="a1">从 AutoCAD、Revit 等软件直接导出或打印的矢量 PDF 效果最好，线条和文字都能还原。扫描件或照片是图片，里面没有线条，转不出来（预览会提示）。</p></details>
-    <details><summary data-i18n="q2">转出来的尺寸对吗？</summary><p data-i18n="a2">PDF 里只记录纸面尺寸，不记录图纸比例。默认按纸面 1:1 输出；在「图纸比例」里选图上标的比例（比如 1/4" = 1'-0" 或 1:100），DWG 里量出来就是实际尺寸。转完可以量一段已知长度核对。</p></details>
-    <details><summary data-i18n="q3">DWG 和 DXF 选哪个？</summary><p data-i18n="a3">要在 AutoCAD 里用，选 DWG（默认）：AutoCAD 2000 格式，AutoCAD 2000 到最新版、BricsCAD、DWG TrueView 都能直接打开，文件也比 DXF 小得多。DXF（R12 格式）几乎所有 CAD 和绘图软件都能读，适合 LibreCAD、激光切割、CNC 等软件。两种文件里的内容完全一样。</p></details>
-    <details><summary data-i18n="q4">转出来的图里有什么？</summary><p data-i18n="a4">线条和多段线（曲线由短线段组成）、虚线、颜色、填充区域的外轮廓（在 PDF_FILL 图层），以及可编辑的文字（在 PDF_TEXT 图层）。原图的图层、图块和标注对象 PDF 里没有保存，所以无法还原；图片不转换。</p></details>
-    <details><summary data-i18n="q5">文字是乱码或变成了线条怎么办？</summary><p data-i18n="a5">有些 PDF 把文字存成了轮廓线，这种文字会变成线条，看起来一样但不能编辑。少数 PDF 的字体编码特殊，文字会是乱码，可以取消「包含文字」，只要线条。</p></details>
-    <details><summary data-i18n="q6">文件会上传到服务器吗？</summary><p data-i18n="a6">不会。PDF 只在你自己的浏览器里读取和转换，不经过任何服务器。</p></details>
-    <details><summary data-i18n="q7">收费吗？需要注册吗？</summary><p data-i18n="a7">完全免费，不用注册，电脑和手机都能用。</p></details>
+    <h2 id="about-h" data-i18n="aboutH">FAQ</h2>
+    <p class="about-lead" data-i18n="aboutP">5cad2pdf PDF to DWG is a free online tool that turns PDF drawings exported from CAD back into DWG or DXF that AutoCAD can edit, keeping lines, dashes, colors and text, with the drawing scale restored if you choose it.</p>
+    <details><summary data-i18n="q0">How do I convert a PDF to DWG?</summary><p data-i18n="a0">Click “Choose or drop PDFs”, pick a PDF, and the preview shows the lines and text that will come across. Choose the format (DWG or DXF), units and drawing scale, then click “Create DWG”. The file downloads straight away. A multi-page PDF gives one file per page, packed in a ZIP.</p></details>
+    <details><summary data-i18n="q1">Which PDFs work?</summary><p data-i18n="a1">Vector PDFs exported or printed from AutoCAD, Revit and similar programs work best: lines and text come back. Scans and photos are pictures with no lines in them, so they can't be converted (the preview tells you).</p></details>
+    <details><summary data-i18n="q2">Will the dimensions be right?</summary><p data-i18n="a2">A PDF only records paper size, not the drawing scale. By default the drawing is at paper size (1:1). Pick the scale shown on the sheet (for example 1/4" = 1'-0" or 1:100) and distances in the drawing measure true size. Measure a known length afterwards to check.</p></details>
+    <details><summary data-i18n="q3">DWG or DXF?</summary><p data-i18n="a3">For AutoCAD, choose DWG (the default): AutoCAD 2000 format, which AutoCAD 2000 through the latest version, BricsCAD and DWG TrueView open directly, and much smaller than DXF. DXF (R12) is read by almost every CAD and drawing program, handy for LibreCAD, laser cutting and CNC software. Both contain exactly the same drawing.</p></details>
+    <details><summary data-i18n="q4">What ends up in the drawing?</summary><p data-i18n="a4">Lines and polylines (curves become short segments), dashed lines, colors, outlines of filled areas (on layer PDF_FILL) and editable text (on layer PDF_TEXT). The original layers, blocks and dimension objects aren't stored in a PDF, so they can't be recovered; pictures are not converted.</p></details>
+    <details><summary data-i18n="q5">Text is garbled or turned into lines?</summary><p data-i18n="a5">Some PDFs store text as outlines; that text comes across as lines, which look the same but can't be edited. A few PDFs use unusual font encodings and their text comes out garbled; untick “Include text” to keep only the lines.</p></details>
+    <details><summary data-i18n="q6">Are my files uploaded?</summary><p data-i18n="a6">No. The PDF is read and converted in your own browser and never goes to a server.</p></details>
+    <details><summary data-i18n="q7">Is it free? Do I need an account?</summary><p data-i18n="a7">It's completely free, with no sign-up, on computers and phones.</p></details>
   </section>
-  <footer class="foot"><span>© 2026 5cad2pdf.com · <a href="/" data-path="/" data-i18n="footOther">DWG 转 PDF</a></span><span class="foot-r"><span data-i18n="footFb">意见反馈请到</span>&nbsp;<a href="/#fb-h" data-path="/" data-hash="#fb-h" data-i18n="footFbA">主页</a></span></footer>
+  <footer class="foot"><span>© 2026 5cad2pdf.com · <a href="/" data-path="/" data-i18n="footOther">DWG to PDF</a></span><span class="foot-r"><span data-i18n="footFb">Feedback:</span>&nbsp;<a href="/#fb-h" data-path="/" data-hash="#fb-h" data-i18n="footFbA">main page</a></span></footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -299,9 +299,9 @@ button.go:disabled { opacity: .5; cursor: progress; }
   "use strict";
   const $ = (id) => document.getElementById(id);
   const STR = {"zh": {"title": "PDF 转 DWG 在线免费转换 · PDF to DWG / DXF Converter | cad2pdf", "h1": "PDF 图纸转 DWG / DXF", "tag": "PDF → DWG · DXF · 文件只在本机浏览器里处理，不上传", "tabCad": "CAD 转 PDF", "tabPdf": "PDF 转 DWG", "pick": "选择或拖入 PDF（可多选）", "pickSub": "从 AutoCAD 等软件导出的矢量 PDF", "unitL": "单位", "uIn": "英寸", "uMm": "毫米", "scaleL": "图纸比例", "s1": "1:1（纸面尺寸）", "sArch": "建筑（英制）", "sEng": "工程（英制）", "sMet": "公制", "scaleH1": "按纸面尺寸输出。选图上标的比例，可以还原实际尺寸。", "scaleHin": "图纸单位是英寸，按所选比例放大成实际尺寸。", "scaleHmm": "图纸单位是毫米，按所选比例放大成实际尺寸。", "pagesL": "多页 PDF", "pgEach": "每页一个文件", "pgOne": "合成一个文件", "txtL": "包含文字（可编辑）", "go": "生成 DXF", "hint": "适合从 CAD 软件导出的 PDF。扫描件是图片，转不出线条。", "empty": "选好 PDF 后，这里显示能转出来的线条和文字。", "reading": "正在读取 PDF…", "pageCap": "第 {p} 页 · 线条 {l} · 文字 {t}", "morePages": "还有 {n} 页，预览只显示前几页，转换时全部包括。", "metaPages": "{n} 页", "metaPage1": "1 页", "metaSize": "{w} × {h} in（{mw} × {mh} mm）", "scanned": "这页是图片（扫描件或照片），没有可转换的线条。", "blank": "这页没有可转换的线条或文字。", "batchH": "{n} 个文件 · 点文件名预览", "st_wk": "转换中", "st_ok": "完成", "st_bad": "读不了", "onlyPdf": "请选择 .pdf 文件。", "skipped": "已跳过 {n} 个不是 PDF 的文件。", "needFile": "请先选择 PDF 文件。", "badPdf": "这个 PDF 打不开，可能已损坏。", "locked": "这个 PDF 有密码保护，请先去掉密码再转换。", "libFail": "转换组件没有加载成功，请检查网络后刷新页面。", "working": "正在转换 {x}…", "pageN": "第 {p}/{n} 页", "zipping": "正在打包 ZIP…", "done": "完成：{n} 个文件（{mb} MB）已下载。", "doneSome": "完成：{n} 个文件已下载，{b} 个文件读不了。", "doneEmpty": "已下载，但有的 PDF 里没有矢量线条（可能是扫描件），转出来会是空的。", "allBad": "这些 PDF 都打不开。", "fail": "生成文件失败，请再试一次。", "aboutH": "常见问题", "aboutP": "5cad2pdf 的 PDF 转 DWG 是免费的在线工具：把从 CAD 导出的 PDF 图纸还原成 AutoCAD 能编辑的 DWG 或 DXF，线条、虚线、颜色和文字都保留，可以按图纸比例还原实际尺寸。", "footFb": "意见反馈请到", "footFbA": "主页", "footOther": "DWG 转 PDF", "fmtL": "输出格式", "fmtHdwg": "AutoCAD 2000 格式，AutoCAD 各版本都能直接打开。", "fmtHdxf": "R12 格式，几乎所有 CAD 软件都能读。", "goDwg": "生成 DWG", "goDxf": "生成 DXF", "done1": "完成：文件（{mb} MB）已下载。", "q0": "怎么把 PDF 转成 DWG？", "a0": "点「选择或拖入 PDF」，选好 PDF 文件，右边会显示能转出来的线条和文字。选输出格式（DWG 或 DXF）、单位和图纸比例，再点「生成 DWG」，文件会直接下载。多页 PDF 默认每页一个文件，打包成 ZIP。", "q1": "什么样的 PDF 能转？", "a1": "从 AutoCAD、Revit 等软件直接导出或打印的矢量 PDF 效果最好，线条和文字都能还原。扫描件或照片是图片，里面没有线条，转不出来（预览会提示）。", "q2": "转出来的尺寸对吗？", "a2": "PDF 里只记录纸面尺寸，不记录图纸比例。默认按纸面 1:1 输出；在「图纸比例」里选图上标的比例（比如 1/4\" = 1'-0\" 或 1:100），DWG 里量出来就是实际尺寸。转完可以量一段已知长度核对。", "q3": "DWG 和 DXF 选哪个？", "a3": "要在 AutoCAD 里用，选 DWG（默认）：AutoCAD 2000 格式，AutoCAD 2000 到最新版、BricsCAD、DWG TrueView 都能直接打开，文件也比 DXF 小得多。DXF（R12 格式）几乎所有 CAD 和绘图软件都能读，适合 LibreCAD、激光切割、CNC 等软件。两种文件里的内容完全一样。", "q4": "转出来的图里有什么？", "a4": "线条和多段线（曲线由短线段组成）、虚线、颜色、填充区域的外轮廓（在 PDF_FILL 图层），以及可编辑的文字（在 PDF_TEXT 图层）。原图的图层、图块和标注对象 PDF 里没有保存，所以无法还原；图片不转换。", "q5": "文字是乱码或变成了线条怎么办？", "a5": "有些 PDF 把文字存成了轮廓线，这种文字会变成线条，看起来一样但不能编辑。少数 PDF 的字体编码特殊，文字会是乱码，可以取消「包含文字」，只要线条。", "q6": "文件会上传到服务器吗？", "a6": "不会。PDF 只在你自己的浏览器里读取和转换，不经过任何服务器。", "q7": "收费吗？需要注册吗？", "a7": "完全免费，不用注册，电脑和手机都能用。"}, "en": {"title": "PDF to DWG Converter, free and online (DWG / DXF) | cad2pdf", "h1": "PDF to DWG / DXF", "tag": "PDF → DWG · DXF · files stay in your browser, nothing is uploaded", "tabCad": "CAD to PDF", "tabPdf": "PDF to DWG", "pick": "Choose or drop PDFs (one or many)", "pickSub": "Vector PDFs exported from AutoCAD and similar", "unitL": "Units", "uIn": "Inches", "uMm": "Millimeters", "scaleL": "Drawing scale", "s1": "1:1 (paper size)", "sArch": "Architectural", "sEng": "Engineering", "sMet": "Metric", "scaleH1": "Output at paper size. Pick the scale on the sheet to get true dimensions.", "scaleHin": "Drawing units are inches, enlarged by the scale to true size.", "scaleHmm": "Drawing units are millimeters, enlarged by the scale to true size.", "pagesL": "Multi-page PDF", "pgEach": "One file per page", "pgOne": "One file", "txtL": "Include text (editable)", "go": "Create DXF", "hint": "Works on PDFs exported from CAD programs. Scans are pictures and have no lines to convert.", "empty": "Choose a PDF and the lines and text that will come across show here.", "reading": "Reading the PDF…", "pageCap": "Page {p} · {l} lines · {t} texts", "morePages": "{n} more pages: the preview shows the first few, the conversion includes all.", "metaPages": "{n} pages", "metaPage1": "1 page", "metaSize": "{w} × {h} in ({mw} × {mh} mm)", "scanned": "This page is a picture (scan or photo) with no lines to convert.", "blank": "This page has no lines or text to convert.", "batchH": "{n} files · click a name to preview", "st_wk": "converting", "st_ok": "done", "st_bad": "can't read", "onlyPdf": "Please choose .pdf files.", "skipped": "Skipped {n} files that aren't PDFs.", "needFile": "Choose a PDF first.", "badPdf": "This PDF can't be opened; it may be damaged.", "locked": "This PDF is password-protected. Remove the password, then convert.", "libFail": "The converter didn't load. Check your connection and reload the page.", "working": "Converting {x}…", "pageN": "page {p}/{n}", "zipping": "Packing the ZIP…", "done": "Done: {n} files ({mb} MB) downloaded.", "doneSome": "Done: {n} files downloaded; {b} files couldn't be read.", "doneEmpty": "Downloaded, but some PDFs have no vector lines (probably scans), so their drawings are empty.", "allBad": "None of these PDFs could be opened.", "fail": "Couldn't create the file. Please try again.", "aboutH": "FAQ", "aboutP": "5cad2pdf PDF to DWG is a free online tool that turns PDF drawings exported from CAD back into DWG or DXF that AutoCAD can edit, keeping lines, dashes, colors and text, with the drawing scale restored if you choose it.", "footFb": "Feedback:", "footFbA": "main page", "footOther": "DWG to PDF", "fmtL": "Format", "fmtHdwg": "AutoCAD 2000 format; every AutoCAD version opens it.", "fmtHdxf": "R12 format; read by almost every CAD program.", "goDwg": "Create DWG", "goDxf": "Create DXF", "done1": "Done: the file ({mb} MB) is downloaded.", "q0": "How do I convert a PDF to DWG?", "a0": "Click “Choose or drop PDFs”, pick a PDF, and the preview shows the lines and text that will come across. Choose the format (DWG or DXF), units and drawing scale, then click “Create DWG”. The file downloads straight away. A multi-page PDF gives one file per page, packed in a ZIP.", "q1": "Which PDFs work?", "a1": "Vector PDFs exported or printed from AutoCAD, Revit and similar programs work best: lines and text come back. Scans and photos are pictures with no lines in them, so they can't be converted (the preview tells you).", "q2": "Will the dimensions be right?", "a2": "A PDF only records paper size, not the drawing scale. By default the drawing is at paper size (1:1). Pick the scale shown on the sheet (for example 1/4\" = 1'-0\" or 1:100) and distances in the drawing measure true size. Measure a known length afterwards to check.", "q3": "DWG or DXF?", "a3": "For AutoCAD, choose DWG (the default): AutoCAD 2000 format, which AutoCAD 2000 through the latest version, BricsCAD and DWG TrueView open directly, and much smaller than DXF. DXF (R12) is read by almost every CAD and drawing program, handy for LibreCAD, laser cutting and CNC software. Both contain exactly the same drawing.", "q4": "What ends up in the drawing?", "a4": "Lines and polylines (curves become short segments), dashed lines, colors, outlines of filled areas (on layer PDF_FILL) and editable text (on layer PDF_TEXT). The original layers, blocks and dimension objects aren't stored in a PDF, so they can't be recovered; pictures are not converted.", "q5": "Text is garbled or turned into lines?", "a5": "Some PDFs store text as outlines; that text comes across as lines, which look the same but can't be edited. A few PDFs use unusual font encodings and their text comes out garbled; untick “Include text” to keep only the lines.", "q6": "Are my files uploaded?", "a6": "No. The PDF is read and converted in your own browser and never goes to a server.", "q7": "Is it free? Do I need an account?", "a7": "It's completely free, with no sign-up, on computers and phones."}};
-  // The address decides the language: /pdf-to-dwg is Chinese, /en/pdf-to-dwg English (see the redirect in <head>).
+  // The address decides the language: /pdf-to-dwg is English, /zh/pdf-to-dwg Chinese (see the redirect in <head>).
   let lang = document.documentElement.lang === "en" ? "en" : "zh";
-  const L = (path) => lang === "en" ? (path === "/" ? "/en/" : "/en" + path) : path;
+  const L = (path) => lang === "zh" ? (path === "/" ? "/zh/" : "/zh" + path) : path;
   const t = (k, v) => { let s = (STR[lang] && STR[lang][k]) || STR.zh[k] || k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
   let lastStatus = null;
   function setStatus(k, kind, v) { const s = $("status"); lastStatus = k ? { k, kind, v } : null; s.textContent = k ? t(k, v) : ""; s.className = "status" + (kind ? " " + kind : ""); }

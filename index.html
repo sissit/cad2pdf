@@ -1,35 +1,35 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="免费在线把 AutoCAD DWG / DXF 图纸转成 PDF：按图框分页、彩色或黑白、24×36 等图纸尺寸，矢量输出放大不糊。文件只在浏览器里处理，不上传。Free DWG/DXF to PDF converter that runs in your browser.">
+<meta name="description" content="Free online DWG to PDF converter: turn AutoCAD DWG and DXF drawings into PDF, one page per title block, color or black and white, ARCH D 24×36 and other sheet sizes, sharp vector output. Files are converted in your browser and never uploaded.">
 <link rel="canonical" href="https://5cad2pdf.com/">
-<link rel="alternate" hreflang="zh-Hans" href="https://5cad2pdf.com/">
-<link rel="alternate" hreflang="en" href="https://5cad2pdf.com/en/">
-<link rel="alternate" hreflang="x-default" href="https://5cad2pdf.com/en/">
-<script>/* language: an English-language browser opening a Chinese address goes to the English one, unless a language was chosen before; crawlers stay, so both versions get indexed */(function(){try{var p=location.pathname,en=/^\/en(\/|$)/.test(p),s=null;try{s=localStorage.getItem("cad2pdf-lang")}catch(e){}if(/bot|crawl|spider|slurp|bingpreview|facebookexternalhit|lighthouse|headlesschrome/i.test(navigator.userAgent))return;var w=s||(/^zh/i.test(navigator.language||"")?"zh":"en");if(!en&&w==="en")location.replace("/en"+(p==="/"||p==="/index.html"?"/":p)+location.search+location.hash);else if(en&&s==="zh")location.replace((p.replace(/^\/en/,"")||"/")+location.search+location.hash)}catch(e){}})();</script>
+<link rel="alternate" hreflang="zh-Hans" href="https://5cad2pdf.com/zh/">
+<link rel="alternate" hreflang="en" href="https://5cad2pdf.com/">
+<link rel="alternate" hreflang="x-default" href="https://5cad2pdf.com/">
+<script>/* language: English lives at /, Chinese at /zh/. A Chinese-language browser opening an English address goes to the Chinese one (and back), unless a language was chosen before; crawlers stay, so both versions get indexed */(function(){try{var p=location.pathname,zh=/^\/zh(\/|\.html|$)/.test(p),s=null;try{s=localStorage.getItem("cad2pdf-lang")}catch(e){}if(/bot|crawl|spider|slurp|bingpreview|facebookexternalhit|lighthouse|headlesschrome/i.test(navigator.userAgent))return;var w=s||(/^zh/i.test(navigator.language||"")?"zh":"en");if(!zh&&w==="zh")location.replace("/zh"+(p==="/"||p==="/index.html"?"/":p)+location.search+location.hash);else if(zh&&w==="en"&&s)location.replace((p.replace(/^\/zh(\.html)?/,"")||"/")+location.search+location.hash)}catch(e){}})();</script>
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#1d5bb8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d5bb8'/%3E%3Cpath d='M8 9h16v14H8z' fill='none' stroke='white' stroke-width='2'/%3E%3Cpath d='M8 17h16M16 9v14' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://5cad2pdf.com/">
-<meta property="og:title" content="DWG 转 PDF 在线免费转换 · cad2pdf">
-<meta property="og:description" content="AutoCAD DWG / DXF 图纸在浏览器里直接转 PDF，按图框分页，矢量放大不糊，文件不上传。">
-<meta property="og:locale" content="zh_CN">
-<meta property="og:locale:alternate" content="en_US">
-<meta property="og:image" content="https://5cad2pdf.com/og.png">
+<meta property="og:title" content="DWG to PDF Converter – Free, Online · cad2pdf">
+<meta property="og:description" content="Convert AutoCAD DWG / DXF drawings to PDF in your browser: one page per title block, sharp vector output, nothing uploaded.">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:image" content="https://5cad2pdf.com/og-en.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="DWG 转 PDF 在线免费转换 · 5cad2pdf.com">
+<meta property="og:image:alt" content="DWG to PDF converter · 5cad2pdf.com">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://5cad2pdf.com/og.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"cad2pdf","alternateName":"DWG 转 PDF","url":"https://5cad2pdf.com/","description":"Free in-browser converter from AutoCAD DWG and DXF drawings to PDF. Pages per drawing frame, color or black and white, vector output. Files are not uploaded.","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","inLanguage":["zh-CN","en"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<meta name="twitter:image" content="https://5cad2pdf.com/og-en.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"cad2pdf","alternateName":"DWG to PDF","url":"https://5cad2pdf.com/","description":"Free in-browser converter from AutoCAD DWG and DXF drawings to PDF. Pages per drawing frame, color or black and white, vector output. Files are not uploaded.","applicationCategory":"DesignApplication","operatingSystem":"Any (web browser)","inLanguage":"en","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script>window.CAD2PDF_DWG_WASM = "https://cdn.jsdelivr.net/npm/@mlightcad/libredwg-web@0.8.1/wasm/";</script>
-<title>DWG 转 PDF 在线免费转换 · DWG/DXF to PDF Converter | cad2pdf</title>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "怎么把 DWG 转成 PDF？", "acceptedAnswer": {"@type": "Answer", "text": "点「选择或拖入图纸」，选好 .dwg 或 .dxf 文件，看一眼右边的预览，选纸张大小、方向和彩色或黑白，再点「生成 PDF」。PDF 会直接下载到你的电脑或手机。"}}, {"@type": "Question", "name": "支持哪些 AutoCAD 版本？", "acceptedAnswer": {"@type": "Answer", "text": "支持 AutoCAD R13 到最新版（包括 2019–2026）画的 DWG 文件，以及 DXF 文件。AutoCAD 2018 以后各版本用的都是同一种「2018 格式」DWG，直接上传就能转，不用另存。"}}, {"@type": "Question", "name": "图纸会上传到服务器吗？", "acceptedAnswer": {"@type": "Answer", "text": "不会。图纸只在你自己的浏览器里读取和转换，不经过任何服务器，适合有保密要求的图纸。"}}, {"@type": "Question", "name": "一个文件里有多个图框怎么办？", "acceptedAnswer": {"@type": "Answer", "text": "默认按图框分页：每个图框生成一页，和在 AutoCAD 里逐个打印图框一样。也可以取消勾选，把整张图放在一页。"}}, {"@type": "Question", "name": "能一次转换多个文件吗？", "acceptedAnswer": {"@type": "Answer", "text": "可以。选择文件时一次选多个，或一次拖入多个 .dwg / .dxf，再点「生成 PDF」。所有文件按当前的纸张、方向、颜色和线宽设置逐个转换，可以选「每张一个 PDF」打包成 ZIP 下载，或「合并成一个 PDF」。某个文件转不了会跳过并标出来，不影响其他文件。勾选「选好文件后自动生成 PDF」，选完文件就直接开始转，不用再点按钮。"}}, {"@type": "Question", "name": "能把 PDF 转回 DWG 吗？", "acceptedAnswer": {"@type": "Answer", "text": "可以。点顶部的「PDF 转 DWG」，把从 AutoCAD 等软件导出的 PDF 转成 DWG 或 DXF，线条、虚线、颜色和文字都能编辑，还能按图纸比例还原实际尺寸。同样免费，文件不上传。"}}, {"@type": "Question", "name": "「矢量」和「图片」输出有什么区别？", "acceptedAnswer": {"@type": "Answer", "text": "矢量（默认）把线条和文字原样写进 PDF，放大多少倍都清楚，文件小、转得快。图片是把图纸渲染成高分辨率图像，图纸里插入了照片时请选图片。"}}, {"@type": "Question", "name": "不打印的图层会出现在 PDF 里吗？", "acceptedAnswer": {"@type": "Answer", "text": "默认不会，和 AutoCAD 打印一样：设为「不打印」、冻结或关闭的图层都不出现在 PDF 里。需要的话可以勾选「打印不打印图层」。"}}, {"@type": "Question", "name": "PDF 里的线条看起来很细，正常吗？", "acceptedAnswer": {"@type": "Answer", "text": "正常。线宽按 AutoCAD 出图习惯设置，原尺寸打印很清楚；在手机或屏幕上看整张图会显得淡，放大就清楚了。如果要缩小打印（比如 24×36 的图打在 11×17 上），在「线宽」里选 0.35 mm 会更清楚。"}}, {"@type": "Question", "name": "图纸里的字体电脑上没有怎么办？", "acceptedAnswer": {"@type": "Answer", "text": "会自动换成外形相近的字体：CAD 字体用相近的 CAD 字体，Arial、Times New Roman 这类 Windows 字体用外观一致的替代字体，中文正常显示。文字位置和大小不变，只是字形可能略有不同。"}}, {"@type": "Question", "name": "DWG 文件打不开或转换失败怎么办？", "acceptedAnswer": {"@type": "Answer", "text": "少数 DWG 文件网站读不了，可以在 AutoCAD 里「另存为」DXF 再上传，效果一样。也可以把文件发到 tangye@gmail.com，我们帮你看。"}}, {"@type": "Question", "name": "收费吗？需要注册吗？", "acceptedAnswer": {"@type": "Answer", "text": "完全免费，不用注册，打开网页就能用，电脑和手机都可以。"}}]}</script>
+<title>DWG to PDF Converter – Free, Online, No Upload | cad2pdf</title>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"How do I convert DWG to PDF?","acceptedAnswer":{"@type":"Answer","text":"Click “Choose or drop a drawing”, pick a .dwg or .dxf file, check the preview, choose the sheet size, orientation and color, then click “Create PDF”. The PDF downloads straight to your computer or phone."}},{"@type":"Question","name":"Which AutoCAD versions are supported?","acceptedAnswer":{"@type":"Answer","text":"DWG files from AutoCAD R13 up to the latest release (including 2019–2026), and DXF files. Every AutoCAD release since 2018 saves the same “2018 format” DWG, so newer drawings convert directly without re-saving."}},{"@type":"Question","name":"Are my drawings uploaded?","acceptedAnswer":{"@type":"Answer","text":"No. Drawings are read and converted only in your own browser and never pass through a server, so it suits confidential drawings."}},{"@type":"Question","name":"What if one file has several title blocks?","acceptedAnswer":{"@type":"Answer","text":"By default each drawing frame becomes its own page, like plotting each title block in AutoCAD. Untick the option to put the whole drawing on one page."}},{"@type":"Question","name":"Can I convert several files at once?","acceptedAnswer":{"@type":"Answer","text":"Yes. Choose or drop several .dwg / .dxf files at once and click Create PDF. Every file is converted with the current sheet, orientation, color and line weight settings, one after another, and you get either one PDF per drawing in a ZIP or all of them merged into one PDF. A file that can't be converted is skipped and marked, and the rest still go through. Tick “Create the PDF as soon as a file is chosen” to start converting right after choosing files."}},{"@type":"Question","name":"Can I convert a PDF back to DWG?","acceptedAnswer":{"@type":"Answer","text":"Yes. Click “PDF to DWG” at the top to turn a PDF exported from AutoCAD or similar into DWG or DXF, with editable lines, dashes, colors and text, and the drawing scale restored if you choose it. It's free too, and nothing is uploaded."}},{"@type":"Question","name":"What is the difference between Vector and Image output?","acceptedAnswer":{"@type":"Answer","text":"Vector (default) writes lines and text into the PDF as shapes, so they stay sharp at any zoom, files are small and conversion is fast. Image renders the drawing as a high-resolution picture; use it if the drawing contains inserted photos."}},{"@type":"Question","name":"Do no-plot layers appear in the PDF?","acceptedAnswer":{"@type":"Answer","text":"Not by default, as in AutoCAD plotting: layers set to not plot, frozen layers and layers turned off are left out. Tick “Include layers set to not plot” if you need them."}},{"@type":"Question","name":"The lines in the PDF look thin. Is that normal?","acceptedAnswer":{"@type":"Answer","text":"Yes. Line weights follow AutoCAD plotting practice and print clearly at full size; on a phone or screen the whole sheet looks faint until you zoom in. If you print scaled down (say a 24 × 36 sheet on 11 × 17), choose 0.35 mm under “Line weight” for bolder lines."}},{"@type":"Question","name":"What if the drawing uses fonts my computer doesn't have?","acceptedAnswer":{"@type":"Answer","text":"They are replaced automatically with look-alike fonts: CAD fonts with a similar CAD font, Windows fonts such as Arial and Times New Roman with metric-matched substitutes, and Chinese text displays normally. Text keeps its position and size; only the letter shapes may differ slightly."}},{"@type":"Question","name":"What if a DWG file won't open or fails to convert?","acceptedAnswer":{"@type":"Answer","text":"A few DWG files can't be read here. Save the drawing as DXF in AutoCAD (Save As) and upload that instead; the result is the same. You can also send the file to tangye@gmail.com and we will take a look."}},{"@type":"Question","name":"Is it free? Do I need an account?","acceptedAnswer":{"@type":"Answer","text":"It is completely free with no sign-up. Just open the page, on a computer or a phone."}}]}</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -173,22 +173,22 @@ button.go:disabled { opacity: .5; cursor: progress; }
 <body>
 <div class="wrap">
   <header>
-    <h1 data-i18n="h1">DWG 图纸转 PDF</h1>
-    <div class="hd-right"><span class="tag" data-i18n="tag">DWG · DXF → PDF · 文件只在本机浏览器里处理，不上传</span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
+    <h1 data-i18n="h1">DWG to PDF</h1>
+    <div class="hd-right"><span class="tag" data-i18n="tag">DWG · DXF → PDF · Files stay in your browser, nothing is uploaded</span><div class="lang" role="group" aria-label="Language"><button type="button" id="l-zh" data-lang="zh">中</button><button type="button" id="l-en" data-lang="en">EN</button></div></div>
   </header>
-  <nav class="tabs" aria-label="Tools"><a href="/" data-path="/" aria-current="page" data-i18n="tabCad">CAD 转 PDF</a><a href="/pdf-to-dwg" data-path="/pdf-to-dwg" data-i18n="tabPdf">PDF 转 DWG</a></nav>
+  <nav class="tabs" aria-label="Tools"><a href="/" data-path="/" aria-current="page" data-i18n="tabCad">CAD to PDF</a><a href="/pdf-to-dwg" data-path="/pdf-to-dwg" data-i18n="tabPdf">PDF to DWG</a></nav>
 
   <div class="main">
     <aside class="rail">
       <label class="drop" id="drop">
         <input type="file" id="file" accept=".dwg,.dxf,.pdf" multiple>
-        <strong data-i18n="pick">选择或拖入图纸（可多选）</strong>
-        <span data-i18n="support">支持 .dwg（R13 至最新版）和 .dxf</span>
+        <strong data-i18n="pick">Choose or drop drawings (one or many)</strong>
+        <span data-i18n="support">.dwg (R13 to latest) and .dxf</span>
       </label>
 
 
       <div class="field">
-        <span class="label" id="lbl-size" data-i18n="paper"></span>
+        <span class="label" id="lbl-size" data-i18n="paper">Sheet size</span>
         <select id="size" aria-labelledby="lbl-size">
           <option value="24x36" selected>24 × 36 in (ARCH D)</option>
           <option value="36x48">36 × 48 in (ARCH E)</option>
@@ -201,60 +201,60 @@ button.go:disabled { opacity: .5; cursor: progress; }
       </div>
 
       <div class="field">
-        <span class="label" data-i18n="orient"></span>
-        <div class="seg" role="radiogroup" data-i18n-aria="orient">
-          <label><input type="radio" name="orient" id="o-auto" value="auto"><span data-i18n="auto"></span></label>
-          <label><input type="radio" name="orient" id="o-land" value="land" checked><span data-i18n="land"></span></label>
-          <label><input type="radio" name="orient" id="o-port" value="port"><span data-i18n="port"></span></label>
+        <span class="label" data-i18n="orient">Orientation</span>
+        <div class="seg" role="radiogroup" data-i18n-aria="orient" aria-label="Orientation">
+          <label><input type="radio" name="orient" id="o-auto" value="auto"><span data-i18n="auto">Auto</span></label>
+          <label><input type="radio" name="orient" id="o-land" value="land" checked><span data-i18n="land">Landscape</span></label>
+          <label><input type="radio" name="orient" id="o-port" value="port"><span data-i18n="port">Portrait</span></label>
         </div>
       </div>
 
       <div class="field">
-        <span class="label" data-i18n="color"></span>
-        <div class="seg" role="radiogroup" data-i18n-aria="color">
-          <label><input type="radio" name="color" id="c-color" value="color" checked><span data-i18n="cColor"></span></label>
-          <label><input type="radio" name="color" id="c-mono" value="mono"><span data-i18n="cMono"></span></label>
+        <span class="label" data-i18n="color">Color</span>
+        <div class="seg" role="radiogroup" data-i18n-aria="color" aria-label="Color">
+          <label><input type="radio" name="color" id="c-color" value="color" checked><span data-i18n="cColor">Color</span></label>
+          <label><input type="radio" name="color" id="c-mono" value="mono"><span data-i18n="cMono">Black &amp; white</span></label>
         </div>
-        <label class="check"><input type="checkbox" id="noplot"> <span data-i18n="noplot"></span></label>
-        <label class="check"><input type="checkbox" id="frames" checked> <span data-i18n="frames"></span></label>
-        <label class="check"><input type="checkbox" id="trim" checked> <span data-i18n="trim"></span></label>
+        <label class="check"><input type="checkbox" id="noplot"> <span data-i18n="noplot">Include layers set to not plot (AutoCAD leaves them out)</span></label>
+        <label class="check"><input type="checkbox" id="frames" checked> <span data-i18n="frames">One page per drawing frame (like plotting each title block in AutoCAD)</span></label>
+        <label class="check"><input type="checkbox" id="trim" checked> <span data-i18n="trim">Ignore stray objects far from the main drawing</span></label>
       </div>
 
       <div class="field">
-        <span class="label" data-i18n="fmt"></span>
-        <div class="seg" role="radiogroup" data-i18n-aria="fmt">
-          <label><input type="radio" name="fmt" id="f-img" value="img"><span data-i18n="fmtImg"></span></label>
-          <label><input type="radio" name="fmt" id="f-vec" value="vec" checked><span data-i18n="fmtVec"></span></label>
+        <span class="label" data-i18n="fmt">Output</span>
+        <div class="seg" role="radiogroup" data-i18n-aria="fmt" aria-label="Output">
+          <label><input type="radio" name="fmt" id="f-img" value="img"><span data-i18n="fmtImg">Image</span></label>
+          <label><input type="radio" name="fmt" id="f-vec" value="vec" checked><span data-i18n="fmtVec">Vector</span></label>
         </div>
-        <p class="hint" data-i18n="fmtHint"></p>
+        <p class="hint" data-i18n="fmtHint">Vector (default): lines and text stay sharp at any zoom, faster, smaller files. Image: the original method; choose it if the drawing contains inserted photos.</p>
       </div>
 
       <div class="field">
-        <span class="label" id="lbl-lw" data-i18n="lw"></span>
+        <span class="label" id="lbl-lw" data-i18n="lw">Line weight</span>
         <select id="lw" aria-labelledby="lbl-lw">
-          <option value="auto" selected data-i18n="lwAuto"></option>
-          <option value="0.13" data-i18n="lw13"></option>
-          <option value="0.25" data-i18n="lw25"></option>
-          <option value="0.35" data-i18n="lw35"></option>
-          <option value="0.5" data-i18n="lw50"></option>
+          <option value="auto" selected data-i18n="lwAuto">Auto (by drawing density)</option>
+          <option value="0.13" data-i18n="lw13">0.13 mm  fine</option>
+          <option value="0.25" data-i18n="lw25">0.25 mm  standard</option>
+          <option value="0.35" data-i18n="lw35">0.35 mm  bold</option>
+          <option value="0.5" data-i18n="lw50">0.50 mm  heavy</option>
         </select>
       </div>
 
 
       <div class="batch" id="batch" hidden>
         <span class="label" id="batch-h"></span>
-        <p class="bhint" data-i18n="bHint"></p>
+        <p class="bhint" data-i18n="bHint">Click a file name to preview it (the one shown is in bold).</p>
         <ol id="batch-list"></ol>
-        <div class="seg" role="radiogroup" data-i18n-aria="batchOut">
-          <label><input type="radio" name="bout" id="b-zip" value="zip" checked><span data-i18n="bZip"></span></label>
-          <label><input type="radio" name="bout" id="b-merge" value="merge"><span data-i18n="bMerge"></span></label>
+        <div class="seg" role="radiogroup" data-i18n-aria="batchOut" aria-label="Batch output">
+          <label><input type="radio" name="bout" id="b-zip" value="zip" checked><span data-i18n="bZip">One PDF each (ZIP)</span></label>
+          <label><input type="radio" name="bout" id="b-merge" value="merge"><span data-i18n="bMerge">Merge into one PDF</span></label>
         </div>
       </div>
-      <label class="check"><input type="checkbox" id="autogo"> <span data-i18n="autoGo"></span></label>
-      <button class="go" id="go" type="button" data-i18n="go"></button>
+      <label class="check"><input type="checkbox" id="autogo"> <span data-i18n="autoGo">Create the PDF as soon as a file is chosen (skip the preview check)</span></label>
+      <button class="go" id="go" type="button" data-i18n="go">Create PDF</button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
-      <div class="pdfask" id="pdfask" hidden><span data-i18n="pdfAsk">这是 PDF 文件。要把 PDF 转成 DWG 或 DXF 吗？</span><button type="button" id="pdfgo" data-i18n="pdfGo">转到 PDF 转 DWG</button></div>
-      <p class="hint" data-i18n="hint"></p>
+      <div class="pdfask" id="pdfask" hidden><span data-i18n="pdfAsk">That’s a PDF. Do you want to convert the PDF to DWG or DXF?</span><button type="button" id="pdfgo" data-i18n="pdfGo">Go to PDF to DWG</button></div>
+      <p class="hint" data-i18n="hint">The drawing is centered on the sheet with a 0.5 in margin. The first DWG loads an 11 MB reader, which takes a few seconds.</p>
     </aside>
 
     <section class="stage">
@@ -266,35 +266,35 @@ button.go:disabled { opacity: .5; cursor: progress; }
     </section>
   </div>
   <section class="about" aria-labelledby="about-h">
-    <h2 id="about-h" data-i18n="aboutH">常见问题</h2>
-    <p class="about-lead" data-i18n="aboutP">cad2pdf 是免费的在线 DWG 转 PDF 工具：把 AutoCAD DWG / DXF 图纸转成可打印的 PDF，支持 24×36、A1、A3 等纸张，按图框分页，颜色和图纸一致。</p>
-    <details><summary data-i18n="q0">怎么把 DWG 转成 PDF？</summary><p data-i18n="a0">点「选择或拖入图纸」，选好 .dwg 或 .dxf 文件，看一眼右边的预览，选纸张大小、方向和彩色或黑白，再点「生成 PDF」。PDF 会直接下载到你的电脑或手机。</p></details>
-    <details><summary data-i18n="q1">支持哪些 AutoCAD 版本？</summary><p data-i18n="a1">支持 AutoCAD R13 到最新版（包括 2019–2026）画的 DWG 文件，以及 DXF 文件。AutoCAD 2018 以后各版本用的都是同一种「2018 格式」DWG，直接上传就能转，不用另存。</p></details>
-    <details><summary data-i18n="q2">图纸会上传到服务器吗？</summary><p data-i18n="a2">不会。图纸只在你自己的浏览器里读取和转换，不经过任何服务器，适合有保密要求的图纸。</p></details>
-    <details><summary data-i18n="q3">一个文件里有多个图框怎么办？</summary><p data-i18n="a3">默认按图框分页：每个图框生成一页，和在 AutoCAD 里逐个打印图框一样。也可以取消勾选，把整张图放在一页。</p></details>
-    <details><summary data-i18n="q10">能一次转换多个文件吗？</summary><p data-i18n="a10">可以。选择文件时一次选多个，或一次拖入多个 .dwg / .dxf，再点「生成 PDF」。所有文件按当前的纸张、方向、颜色和线宽设置逐个转换，可以选「每张一个 PDF」打包成 ZIP 下载，或「合并成一个 PDF」。某个文件转不了会跳过并标出来，不影响其他文件。勾选「选好文件后自动生成 PDF」，选完文件就直接开始转，不用再点按钮。</p></details>
-    <details><summary data-i18n="q11">能把 PDF 转回 DWG 吗？</summary><p data-i18n="a11">可以。点顶部的「PDF 转 DWG」，把从 AutoCAD 等软件导出的 PDF 转成 DWG 或 DXF，线条、虚线、颜色和文字都能编辑，还能按图纸比例还原实际尺寸。同样免费，文件不上传。</p></details>
-    <details><summary data-i18n="q4">「矢量」和「图片」输出有什么区别？</summary><p data-i18n="a4">矢量（默认）把线条和文字原样写进 PDF，放大多少倍都清楚，文件小、转得快。图片是把图纸渲染成高分辨率图像，图纸里插入了照片时请选图片。</p></details>
-    <details><summary data-i18n="q5">不打印的图层会出现在 PDF 里吗？</summary><p data-i18n="a5">默认不会，和 AutoCAD 打印一样：设为「不打印」、冻结或关闭的图层都不出现在 PDF 里。需要的话可以勾选「打印不打印图层」。</p></details>
-    <details><summary data-i18n="q7">PDF 里的线条看起来很细，正常吗？</summary><p data-i18n="a7">正常。线宽按 AutoCAD 出图习惯设置，原尺寸打印很清楚；在手机或屏幕上看整张图会显得淡，放大就清楚了。如果要缩小打印（比如 24×36 的图打在 11×17 上），在「线宽」里选 0.35 mm 会更清楚。</p></details>
-    <details><summary data-i18n="q8">图纸里的字体电脑上没有怎么办？</summary><p data-i18n="a8">会自动换成外形相近的字体：CAD 字体用相近的 CAD 字体，Arial、Times New Roman 这类 Windows 字体用外观一致的替代字体，中文正常显示。文字位置和大小不变，只是字形可能略有不同。</p></details>
-    <details><summary data-i18n="q9">DWG 文件打不开或转换失败怎么办？</summary><p data-i18n="a9">少数 DWG 文件网站读不了，可以在 AutoCAD 里「另存为」DXF 再上传，效果一样。也可以把文件发到 tangye@gmail.com，我们帮你看。</p></details>
-    <details><summary data-i18n="q6">收费吗？需要注册吗？</summary><p data-i18n="a6">完全免费，不用注册，打开网页就能用，电脑和手机都可以。</p></details>
+    <h2 id="about-h" data-i18n="aboutH">FAQ</h2>
+    <p class="about-lead" data-i18n="aboutP">cad2pdf is a free online DWG to PDF converter: it turns AutoCAD DWG and DXF drawings into print-ready PDFs on 24 × 36, A1, A3 and other sheets, one page per drawing frame, with the drawing’s own colors.</p>
+    <details><summary data-i18n="q0">How do I convert DWG to PDF?</summary><p data-i18n="a0">Click “Choose or drop a drawing”, pick a .dwg or .dxf file, check the preview, choose the sheet size, orientation and color, then click “Create PDF”. The PDF downloads straight to your computer or phone.</p></details>
+    <details><summary data-i18n="q1">Which AutoCAD versions are supported?</summary><p data-i18n="a1">DWG files from AutoCAD R13 up to the latest release (including 2019–2026), and DXF files. Every AutoCAD release since 2018 saves the same “2018 format” DWG, so newer drawings convert directly without re-saving.</p></details>
+    <details><summary data-i18n="q2">Are my drawings uploaded?</summary><p data-i18n="a2">No. Drawings are read and converted only in your own browser and never pass through a server, so it suits confidential drawings.</p></details>
+    <details><summary data-i18n="q3">What if one file has several title blocks?</summary><p data-i18n="a3">By default each drawing frame becomes its own page, like plotting each title block in AutoCAD. Untick the option to put the whole drawing on one page.</p></details>
+    <details><summary data-i18n="q10">Can I convert several files at once?</summary><p data-i18n="a10">Yes. Choose or drop several .dwg / .dxf files at once and click Create PDF. Every file is converted with the current sheet, orientation, color and line weight settings, one after another, and you get either one PDF per drawing in a ZIP or all of them merged into one PDF. A file that can't be converted is skipped and marked, and the rest still go through. Tick “Create the PDF as soon as a file is chosen” to start converting right after choosing files.</p></details>
+    <details><summary data-i18n="q11">Can I convert a PDF back to DWG?</summary><p data-i18n="a11">Yes. Click “PDF to DWG” at the top to turn a PDF exported from AutoCAD or similar into DWG or DXF, with editable lines, dashes, colors and text, and the drawing scale restored if you choose it. It's free too, and nothing is uploaded.</p></details>
+    <details><summary data-i18n="q4">What is the difference between Vector and Image output?</summary><p data-i18n="a4">Vector (default) writes lines and text into the PDF as shapes, so they stay sharp at any zoom, files are small and conversion is fast. Image renders the drawing as a high-resolution picture; use it if the drawing contains inserted photos.</p></details>
+    <details><summary data-i18n="q5">Do no-plot layers appear in the PDF?</summary><p data-i18n="a5">Not by default, as in AutoCAD plotting: layers set to not plot, frozen layers and layers turned off are left out. Tick “Include layers set to not plot” if you need them.</p></details>
+    <details><summary data-i18n="q7">The lines in the PDF look thin. Is that normal?</summary><p data-i18n="a7">Yes. Line weights follow AutoCAD plotting practice and print clearly at full size; on a phone or screen the whole sheet looks faint until you zoom in. If you print scaled down (say a 24 × 36 sheet on 11 × 17), choose 0.35 mm under “Line weight” for bolder lines.</p></details>
+    <details><summary data-i18n="q8">What if the drawing uses fonts my computer doesn't have?</summary><p data-i18n="a8">They are replaced automatically with look-alike fonts: CAD fonts with a similar CAD font, Windows fonts such as Arial and Times New Roman with metric-matched substitutes, and Chinese text displays normally. Text keeps its position and size; only the letter shapes may differ slightly.</p></details>
+    <details><summary data-i18n="q9">What if a DWG file won't open or fails to convert?</summary><p data-i18n="a9">A few DWG files can't be read here. Save the drawing as DXF in AutoCAD (Save As) and upload that instead; the result is the same. You can also send the file to tangye@gmail.com and we will take a look.</p></details>
+    <details><summary data-i18n="q6">Is it free? Do I need an account?</summary><p data-i18n="a6">It is completely free with no sign-up. Just open the page, on a computer or a phone.</p></details>
   </section>
   <section class="about fb" aria-labelledby="fb-h">
-    <h2 id="fb-h" data-i18n="fbH">意见反馈</h2>
-    <p class="about-lead" data-i18n="fbP">转换效果不对、想要新功能，都可以告诉我。不用登录，联系方式可以不填。</p>
+    <h2 id="fb-h" data-i18n="fbH">Feedback</h2>
+    <p class="about-lead" data-i18n="fbP">Tell me if a conversion looks wrong or what you would like added. No sign-in needed; contact details are optional.</p>
     <form id="fb" novalidate>
-      <label class="fb-l"><span data-i18n="fbMsg">你的意见</span>
-        <textarea id="fb-msg" rows="4" maxlength="3000" data-i18n-ph="fbMsgPh" placeholder="比如：哪张图、哪里不对、希望怎样"></textarea></label>
-      <label class="fb-l"><span data-i18n="fbContact">联系方式（可不填）</span>
-        <input id="fb-contact" type="text" maxlength="200" autocomplete="email" data-i18n-ph="fbContactPh" placeholder="邮箱或微信，方便回复你"></label>
+      <label class="fb-l"><span data-i18n="fbMsg">Your feedback</span>
+        <textarea id="fb-msg" rows="4" maxlength="3000" data-i18n-ph="fbMsgPh" placeholder="e.g. which drawing, what looks wrong, what you expected"></textarea></label>
+      <label class="fb-l"><span data-i18n="fbContact">Contact (optional)</span>
+        <input id="fb-contact" type="text" maxlength="200" autocomplete="email" data-i18n-ph="fbContactPh" placeholder="Email or WeChat, so I can reply"></label>
       <input type="text" name="website" id="fb-web" tabindex="-1" autocomplete="off" aria-hidden="true" class="fb-hp">
-      <label class="check"><input type="checkbox" id="fb-set" checked> <span data-i18n="fbSet">附上当前的转换设置（文件名、纸张、输出方式等，不含图纸内容）</span></label>
-      <div class="fb-row"><button class="go fb-send" type="submit" id="fb-send" data-i18n="fbSend">提交</button><span class="hint" id="fb-st" role="status" aria-live="polite"></span></div>
+      <label class="check"><input type="checkbox" id="fb-set" checked> <span data-i18n="fbSet">Attach the current settings (file name, sheet, output type; not the drawing itself)</span></label>
+      <div class="fb-row"><button class="go fb-send" type="submit" id="fb-send" data-i18n="fbSend">Send</button><span class="hint" id="fb-st" role="status" aria-live="polite"></span></div>
     </form>
   </section>
-  <footer class="foot"><span>© 2026 5cad2pdf.com · <a href="/pdf-to-dwg" data-path="/pdf-to-dwg" data-i18n="footOther">PDF 转 DWG</a></span><span class="foot-r"><span id="ver"></span><span id="visits" hidden></span></span></footer>
+  <footer class="foot"><span>© 2026 5cad2pdf.com · <a href="/pdf-to-dwg" data-path="/pdf-to-dwg" data-i18n="footOther">PDF to DWG</a></span><span class="foot-r"><span id="ver"></span><span id="visits" hidden></span></span></footer>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -454,9 +454,9 @@ window.SAMPLE_DXF = "  0\nSECTION\n  2\nHEADER\n  9\n$ACADVER\n  1\nAC1015\n  9\
       sampleFail: "The sample drawing didn't load. You can still choose your own drawing."
     }
   };
-  // The address decides the language: / is Chinese, /en/ English (see the redirect in <head>).
+  // The address decides the language: / is English, /zh/ Chinese (see the redirect in <head>).
   let lang = document.documentElement.lang === "en" ? "en" : "zh";
-  const L = (path) => lang === "en" ? (path === "/" ? "/en/" : "/en" + path) : path;
+  const L = (path) => lang === "zh" ? (path === "/" ? "/zh/" : "/zh" + path) : path;
   class UserError extends Error {}
   const t = (k, v) => { let s = (STR[lang] && STR[lang][k]) || STR.zh[k] || k; if (v) for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
   const fail = (k) => { const e = new UserError(t(k)); e.key = k; throw e; };

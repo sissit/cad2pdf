@@ -39,10 +39,10 @@ CAD fonts (SHX/TTF) load at run time from
 
 ## Two languages
 
-Each page has a Chinese address and an English one: `/` and `/en/`, `/pdf-to-dwg` and `/en/pdf-to-dwg`,
-linked with hreflang. `index.html` is the source of both main pages; after changing it run
-`node tools/i18n/build-en.cjs` to rebuild `en.html`. The PDF to DWG pages are built by
-`python3 tools/pdf2dxf/build-page.py` (writes `pdf-to-dwg.html` and `en-pdf-to-dwg.html`).
+Each page has an English address and a Chinese one: `/` and `/zh/`, `/pdf-to-dwg` and `/zh/pdf-to-dwg`,
+linked with hreflang (English is the default). `zh.html` is the source of both main pages; after changing it run
+`node tools/i18n/build-en.cjs` to rebuild the English `index.html`. The PDF to DWG pages are built by
+`python3 tools/pdf2dxf/build-page.py` (writes `zh-pdf-to-dwg.html` and `pdf-to-dwg.html`).
 
 ## License
 

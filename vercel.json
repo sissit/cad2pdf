@@ -5,20 +5,20 @@
       "destination": "/admin.html"
     },
     {
+      "source": "/zh",
+      "destination": "/zh.html"
+    },
+    {
+      "source": "/zh/",
+      "destination": "/zh.html"
+    },
+    {
+      "source": "/zh/pdf-to-dwg",
+      "destination": "/zh-pdf-to-dwg.html"
+    },
+    {
       "source": "/pdf-to-dwg",
       "destination": "/pdf-to-dwg.html"
-    },
-    {
-      "source": "/en",
-      "destination": "/en.html"
-    },
-    {
-      "source": "/en/",
-      "destination": "/en.html"
-    },
-    {
-      "source": "/en/pdf-to-dwg",
-      "destination": "/en-pdf-to-dwg.html"
     }
   ],
   "headers": [
@@ -38,6 +38,26 @@
   ],
   "redirects": [
     {
+      "source": "/en",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/en/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/en/pdf-to-dwg",
+      "destination": "/pdf-to-dwg",
+      "permanent": true
+    },
+    {
+      "source": "/en/pdf-to-dxf",
+      "destination": "/pdf-to-dwg",
+      "permanent": true
+    },
+    {
       "source": "/pdf-to-dxf",
       "destination": "/pdf-to-dwg",
       "permanent": true
@@ -48,8 +68,8 @@
       "permanent": true
     },
     {
-      "source": "/en/pdf-to-dxf",
-      "destination": "/en/pdf-to-dwg",
+      "source": "/zh/pdf-to-dxf",
+      "destination": "/zh/pdf-to-dwg",
       "permanent": true
     }
   ]
