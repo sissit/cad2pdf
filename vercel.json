@@ -71,6 +71,26 @@
       "source": "/zh/pdf-to-dxf",
       "destination": "/zh/pdf-to-dwg",
       "permanent": true
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/zh.html",
+      "destination": "/zh/",
+      "permanent": true
+    },
+    {
+      "source": "/pdf-to-dwg.html",
+      "destination": "/pdf-to-dwg",
+      "permanent": true
+    },
+    {
+      "source": "/zh-pdf-to-dwg.html",
+      "destination": "/zh/pdf-to-dwg",
+      "permanent": true
     }
   ]
 }
